@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "rm -rf _flutter && git clone https://github.com/flutter/flutter.git -b stable --depth 1 _flutter && export PATH=\"$PATH:$(pwd)/_flutter/bin\" && flutter pub get && flutter build web --release",
+  "buildCommand": "echo 'Deploying prebuilt Flutter Web app'",
   "outputDirectory": "build/web",
   "headers": [
     {
