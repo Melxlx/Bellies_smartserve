@@ -1,6 +1,6 @@
 enum UserRole { owner, cashier, kitchen, rider, guest, customer }
 
-enum AccountStatus { active, archived, locked }
+enum AccountStatus { active, archived, locked, deleted }
 
 class UserModel {
   final String id;

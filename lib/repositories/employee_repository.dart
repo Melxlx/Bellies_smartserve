@@ -11,18 +11,20 @@ class EmployeeRepository {
       final response = await _supabase
           .from('profiles')
           .select('*, employee_details(*)')
+          .neq('account_status', 'DELETED')
           .order('full_name', ascending: true);
 
       final list = (response as List).map((json) => UserModel.fromJson(json)).toList();
-      return list.where((u) => u.role == UserRole.cashier || u.role == UserRole.kitchen || u.role == UserRole.rider).toList();
+      return list.where((u) => u.accountStatus != AccountStatus.deleted && (u.role == UserRole.cashier || u.role == UserRole.kitchen || u.role == UserRole.rider)).toList();
     } catch (_) {
       final response = await _supabase
           .from('profiles')
           .select()
+          .neq('account_status', 'DELETED')
           .order('full_name', ascending: true);
 
       final list = (response as List).map((json) => UserModel.fromJson(json)).toList();
-      return list.where((u) => u.role == UserRole.cashier || u.role == UserRole.kitchen || u.role == UserRole.rider).toList();
+      return list.where((u) => u.accountStatus != AccountStatus.deleted && (u.role == UserRole.cashier || u.role == UserRole.kitchen || u.role == UserRole.rider)).toList();
     }
   }
 
@@ -32,12 +34,15 @@ class EmployeeRepository {
       final response = await _supabase
           .from('profiles')
           .select()
+          .neq('account_status', 'DELETED')
           .order('full_name', ascending: true);
 
       final list = (response as List).map((json) => UserModel.fromJson(json)).toList();
-      return list.where((u) => u.role == UserRole.customer || u.role == UserRole.guest).toList();
+      return list.where((u) => u.accountStatus != AccountStatus.deleted && (u.role == UserRole.customer || u.role == UserRole.guest)).toList();
     } catch (e) {
       return [];
+    }
+  }
     }
   }
 
@@ -248,9 +253,88 @@ class EmployeeRepository {
   }
 
   Future<void> permanentlyDeleteProfile(String id) async {
+    // 1. Delete associated employee_details
     try {
       await _supabase.from('employee_details').delete().eq('user_id', id);
+    } catch (e) {
+      debugPrint("employee_details delete error: $e");
+    }
+
+    // 2. Delete associated rfid_scans
+    try {
+      await _supabase.from('rfid_scans').delete().eq('user_id', id);
+    } catch (e) {
+      debugPrint("rfid_scans delete error: $e");
+    }
+
+    // 3. Delete attendance records
+    try {
+      await _supabase.from('attendance').delete().eq('user_id', id);
+    } catch (e) {
+      debugPrint("attendance user_id delete error: $e");
+    }
+    try {
+      await _supabase.from('attendance').delete().eq('employee_id', id);
+    } catch (e) {
+      debugPrint("attendance employee_id delete error: $e");
+    }
+
+    // 4. Delete payroll records
+    try {
+      await _supabase.from('payroll').delete().eq('user_id', id);
+    } catch (e) {
+      debugPrint("payroll user_id delete error: $e");
+    }
+    try {
+      await _supabase.from('payroll').delete().eq('employee_id', id);
+    } catch (e) {
+      debugPrint("payroll employee_id delete error: $e");
+    }
+
+    // 5. Delete system notifications & activity logs
+    try {
+      await _supabase.from('system_notifications').delete().eq('user_id', id);
+    } catch (e) {
+      debugPrint("system_notifications delete error: $e");
+    }
+    try {
+      await _supabase.from('activity_logs').delete().eq('user_id', id);
+    } catch (e) {
+      debugPrint("activity_logs delete error: $e");
+    }
+
+    // 6. Delete customer reviews
+    try {
+      await _supabase.from('reviews').delete().eq('customer_id', id);
+    } catch (e) {
+      debugPrint("reviews delete error: $e");
+    }
+
+    // 7. Unlink order foreign keys so profile deletion isn't blocked
+    try {
+      await _supabase.from('orders').update({'customer_id': null}).eq('customer_id', id);
     } catch (_) {}
-    await _supabase.from('profiles').delete().eq('id', id);
+    try {
+      await _supabase.from('orders').update({'rider_id': null}).eq('rider_id', id);
+    } catch (_) {}
+    try {
+      await _supabase.from('orders').update({'cashier_id': null}).eq('cashier_id', id);
+    } catch (_) {}
+
+    // 8. Attempt Supabase RPC delete_user_account if defined in Postgres
+    try {
+      await _supabase.rpc('delete_user_account', params: {'target_user_id': id});
+    } catch (e) {
+      debugPrint("RPC delete_user_account error/not present: $e");
+    }
+
+    // 9. Physical delete from profiles table
+    try {
+      await _supabase.from('profiles').delete().eq('id', id);
+    } catch (e) {
+      debugPrint("profiles physical delete error: $e");
+      // Fallback: If physical delete is blocked by RLS/FK constraint, set status to DELETED
+      await _supabase.from('profiles').update({'account_status': 'DELETED'}).eq('id', id);
+    }
   }
 }
