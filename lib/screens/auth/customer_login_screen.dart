@@ -40,6 +40,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
   final _signUpLastNameController = TextEditingController();
   final _signUpEmailController = TextEditingController();
   final _signUpPhoneController = TextEditingController();
+  final _signUpAddressController = TextEditingController();
   final _signUpPasswordController = TextEditingController();
   final _signUpConfirmPasswordController = TextEditingController();
   final FocusNode _passwordFocusNode = FocusNode();
@@ -67,9 +68,18 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
       if (mounted) setState(() {});
     });
     _loadRememberMe();
-    _signUpPasswordController.addListener(() {
-      setState(() {});
-    });
+    
+    // Add real-time input validation listeners for instant green/red feedback
+    _signUpFirstNameController.addListener(() { if (mounted) setState(() {}); });
+    _signUpLastNameController.addListener(() { if (mounted) setState(() {}); });
+    _signUpEmailController.addListener(() { if (mounted) setState(() {}); });
+    _signUpPhoneController.addListener(() { if (mounted) setState(() {}); });
+    _signUpAddressController.addListener(() { if (mounted) setState(() {}); });
+    _signUpPasswordController.addListener(() { if (mounted) setState(() {}); });
+    _signUpConfirmPasswordController.addListener(() { if (mounted) setState(() {}); });
+    _emailController.addListener(() { if (mounted) setState(() {}); });
+    _passwordController.addListener(() { if (mounted) setState(() {}); });
+
     _passwordFocusNode.addListener(() {
       setState(() {});
     });
@@ -117,6 +127,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
     _signUpLastNameController.dispose();
     _signUpEmailController.dispose();
     _signUpPhoneController.dispose();
+    _signUpAddressController.dispose();
     _signUpPasswordController.dispose();
     _signUpConfirmPasswordController.dispose();
     _passwordFocusNode.dispose();
@@ -333,6 +344,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
     final firstName = _signUpFirstNameController.text.trim();
     final lastName = _signUpLastNameController.text.trim();
     final contactNumber = _signUpPhoneController.text.trim();
+    final address = _signUpAddressController.text.trim();
     final fullName = "$firstName $lastName";
 
     setState(() => _isLoading = true);
@@ -356,6 +368,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
         password: password,
         fullName: fullName,
         contactNumber: contactNumber,
+        address: address,
       );
 
       if (!mounted) return;
@@ -374,6 +387,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
         email: email,
         fullName: fullName,
         contactNumber: contactNumber,
+        address: address,
         testCode: generatedCode,
       );
     } on AuthException catch (e) {
@@ -395,6 +409,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
     required String fullName,
     String? username,
     String? contactNumber,
+    String? address,
     String? testCode,
   }) {
     final otpController = TextEditingController();
@@ -445,6 +460,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                   fullName: fullName,
                   username: username,
                   contactNumber: contactNumber,
+                  address: address,
                 );
 
                 timer?.cancel();
@@ -1601,7 +1617,7 @@ You have the right to access, update, or request the deletion of your account in
           TextFormField(
             controller: _emailController,
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: _inputDecoration("Enter your email", Icons.email_outlined),
+            decoration: _inputDecoration("Enter your email", Icons.email_outlined, isValid: _isSignInEmailValid),
             validator: (val) {
               if (val == null || val.trim().isEmpty) return "Email address is required";
               if (!RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val.trim())) {
@@ -1616,7 +1632,7 @@ You have the right to access, update, or request the deletion of your account in
             controller: _passwordController,
             autovalidateMode: AutovalidateMode.onUserInteraction,
             obscureText: !_isPasswordVisible,
-            decoration: _inputDecoration("Enter your password", Icons.lock_outline, suffix: IconButton(
+            decoration: _inputDecoration("Enter your password", Icons.lock_outline, isValid: _isSignInPasswordValid, suffix: IconButton(
               icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
               onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
             )),
@@ -1697,7 +1713,7 @@ You have the right to access, update, or request the deletion of your account in
                           FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
                           DenyLeadingSpaceFormatter(),
                         ],
-                        decoration: _inputDecoration("e.g. Juan", null),
+                        decoration: _inputDecoration("e.g. Juan", null, isValid: _isFirstNameValid),
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) return "First name required";
                           final trimmed = v.trim();
@@ -1726,7 +1742,7 @@ You have the right to access, update, or request the deletion of your account in
                           FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
                           DenyLeadingSpaceFormatter(),
                         ],
-                        decoration: _inputDecoration("e.g. Cruz", null),
+                        decoration: _inputDecoration("e.g. Cruz", null, isValid: _isLastNameValid),
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) return "Last name required";
                           final trimmed = v.trim();
@@ -1749,7 +1765,7 @@ You have the right to access, update, or request the deletion of your account in
               autovalidateMode: AutovalidateMode.onUserInteraction,
               keyboardType: TextInputType.emailAddress,
               maxLength: 60,
-              decoration: _inputDecoration("your@email.com", Icons.email_outlined),
+              decoration: _inputDecoration("your@email.com", Icons.email_outlined, isValid: _isSignUpEmailValid),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return "Email address is required";
                 final trimmed = v.trim();
@@ -1773,13 +1789,27 @@ You have the right to access, update, or request the deletion of your account in
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              decoration: _inputDecoration("09XXXXXXXXX", Icons.phone_outlined),
+              decoration: _inputDecoration("09XXXXXXXXX", Icons.phone_outlined, isValid: _isSignUpPhoneValid),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return "Phone number is required";
                 final trimmed = v.trim();
                 if (!RegExp(r'^09\d{9}$').hasMatch(trimmed)) {
                   return "Enter a valid 11-digit PH mobile number starting with 09";
                 }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            _inputLabel("Delivery Address"),
+            TextFormField(
+              controller: _signUpAddressController,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              maxLength: 100,
+              decoration: _inputDecoration("e.g. Sta. Cruz, Laguna", Icons.location_on_outlined, isValid: _isSignUpAddressValid),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return "Delivery address is required";
+                final trimmed = v.trim();
+                if (trimmed.length < 5) return "Please enter a complete address (min 5 chars)";
                 return null;
               },
             ),
@@ -1794,7 +1824,7 @@ You have the right to access, update, or request the deletion of your account in
               enableSuggestions: false,
               autocorrect: false,
               maxLength: 30,
-              decoration: _inputDecoration("••••••••", Icons.lock_outline, suffix: IconButton(
+              decoration: _inputDecoration("••••••••", Icons.lock_outline, isValid: _isSignUpPasswordValid, suffix: IconButton(
                 icon: Icon(_isSignUpPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
                 onPressed: () => setState(() => _isSignUpPasswordVisible = !_isSignUpPasswordVisible),
               )),
@@ -1854,7 +1884,7 @@ You have the right to access, update, or request the deletion of your account in
               enableSuggestions: false,
               autocorrect: false,
               maxLength: 30,
-              decoration: _inputDecoration("Re-enter password", Icons.lock_outline, suffix: IconButton(
+              decoration: _inputDecoration("Re-enter password", Icons.lock_outline, isValid: _isSignUpConfirmPasswordValid, suffix: IconButton(
                 icon: Icon(_isSignUpConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
                 onPressed: () => setState(() => _isSignUpConfirmPasswordVisible = !_isSignUpConfirmPasswordVisible),
               )),
@@ -1891,7 +1921,7 @@ You have the right to access, update, or request the deletion of your account in
                         TextSpan(
                           text: "Terms of Service",
                           style: const TextStyle(
-                            color: Color(0xFF1D1D1F),
+                            color: Color(0xFFE91E63),
                             fontWeight: FontWeight.w600,
                           ),
                           recognizer: TapGestureRecognizer()..onTap = _showTermsOfService,
@@ -1900,7 +1930,7 @@ You have the right to access, update, or request the deletion of your account in
                         TextSpan(
                           text: "Privacy Policy",
                           style: const TextStyle(
-                            color: Color(0xFF1D1D1F),
+                            color: Color(0xFFE91E63),
                             fontWeight: FontWeight.w600,
                           ),
                           recognizer: TapGestureRecognizer()..onTap = _showPrivacyPolicy,
@@ -1976,19 +2006,79 @@ You have the right to access, update, or request the deletion of your account in
     );
   }
 
-  InputDecoration _inputDecoration(String hint, IconData? icon, {Widget? suffix}) {
+  bool get _isFirstNameValid {
+    final v = _signUpFirstNameController.text.trim();
+    return v.isNotEmpty && !_signUpFirstNameController.text.startsWith(' ') && v.length >= 2 && RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(v);
+  }
+
+  bool get _isLastNameValid {
+    final v = _signUpLastNameController.text.trim();
+    return v.isNotEmpty && !_signUpLastNameController.text.startsWith(' ') && v.length >= 2 && RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(v);
+  }
+
+  bool get _isSignUpEmailValid {
+    final v = _signUpEmailController.text.trim();
+    final emailRegex = RegExp(
+      r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$",
+    );
+    return v.isNotEmpty && v.length <= 60 && emailRegex.hasMatch(v);
+  }
+
+  bool get _isSignUpPhoneValid {
+    final v = _signUpPhoneController.text.trim();
+    return v.isNotEmpty && RegExp(r'^09\d{9}$').hasMatch(v);
+  }
+
+  bool get _isSignUpAddressValid {
+    final v = _signUpAddressController.text.trim();
+    return v.isNotEmpty && v.length >= 5;
+  }
+
+  bool get _isSignUpPasswordValid {
+    return _signUpPasswordController.text.isNotEmpty && _hasMinLength && _hasUppercase && _hasNumberOrSymbol;
+  }
+
+  bool get _isSignUpConfirmPasswordValid {
+    final v = _signUpConfirmPasswordController.text;
+    return v.isNotEmpty && v == _signUpPasswordController.text && _isSignUpPasswordValid;
+  }
+
+  bool get _isSignInEmailValid {
+    final v = _emailController.text.trim();
+    return v.isNotEmpty && RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v);
+  }
+
+  bool get _isSignInPasswordValid {
+    final v = _passwordController.text.trim();
+    return v.isNotEmpty && v.length >= 6;
+  }
+
+  InputDecoration _inputDecoration(String hint, IconData? icon, {Widget? suffix, bool? isValid}) {
+    Color borderColor;
+    Color focusedColor;
+
+    if (isValid == true) {
+      borderColor = const Color(0xFF34C759); // iOS System Green for valid state
+      focusedColor = const Color(0xFF34C759);
+    } else {
+      borderColor = Colors.grey.shade300;
+      focusedColor = const Color(0xFFE91E63);
+    }
+
     return InputDecoration(
       hintText: hint,
-      counterText: "", // Hides the annoying character counter
+      counterText: "", // Hides character counter
       hintStyle: GoogleFonts.poppins(color: const Color(0xFF86868B), fontSize: 14),
-      prefixIcon: icon != null ? Icon(icon, size: 20, color: const Color(0xFF86868B)) : null,
+      prefixIcon: icon != null ? Icon(icon, size: 20, color: isValid == true ? const Color(0xFF34C759) : const Color(0xFF86868B)) : null,
       suffixIcon: suffix,
       filled: true,
-      fillColor: const Color(0xFFF5F5F7).withOpacity(0.5), // Clean iOS light gray
+      fillColor: isValid == true ? const Color(0xFFF2F9F4) : const Color(0xFFF5F5F7).withOpacity(0.5),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade300, width: 1)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200, width: 1)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE91E63), width: 1.5)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor, width: 1)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor, width: isValid == true ? 1.5 : 1)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: focusedColor, width: 1.5)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFFF3B30), width: 1.5)),
+      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFFF3B30), width: 1.5)),
       errorMaxLines: 3,
       errorStyle: GoogleFonts.poppins(fontSize: 11, height: 1.2, color: const Color(0xFFFF3B30), fontWeight: FontWeight.w500),
     );
