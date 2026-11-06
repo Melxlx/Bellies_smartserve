@@ -417,8 +417,6 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
     bool isVerifying = false;
     bool isResending = false;
     String? errorMessage;
-    String selectedChannel = 'gmail'; // Default channel is Gmail OTP
-    bool smsSent = false;
     int cooldownSeconds = 300;
     int resendAttempts = 0;
     const maxResendAttempts = 5;
@@ -430,7 +428,6 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
-            // Setup listener on controller to trigger rebuilds on typing so button updates instantly
             otpController.removeListener(() {});
             otpController.addListener(() {
               setDialogState(() {});
@@ -472,7 +469,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text("Account verified and created! Welcome to Bellie's Kitchen."),
+                      content: Text("Account verified and created! Welcome to Bellie's SmartServe."),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -488,59 +485,9 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                   await showErrorDialog(
                     dialogContext,
                     title: "Invalid Verification Code",
-                    message: "The 6-digit code you entered is incorrect or expired. Please check your $selectedChannel and try again.",
+                    message: "The 6-digit code you entered is incorrect or expired. Please check your Gmail inbox and try again.",
                   );
                 }
-              }
-            }
-
-            Future<void> handleSwitchChannel(String channel) async {
-              if (selectedChannel == channel || isResending) return;
-
-              if (channel == 'sms') {
-                if (contactNumber == null || contactNumber.trim().isEmpty) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(
-                      content: Text("No phone number provided during registration. Using Gmail OTP."),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                  return;
-                }
-
-                setDialogState(() {
-                  selectedChannel = 'sms';
-                  errorMessage = null;
-                });
-
-                if (!smsSent) {
-                  setDialogState(() => isResending = true);
-                  try {
-                    await _authService.sendSignUpSMS(phone: contactNumber);
-                    smsSent = true;
-                    setDialogState(() => isResending = false);
-                    if (ctx.mounted) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(
-                          content: Text("Verification code sent via SMS to $contactNumber."),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    final cleanMsg = e is AuthException ? e.message : "SMS verification is unavailable. Please verify using Gmail OTP.";
-                    setDialogState(() {
-                      isResending = false;
-                      errorMessage = cleanMsg;
-                      selectedChannel = 'gmail';
-                    });
-                  }
-                }
-              } else {
-                setDialogState(() {
-                  selectedChannel = 'gmail';
-                  errorMessage = null;
-                });
               }
             }
 
@@ -553,13 +500,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
               });
 
               try {
-                if (selectedChannel == 'sms' && contactNumber != null && contactNumber.isNotEmpty) {
-                  await _authService.sendSignUpSMS(phone: contactNumber);
-                  smsSent = true;
-                } else {
-                  await _authService.resendSignUpOTP(email: email);
-                }
-
+                await _authService.resendSignUpOTP(email: email);
                 resendAttempts++;
                 cooldownSeconds = 300;
                 isResending = false;
@@ -568,10 +509,9 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                 setDialogState(() {});
 
                 if (ctx.mounted) {
-                  final channelName = selectedChannel == 'sms' ? "SMS to $contactNumber" : "Gmail ($email)";
                   ScaffoldMessenger.of(ctx).showSnackBar(
                     SnackBar(
-                      content: Text("New verification code sent via $channelName."),
+                      content: Text("A new 6-digit verification code has been sent to $email."),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -588,30 +528,31 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
             final isCodeComplete = currentDigits.length == 6;
 
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               backgroundColor: Colors.white,
               surfaceTintColor: Colors.white,
-              elevation: 10,
+              elevation: 12,
+              shadowColor: Colors.black.withValues(alpha: 0.15),
               child: Container(
-                width: 440,
-                padding: const EdgeInsets.all(28),
+                width: 420,
+                padding: const EdgeInsets.all(26),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Header Row
+                      // iOS Style Header Row
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFF0F5),
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Icon(
-                              selectedChannel == 'gmail' ? Icons.mark_email_read_outlined : Icons.sms_outlined,
-                              color: const Color(0xFFE91E63),
+                            child: const Icon(
+                              Icons.mark_email_read_rounded,
+                              color: Color(0xFFE91E63),
                               size: 26,
                             ),
                           ),
@@ -625,167 +566,98 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                                   style: GoogleFonts.poppins(
                                     fontSize: 19,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF1E1E1E),
+                                    color: const Color(0xFF0F172A),
+                                    letterSpacing: -0.3,
                                   ),
                                 ),
+                                const SizedBox(height: 2),
                                 Text(
-                                  selectedChannel == 'gmail'
-                                      ? "Default verification via Gmail"
-                                      : "Secondary choice via SMS",
+                                  "Gmail OTP Verification",
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
-                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF64748B),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          IconButton(
-                            onPressed: isVerifying
+                          InkWell(
+                            onTap: isVerifying
                                 ? null
                                 : () {
                                     timer?.cancel();
                                     focusNode.dispose();
                                     Navigator.pop(dialogContext);
                                   },
-                            icon: const Icon(Icons.close, color: Colors.grey),
-                            tooltip: "Close",
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF1F5F9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                color: Color(0xFF64748B),
+                                size: 18,
+                              ),
+                            ),
                           ),
                         ],
                       ),
 
                       const SizedBox(height: 20),
 
-                      // Method Choice Switcher (Default: Gmail, Second Choice: SMS)
+                      // Information Notice Box (Apple / iOS clean card)
                       Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => handleSwitchChannel('gmail'),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: selectedChannel == 'gmail' ? Colors.white : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: selectedChannel == 'gmail'
-                                        ? [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(alpha: 0.06),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ]
-                                        : [],
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.mail_outline_rounded,
-                                        size: 16,
-                                        color: selectedChannel == 'gmail' ? const Color(0xFFE91E63) : Colors.grey[600],
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        "Gmail OTP (Default)",
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          fontWeight: selectedChannel == 'gmail' ? FontWeight.bold : FontWeight.w500,
-                                          color: selectedChannel == 'gmail' ? const Color(0xFFE91E63) : Colors.grey[700],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (contactNumber != null && contactNumber.isNotEmpty) ...[
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => handleSwitchChannel('sms'),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: selectedChannel == 'sms' ? Colors.white : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(10),
-                                      boxShadow: selectedChannel == 'sms'
-                                          ? [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(alpha: 0.06),
-                                                blurRadius: 4,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ]
-                                          : [],
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.phone_android_rounded,
-                                          size: 16,
-                                          color: selectedChannel == 'sms' ? const Color(0xFFE91E63) : Colors.grey[600],
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          "SMS OTP (Option)",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            fontWeight: selectedChannel == 'sms' ? FontWeight.bold : FontWeight.w500,
-                                            color: selectedChannel == 'sms' ? const Color(0xFFE91E63) : Colors.grey[700],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      // Information Notice
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              selectedChannel == 'gmail' ? Icons.info_outline_rounded : Icons.smartphone_rounded,
-                              size: 18,
-                              color: const Color(0xFFE91E63),
+                            const Padding(
+                              padding: EdgeInsets.only(top: 2),
+                              child: Icon(
+                                Icons.alternate_email_rounded,
+                                size: 18,
+                                color: Color(0xFFE91E63),
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: Text(
-                                selectedChannel == 'gmail'
-                                    ? "We sent a 6-digit verification code to $email. Please check your inbox and Spam folder."
-                                    : "We sent a 6-digit verification code via SMS to $contactNumber.",
-                                style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[700], height: 1.3),
+                              child: RichText(
+                                text: TextSpan(
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12.5,
+                                    color: const Color(0xFF475569),
+                                    height: 1.4,
+                                  ),
+                                  children: [
+                                    const TextSpan(text: "We sent a 6-digit verification code to "),
+                                    TextSpan(
+                                      text: email,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const TextSpan(text: ". Please check your inbox and Spam folder."),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 22),
 
-                      // 6 Box Input Row
+                      // 6 Box OTP Input Row (iOS Focus State & Glow)
                       GestureDetector(
                         onTap: () => focusNode.requestFocus(),
                         child: Stack(
@@ -817,8 +689,8 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                             LayoutBuilder(
                               builder: (context, constraints) {
                                 final availableWidth = constraints.maxWidth;
-                                final boxWidth = ((availableWidth - (5 * 8)) / 6).clamp(38.0, 52.0);
-                                final boxHeight = (boxWidth * 1.15).clamp(46.0, 58.0);
+                                final boxWidth = ((availableWidth - (5 * 8)) / 6).clamp(38.0, 50.0);
+                                final boxHeight = (boxWidth * 1.18).clamp(48.0, 58.0);
                                 final text = otpController.text;
 
                                 return Row(
@@ -833,11 +705,13 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                                       width: boxWidth,
                                       height: boxHeight,
                                       decoration: BoxDecoration(
-                                        color: (isFocused || isFilled) ? const Color(0xFFFFF5F8) : const Color(0xFFF8FAFC),
+                                        color: (isFocused || isFilled)
+                                            ? const Color(0xFFFFF5F8)
+                                            : const Color(0xFFF8FAFC),
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
                                           color: hasError
-                                              ? const Color(0xFFD32F2F)
+                                              ? const Color(0xFFEF4444)
                                               : (isFocused || isFilled
                                                   ? const Color(0xFFE91E63)
                                                   : const Color(0xFFCBD5E1)),
@@ -846,7 +720,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                                         boxShadow: isFocused
                                             ? [
                                                 BoxShadow(
-                                                  color: const Color(0xFFE91E63).withValues(alpha: 0.15),
+                                                  color: const Color(0xFFE91E63).withValues(alpha: 0.20),
                                                   blurRadius: 8,
                                                   spreadRadius: 1,
                                                 ),
@@ -859,7 +733,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                                         style: GoogleFonts.poppins(
                                           fontSize: boxWidth * 0.48,
                                           fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1E1E1E),
+                                          color: const Color(0xFF0F172A),
                                         ),
                                       ),
                                     );
@@ -873,23 +747,24 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
 
                       // Error message callout
                       if (errorMessage != null && errorMessage!.isNotEmpty) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFEBEE),
-                            borderRadius: BorderRadius.circular(10),
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFCA5A5)),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.error_outline_rounded, color: Color(0xFFD32F2F), size: 16),
-                              const SizedBox(width: 8),
+                              const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444), size: 18),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   errorMessage!,
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
-                                    color: const Color(0xFFD32F2F),
+                                    color: const Color(0xFFB91C1C),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -899,18 +774,22 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                         ),
                       ],
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 22),
 
-                      // Resend Code Action
+                      // Resend Code Timer Row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           if (cooldownSeconds > 0) ...[
-                            Icon(Icons.timer_outlined, size: 16, color: Colors.grey[600]),
+                            const Icon(Icons.timer_outlined, size: 16, color: Color(0xFF64748B)),
                             const SizedBox(width: 6),
                             Text(
                               "Resend code in ${(cooldownSeconds ~/ 60).toString().padLeft(2, '0')}:${(cooldownSeconds % 60).toString().padLeft(2, '0')}",
-                              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                              style: GoogleFonts.poppins(
+                                fontSize: 12.5,
+                                color: const Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ] else ...[
                             TextButton.icon(
@@ -918,11 +797,22 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                                   ? null
                                   : handleResendCode,
                               icon: isResending
-                                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFE91E63)))
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Color(0xFFE91E63),
+                                      ),
+                                    )
                                   : const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFFE91E63)),
                               label: Text(
-                                "Resend Code via ${selectedChannel == 'sms' ? 'SMS' : 'Gmail'}",
-                                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFFE91E63)),
+                                "Resend Email Code",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFFE91E63),
+                                ),
                               ),
                             ),
                           ],
@@ -931,19 +821,19 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
 
                       const SizedBox(height: 20),
 
-                      // Main Action Button: VERIFY ACCOUNT
+                      // Main Action Button: VERIFY ACCOUNT (iOS Style Elevated Button)
                       SizedBox(
                         height: 52,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFE91E63),
-                            disabledBackgroundColor: Colors.grey.shade200,
-                            disabledForegroundColor: Colors.grey.shade400,
+                            disabledBackgroundColor: const Color(0xFFE2E8F0),
+                            disabledForegroundColor: const Color(0xFF94A3B8),
                             foregroundColor: Colors.white,
-                            elevation: isCodeComplete && !isVerifying ? 3 : 0,
-                            shadowColor: const Color(0xFFE91E63).withValues(alpha: 0.4),
+                            elevation: isCodeComplete && !isVerifying ? 4 : 0,
+                            shadowColor: const Color(0xFFE91E63).withValues(alpha: 0.35),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
                           onPressed: (isVerifying || !isCodeComplete) ? null : () => verifyCode(),
