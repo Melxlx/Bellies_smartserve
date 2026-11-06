@@ -57,7 +57,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
             .eq('id', user.id)
             .maybeSingle();
 
-        if (res != null) {
+        if (res != null && !_isEditing && !_isSaving) {
           final fullName = res['full_name']?.toString() ?? '';
           final parts = fullName.split(' ');
           _firstNameController.text = res['first_name'] ?? (parts.isNotEmpty ? parts.first : '');
@@ -297,7 +297,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: _firstNameController,
-                                    readOnly: !_isEditing,
+                                    readOnly: !_isEditing || _isSaving || _isLoading || _isUploading,
                                     maxLength: 30,
                                     inputFormatters: [
                                       FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
@@ -306,8 +306,8 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                     decoration: InputDecoration(
                                       labelText: "First Name",
                                       border: const OutlineInputBorder(),
-                                      filled: !_isEditing,
-                                      fillColor: _isEditing ? Colors.white : const Color(0xFFF8FAFC),
+                                      filled: !_isEditing || _isSaving || _isLoading || _isUploading,
+                                      fillColor: (_isEditing && !_isSaving && !_isLoading && !_isUploading) ? Colors.white : const Color(0xFFF8FAFC),
                                       counterText: "",
                                     ),
                                     validator: (v) {
@@ -321,7 +321,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: _lastNameController,
-                                    readOnly: !_isEditing,
+                                    readOnly: !_isEditing || _isSaving || _isLoading || _isUploading,
                                     maxLength: 30,
                                     inputFormatters: [
                                       FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
@@ -330,8 +330,8 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                     decoration: InputDecoration(
                                       labelText: "Last Name",
                                       border: const OutlineInputBorder(),
-                                      filled: !_isEditing,
-                                      fillColor: _isEditing ? Colors.white : const Color(0xFFF8FAFC),
+                                      filled: !_isEditing || _isSaving || _isLoading || _isUploading,
+                                      fillColor: (_isEditing && !_isSaving && !_isLoading && !_isUploading) ? Colors.white : const Color(0xFFF8FAFC),
                                       counterText: "",
                                     ),
                                     validator: (v) {
@@ -352,7 +352,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                             const SizedBox(height: 20),
                             TextFormField(
                               controller: _phoneController,
-                              readOnly: !_isEditing,
+                              readOnly: !_isEditing || _isSaving || _isLoading || _isUploading,
                               maxLength: 13,
                               keyboardType: TextInputType.phone,
                               inputFormatters: [
@@ -362,8 +362,8 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                               decoration: InputDecoration(
                                 labelText: "Contact Number",
                                 border: const OutlineInputBorder(),
-                                filled: !_isEditing,
-                                fillColor: _isEditing ? Colors.white : const Color(0xFFF8FAFC),
+                                filled: !_isEditing || _isSaving || _isLoading || _isUploading,
+                                fillColor: (_isEditing && !_isSaving && !_isLoading && !_isUploading) ? Colors.white : const Color(0xFFF8FAFC),
                                 counterText: "",
                               ),
                               validator: (v) {

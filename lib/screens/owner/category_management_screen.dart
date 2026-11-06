@@ -207,6 +207,7 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
           children: [
             TextFormField(
               controller: _nameController,
+              enabled: !_isSaving,
               maxLength: 50,
               decoration: const InputDecoration(labelText: "Category Name *"),
               validator: (val) {
@@ -217,12 +218,14 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
             ),
             TextFormField(
               controller: _descController,
+              enabled: !_isSaving,
               maxLength: 150,
               decoration: const InputDecoration(labelText: "Description (Optional)"),
               maxLines: 2,
             ),
             TextFormField(
               controller: _orderController,
+              enabled: !_isSaving,
               maxLength: 5,
               decoration: const InputDecoration(labelText: "Display Order"),
               keyboardType: TextInputType.number,

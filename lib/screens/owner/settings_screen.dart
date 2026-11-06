@@ -92,17 +92,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         TextFormField(
                           controller: _storeNameController,
+                          enabled: !_isLoading && !_isSaving,
                           decoration: const InputDecoration(labelText: "Store Name", border: OutlineInputBorder()),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _addressController,
+                          enabled: !_isLoading && !_isSaving,
                           decoration: const InputDecoration(labelText: "Store Address", border: OutlineInputBorder()),
                           maxLines: 2,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _phoneController,
+                          enabled: !_isLoading && !_isSaving,
                           decoration: const InputDecoration(labelText: "Contact Number", border: OutlineInputBorder()),
                         ),
                       ],
@@ -124,6 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         TextFormField(
                           controller: _baseFeeController,
+                          enabled: !_isLoading && !_isSaving,
                           decoration: const InputDecoration(
                             labelText: "Base Delivery Fee (₱)",
                             hintText: "30.00",
@@ -135,6 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _includedDistController,
+                          enabled: !_isLoading && !_isSaving,
                           decoration: const InputDecoration(
                             labelText: "Included Base Distance (km)",
                             hintText: "2.0",
@@ -146,6 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _additionalRateController,
+                          enabled: !_isLoading && !_isSaving,
                           decoration: const InputDecoration(
                             labelText: "Rate Per Additional Kilometer (₱/km)",
                             hintText: "10.00",

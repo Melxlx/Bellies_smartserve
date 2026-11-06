@@ -530,6 +530,7 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
             children: [
               TextFormField(
                 controller: _skuController,
+                enabled: !_isSaving,
                 onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(labelText: "SKU", border: OutlineInputBorder()),
                 validator: (val) => val == null || val.isEmpty ? "Required" : null,
@@ -537,6 +538,7 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _nameController,
+                enabled: !_isSaving,
                 onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(labelText: "Product Name", border: OutlineInputBorder()),
                 validator: (val) {
@@ -550,11 +552,12 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
                 initialValue: _selectedCategoryId,
                 decoration: const InputDecoration(labelText: "Category", border: OutlineInputBorder()),
                 items: widget.categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
-                onChanged: (val) => setState(() => _selectedCategoryId = val),
+                onChanged: _isSaving ? null : (val) => setState(() => _selectedCategoryId = val),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _descController,
+                enabled: !_isSaving,
                 onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(labelText: "Description", border: OutlineInputBorder()),
                 maxLines: 2,
@@ -566,6 +569,7 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
                   Expanded(
                     child: TextFormField(
                       controller: _priceController,
+                      enabled: !_isSaving,
                       onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(labelText: "Price (₱)", border: OutlineInputBorder()),
                       keyboardType: TextInputType.number,
@@ -580,6 +584,7 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
                   Expanded(
                     child: TextFormField(
                       controller: _costController,
+                      enabled: !_isSaving,
                       onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(labelText: "Cost (₱)", border: OutlineInputBorder()),
                       keyboardType: TextInputType.number,

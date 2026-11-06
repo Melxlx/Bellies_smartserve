@@ -227,6 +227,7 @@ class _OrderRatingWidgetState extends State<OrderRatingWidget> {
           // Optional Comment Input
           TextField(
             controller: _commentController,
+            enabled: !_isSubmitting,
             maxLines: 2,
             maxLength: 100,
             decoration: InputDecoration(
@@ -246,7 +247,7 @@ class _OrderRatingWidgetState extends State<OrderRatingWidget> {
             children: [
               Expanded(
                 child: TextButton(
-                  onPressed: () => setState(() => _isDismissed = true),
+                  onPressed: _isSubmitting ? null : () => setState(() => _isDismissed = true),
                   child: const Text("SKIP FOR NOW", style: TextStyle(color: Colors.grey, fontSize: 12)),
                 ),
               ),

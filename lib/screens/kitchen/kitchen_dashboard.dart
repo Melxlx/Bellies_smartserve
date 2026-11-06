@@ -187,13 +187,14 @@ class _KitchenDashboardState extends State<KitchenDashboard>
                   items: ingredients
                       .map((ing) => DropdownMenuItem(value: ing, child: Text("${ing.name} (${ing.unit.name.toUpperCase()})")))
                       .toList(),
-                  onChanged: (val) {
+                  onChanged: saving ? null : (val) {
                     if (val != null) setDialogState(() => selectedIng = val);
                   },
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: qtyController,
+                  enabled: !saving,
                   decoration: InputDecoration(
                     labelText: "Quantity Wasted (${selectedIng.unit.name.toUpperCase()})",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -203,6 +204,7 @@ class _KitchenDashboardState extends State<KitchenDashboard>
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: reasonController,
+                  enabled: !saving,
                   decoration: InputDecoration(
                     labelText: "Reason / Notes",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

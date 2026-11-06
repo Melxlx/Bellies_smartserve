@@ -158,6 +158,7 @@ class _RFIDAttendanceScreenState extends State<RFIDAttendanceScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: controller,
+                  enabled: !isListening,
                   decoration: const InputDecoration(
                     labelText: "RFID UID",
                     border: OutlineInputBorder(),

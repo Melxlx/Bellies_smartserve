@@ -932,6 +932,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nameController,
+                  enabled: !_saving,
                   maxLength: 60,
                   decoration: InputDecoration(
                     labelText: 'Ingredient Name (e.g., Rice Grains, Beef Tapa) *',
@@ -953,7 +954,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
                   items: _ingredientCategories
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                       .toList(),
-                  onChanged: (val) {
+                  onChanged: _saving ? null : (val) {
                     if (val != null) {
                       setState(() => _selectedCategory = val);
                     }
@@ -963,6 +964,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _customCategoryController,
+                    enabled: !_saving,
                     decoration: InputDecoration(
                       labelText: 'Custom Category Name *',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -981,6 +983,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _quantityController,
+                        enabled: !_saving,
                         decoration: InputDecoration(
                           labelText: 'Current Stock *',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -1004,7 +1007,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
                         items: IngredientUnit.values
                             .map((u) => DropdownMenuItem(value: u, child: Text(u.name.toUpperCase())))
                             .toList(),
-                        onChanged: (v) => setState(() => _unit = v ?? IngredientUnit.kilogram),
+                        onChanged: _saving ? null : (v) => setState(() => _unit = v ?? IngredientUnit.kilogram),
                       ),
                     ),
                   ],
@@ -1015,6 +1018,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _reorderController,
+                        enabled: !_saving,
                         decoration: InputDecoration(
                           labelText: 'Reorder Level *',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -1031,6 +1035,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _costController,
+                        enabled: !_saving,
                         decoration: InputDecoration(
                           labelText: 'Unit Cost (₱)',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

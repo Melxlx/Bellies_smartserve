@@ -282,6 +282,7 @@ class _RecipeManagementDialogState extends State<RecipeManagementDialog> {
                             const SizedBox(height: 10),
                             // Search Bar
                             TextField(
+                              enabled: !_isSaving,
                               decoration: InputDecoration(
                                 hintText: "Search ingredient name or category...",
                                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
@@ -337,7 +338,7 @@ class _RecipeManagementDialogState extends State<RecipeManagementDialog> {
                                         ),
                                       ))
                                   .toList(),
-                              onChanged: (val) {
+                              onChanged: _isSaving ? null : (val) {
                                 if (val != null) setState(() => _selectedIngredientId = val);
                               },
                             ),
@@ -347,6 +348,7 @@ class _RecipeManagementDialogState extends State<RecipeManagementDialog> {
                                 Expanded(
                                   child: TextFormField(
                                     controller: _qtyController,
+                                    enabled: !_isSaving,
                                     decoration: InputDecoration(
                                       labelText: "Quantity Required",
                                       labelStyle: const TextStyle(fontSize: 13),

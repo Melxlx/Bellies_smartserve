@@ -342,6 +342,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _firstNameController,
+                        enabled: !_isSaving,
                         maxLength: 30,
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
@@ -363,6 +364,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _lastNameController,
+                        enabled: !_isSaving,
                         maxLength: 30,
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
@@ -396,6 +398,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _phoneController,
+                  enabled: !_isSaving,
                   maxLength: 13,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [

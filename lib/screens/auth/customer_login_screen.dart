@@ -1196,6 +1196,8 @@ You have the right to access, update, or request the deletion of your account in
               const SizedBox(height: 16),
               TextField(
                 controller: emailController,
+                enabled: !isSending,
+                maxLength: 60,
                 decoration: InputDecoration(
                   labelText: "Email Address",
                   hintText: "e.g. customer@example.com",
@@ -1504,7 +1506,7 @@ You have the right to access, update, or request the deletion of your account in
         ),
         const SizedBox(height: 24),
         SizedBox(
-          height: isSignIn ? 300 : 640,
+          height: isSignIn ? 340 : 640,
           child: TabBarView(
             controller: _tabController,
             physics: const NeverScrollableScrollPhysics(),
@@ -1608,349 +1610,368 @@ You have the right to access, update, or request the deletion of your account in
   }
 
   Widget _buildSignInForm() {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _inputLabel("Email Address"),
-          TextFormField(
-            controller: _emailController,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: _inputDecoration("Enter your email", Icons.email_outlined, isValid: _isSignInEmailValid),
-            validator: (val) {
-              if (val == null || val.trim().isEmpty) return "Email address is required";
-              if (!RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val.trim())) {
-                return "Enter a valid email address (e.g. name@domain.com)";
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          _inputLabel("Password"),
-          TextFormField(
-            controller: _passwordController,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            obscureText: !_isPasswordVisible,
-            decoration: _inputDecoration("Enter your password", Icons.lock_outline, isValid: _isSignInPasswordValid, suffix: IconButton(
-              icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
-              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-            )),
-            validator: (val) {
-              if (val == null || val.trim().isEmpty) return "Password is required";
-              if (val.trim().length < 6) return "Password must be at least 6 characters";
-              return null;
-            },
-          ),
-          const SizedBox(height: 12),
-          Row(
+    return AbsorbPointer(
+      absorbing: _isLoading || _isOAuthLoading,
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              InkWell(
-                onTap: () => setState(() => _rememberMe = !_rememberMe),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: Checkbox(
-                        value: _rememberMe,
-                        activeColor: const Color(0xFFE91E63),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        onChanged: (val) => setState(() => _rememberMe = val ?? false),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Remember me",
-                      style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
-                    ),
-                  ],
-                ),
+              _inputLabel("Email Address"),
+              TextFormField(
+                controller: _emailController,
+                enabled: !_isLoading && !_isOAuthLoading,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                maxLength: 60,
+                decoration: _inputDecoration("Enter your email", Icons.email_outlined, isValid: _isSignInEmailValid),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return "Email address is required";
+                  if (!RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val.trim())) {
+                    return "Enter a valid email address (e.g. name@domain.com)";
+                  }
+                  return null;
+                },
               ),
-              const Spacer(),
-              TextButton(
-                onPressed: _showForgotPasswordDialog,
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFE91E63),
-                  padding: EdgeInsets.zero,
-                ),
-                child: Text(
-                  "Forgot Password?",
-                  style: GoogleFonts.poppins(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+              const SizedBox(height: 10),
+              _inputLabel("Password"),
+              TextFormField(
+                controller: _passwordController,
+                enabled: !_isLoading && !_isOAuthLoading,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                obscureText: !_isPasswordVisible,
+                maxLength: 30,
+                decoration: _inputDecoration("Enter your password", Icons.lock_outline, isValid: _isSignInPasswordValid, suffix: IconButton(
+                  icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
+                  onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                )),
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) return "Password is required";
+                if (val.trim().length < 6) return "Password must be at least 6 characters";
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                InkWell(
+                  onTap: (_isLoading || _isOAuthLoading) ? null : () => setState(() => _rememberMe = !_rememberMe),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: Checkbox(
+                          value: _rememberMe,
+                          activeColor: const Color(0xFFE91E63),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          onChanged: (_isLoading || _isOAuthLoading) ? null : (val) => setState(() => _rememberMe = val ?? false),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Remember me",
+                        style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _isLoading ? const Center(child: CircularProgressIndicator()) : _primaryBtn("SIGN IN", _handleEmailLogin, isEnabled: true),
-        ],
+                const Spacer(),
+                TextButton(
+                  onPressed: (_isLoading || _isOAuthLoading) ? null : _showForgotPasswordDialog,
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFE91E63),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    "Forgot Password?",
+                    style: GoogleFonts.poppins(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _isLoading ? const Center(child: CircularProgressIndicator()) : _primaryBtn("SIGN IN", _handleEmailLogin, isEnabled: !_isLoading && !_isOAuthLoading),
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSignUpForm() {
-    return Form(
-      key: _signUpFormKey,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _inputLabel("First Name"),
-                      TextFormField(
-                        controller: _signUpFirstNameController,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        maxLength: 30,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
-                          DenyLeadingSpaceFormatter(),
-                        ],
-                        decoration: _inputDecoration("e.g. Juan", null, isValid: _isFirstNameValid),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return "First name required";
-                          final trimmed = v.trim();
-                          if (v.startsWith(' ')) return "Cannot start with a space";
-                          if (trimmed.length < 2) return "Must be at least 2 letters";
-                          if (!RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(trimmed)) {
-                            return "Numbers & symbols not allowed";
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _inputLabel("Last Name"),
-                      TextFormField(
-                        controller: _signUpLastNameController,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        maxLength: 30,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
-                          DenyLeadingSpaceFormatter(),
-                        ],
-                        decoration: _inputDecoration("e.g. Cruz", null, isValid: _isLastNameValid),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return "Last name required";
-                          final trimmed = v.trim();
-                          if (v.startsWith(' ')) return "Cannot start with a space";
-                          if (trimmed.length < 2) return "Must be at least 2 letters";
-                          if (!RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(trimmed)) {
-                            return "Numbers & symbols not allowed";
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ]),
-            const SizedBox(height: 12),
-            _inputLabel("Email Address"),
-            TextFormField(
-              controller: _signUpEmailController,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              keyboardType: TextInputType.emailAddress,
-              maxLength: 60,
-              decoration: _inputDecoration("your@email.com", Icons.email_outlined, isValid: _isSignUpEmailValid),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return "Email address is required";
-                final trimmed = v.trim();
-                if (trimmed.length > 60) return "Email address cannot exceed 60 characters";
-                final emailRegex = RegExp(
-                  r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$",
-                );
-                if (!emailRegex.hasMatch(trimmed)) {
-                  return "Enter a valid email address (e.g. name@domain.com or user@lu.edu.ph)";
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            _inputLabel("Phone Number"),
-            TextFormField(
-              controller: _signUpPhoneController,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              keyboardType: TextInputType.phone,
-              maxLength: 11,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              decoration: _inputDecoration("09XXXXXXXXX", Icons.phone_outlined, isValid: _isSignUpPhoneValid),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return "Phone number is required";
-                final trimmed = v.trim();
-                if (!RegExp(r'^09\d{9}$').hasMatch(trimmed)) {
-                  return "Enter a valid 11-digit PH mobile number starting with 09";
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            _inputLabel("Delivery Address"),
-            TextFormField(
-              controller: _signUpAddressController,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              maxLength: 100,
-              decoration: _inputDecoration("e.g. Sta. Cruz, Laguna", Icons.location_on_outlined, isValid: _isSignUpAddressValid),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return "Delivery address is required";
-                final trimmed = v.trim();
-                if (trimmed.length < 5) return "Please enter a complete address (min 5 chars)";
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            _inputLabel("Password"),
-            TextFormField(
-              controller: _signUpPasswordController,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              focusNode: _passwordFocusNode,
-              obscureText: !_isSignUpPasswordVisible,
-              autofillHints: const [AutofillHints.newPassword],
-              enableSuggestions: false,
-              autocorrect: false,
-              maxLength: 30,
-              decoration: _inputDecoration("••••••••", Icons.lock_outline, isValid: _isSignUpPasswordValid, suffix: IconButton(
-                icon: Icon(_isSignUpPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
-                onPressed: () => setState(() => _isSignUpPasswordVisible = !_isSignUpPasswordVisible),
-              )),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return "Password required";
-                if (!(_hasMinLength && _hasUppercase && _hasNumberOrSymbol)) {
-                  return "Password does not meet all security requirements";
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 6),
-            if (_passwordFocusNode.hasFocus) ...[
-              Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(20),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    LinearProgressIndicator(
-                      value: _passwordStrengthCount / 3.0,
-                      backgroundColor: Colors.grey.shade200,
-                      color: _passwordStrengthCount == 3
-                          ? Colors.green
-                          : _passwordStrengthCount == 2
-                              ? Colors.orange
-                              : Colors.red,
-                      minHeight: 4,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildPasswordRequirementRow("Minimum 8 characters", _hasMinLength),
-                    _buildPasswordRequirementRow("At least one uppercase letter", _hasUppercase),
-                    _buildPasswordRequirementRow("One number or symbol", _hasNumberOrSymbol),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            _inputLabel("Confirm Password"),
-            TextFormField(
-              controller: _signUpConfirmPasswordController,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              obscureText: !_isSignUpConfirmPasswordVisible,
-              autofillHints: const [AutofillHints.newPassword],
-              enableSuggestions: false,
-              autocorrect: false,
-              maxLength: 30,
-              decoration: _inputDecoration("Re-enter password", Icons.lock_outline, isValid: _isSignUpConfirmPasswordValid, suffix: IconButton(
-                icon: Icon(_isSignUpConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
-                onPressed: () => setState(() => _isSignUpConfirmPasswordVisible = !_isSignUpConfirmPasswordVisible),
-              )),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return "Confirm password required";
-                if (v != _signUpPasswordController.text) return "Passwords do not match";
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            
-            // Required Consent Checkbox with Clickable Text Links (Requirements 1, 4, 7, 8)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Checkbox(
-                    value: _agreedToTerms,
-                    activeColor: const Color(0xFFE91E63), // Keep brand red/pink
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)), // iOS checkbox style
-                    side: BorderSide(color: Colors.grey.shade400, width: 1.5),
-                    onChanged: (val) => setState(() => _agreedToTerms = val ?? false),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF86868B), height: 1.5),
+    return AbsorbPointer(
+      absorbing: _isLoading || _isOAuthLoading,
+      child: Form(
+        key: _signUpFormKey,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const TextSpan(text: "I have read and agree to the "),
-                        TextSpan(
-                          text: "Terms of Service",
-                          style: const TextStyle(
-                            color: Color(0xFFE91E63),
-                            fontWeight: FontWeight.w600,
-                          ),
-                          recognizer: TapGestureRecognizer()..onTap = _showTermsOfService,
+                        _inputLabel("First Name"),
+                        TextFormField(
+                          controller: _signUpFirstNameController,
+                          enabled: !_isLoading && !_isOAuthLoading,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          maxLength: 30,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
+                            DenyLeadingSpaceFormatter(),
+                          ],
+                          decoration: _inputDecoration("e.g. Juan", null, isValid: _isFirstNameValid),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return "First name required";
+                            final trimmed = v.trim();
+                            if (v.startsWith(' ')) return "Cannot start with a space";
+                            if (trimmed.length < 2) return "Must be at least 2 letters";
+                            if (!RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(trimmed)) {
+                              return "Numbers & symbols not allowed";
+                            }
+                            return null;
+                          },
                         ),
-                        const TextSpan(text: " and "),
-                        TextSpan(
-                          text: "Privacy Policy",
-                          style: const TextStyle(
-                            color: Color(0xFFE91E63),
-                            fontWeight: FontWeight.w600,
-                          ),
-                          recognizer: TapGestureRecognizer()..onTap = _showPrivacyPolicy,
-                        ),
-                        const TextSpan(text: "."),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _inputLabel("Last Name"),
+                        TextFormField(
+                          controller: _signUpLastNameController,
+                          enabled: !_isLoading && !_isOAuthLoading,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          maxLength: 30,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
+                            DenyLeadingSpaceFormatter(),
+                          ],
+                          decoration: _inputDecoration("e.g. Cruz", null, isValid: _isLastNameValid),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return "Last name required";
+                            final trimmed = v.trim();
+                            if (v.startsWith(' ')) return "Cannot start with a space";
+                            if (trimmed.length < 2) return "Must be at least 2 letters";
+                            if (!RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(trimmed)) {
+                              return "Numbers & symbols not allowed";
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ]),
+              const SizedBox(height: 12),
+              _inputLabel("Email Address"),
+              TextFormField(
+                controller: _signUpEmailController,
+                enabled: !_isLoading && !_isOAuthLoading,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                keyboardType: TextInputType.emailAddress,
+                maxLength: 60,
+                decoration: _inputDecoration("your@email.com", Icons.email_outlined, isValid: _isSignUpEmailValid),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return "Email address is required";
+                  final trimmed = v.trim();
+                  if (trimmed.length > 60) return "Email address cannot exceed 60 characters";
+                  final emailRegex = RegExp(
+                    r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$",
+                  );
+                  if (!emailRegex.hasMatch(trimmed)) {
+                    return "Enter a valid email address (e.g. name@domain.com or user@lu.edu.ph)";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              _inputLabel("Phone Number"),
+              TextFormField(
+                controller: _signUpPhoneController,
+                enabled: !_isLoading && !_isOAuthLoading,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                keyboardType: TextInputType.phone,
+                maxLength: 13,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                ],
+                decoration: _inputDecoration("09XXXXXXXXX or +639XXXXXXXXX", Icons.phone_outlined, isValid: _isSignUpPhoneValid),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return "Phone number is required";
+                  final cleaned = v.trim().replaceAll(RegExp(r'[\s()\-]'), '');
+                  if (!RegExp(r'^(09|\+?639)\d{9}$').hasMatch(cleaned)) {
+                    return "Enter a valid PH mobile (e.g. 09171234567, 639171234567, or +639171234567)";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              _inputLabel("Delivery Address"),
+              TextFormField(
+                controller: _signUpAddressController,
+                enabled: !_isLoading && !_isOAuthLoading,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                maxLength: 100,
+                decoration: _inputDecoration("e.g. Sta. Cruz, Laguna", Icons.location_on_outlined, isValid: _isSignUpAddressValid),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return "Delivery address is required";
+                  final trimmed = v.trim();
+                  if (trimmed.length < 5) return "Please enter a complete address (min 5 chars)";
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              _inputLabel("Password"),
+              TextFormField(
+                controller: _signUpPasswordController,
+                enabled: !_isLoading && !_isOAuthLoading,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                focusNode: _passwordFocusNode,
+                obscureText: !_isSignUpPasswordVisible,
+                autofillHints: const [AutofillHints.newPassword],
+                enableSuggestions: false,
+                autocorrect: false,
+                maxLength: 30,
+                decoration: _inputDecoration("••••••••", Icons.lock_outline, isValid: _isSignUpPasswordValid, suffix: IconButton(
+                  icon: Icon(_isSignUpPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
+                  onPressed: () => setState(() => _isSignUpPasswordVisible = !_isSignUpPasswordVisible),
+                )),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return "Password required";
+                  if (!(_hasMinLength && _hasUppercase && _hasNumberOrSymbol)) {
+                    return "Password does not meet all security requirements";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 6),
+              if (_passwordFocusNode.hasFocus) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(20),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      LinearProgressIndicator(
+                        value: _passwordStrengthCount / 3.0,
+                        backgroundColor: Colors.grey.shade200,
+                        color: _passwordStrengthCount == 3
+                            ? Colors.green
+                            : _passwordStrengthCount == 2
+                                ? Colors.orange
+                                : Colors.red,
+                        minHeight: 4,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildPasswordRequirementRow("Minimum 8 characters", _hasMinLength),
+                      _buildPasswordRequirementRow("At least one uppercase letter", _hasUppercase),
+                      _buildPasswordRequirementRow("One number or symbol", _hasNumberOrSymbol),
+                    ],
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: 24),
-            _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFE91E63)))
-                : _primaryBtn(
-                    "CREATE ACCOUNT",
-                    _handleEmailSignUp,
-                    isEnabled: _agreedToTerms,
+              const SizedBox(height: 12),
+              _inputLabel("Confirm Password"),
+              TextFormField(
+                controller: _signUpConfirmPasswordController,
+                enabled: !_isLoading && !_isOAuthLoading,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                obscureText: !_isSignUpConfirmPasswordVisible,
+                autofillHints: const [AutofillHints.newPassword],
+                enableSuggestions: false,
+                autocorrect: false,
+                maxLength: 30,
+                decoration: _inputDecoration("Re-enter password", Icons.lock_outline, isValid: _isSignUpConfirmPasswordValid, suffix: IconButton(
+                  icon: Icon(_isSignUpConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
+                  onPressed: () => setState(() => _isSignUpConfirmPasswordVisible = !_isSignUpConfirmPasswordVisible),
+                )),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return "Confirm password required";
+                  if (v != _signUpPasswordController.text) return "Passwords do not match";
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Required Consent Checkbox with Clickable Text Links (Requirements 1, 4, 7, 8)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      value: _agreedToTerms,
+                      activeColor: const Color(0xFFE91E63), // Keep brand red/pink
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)), // iOS checkbox style
+                      side: BorderSide(color: Colors.grey.shade400, width: 1.5),
+                      onChanged: (_isLoading || _isOAuthLoading) ? null : (val) => setState(() => _agreedToTerms = val ?? false),
+                    ),
                   ),
-          ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF86868B), height: 1.5),
+                        children: [
+                          const TextSpan(text: "I have read and agree to the "),
+                          TextSpan(
+                            text: "Terms of Service",
+                            style: const TextStyle(
+                              color: Color(0xFFE91E63),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            recognizer: TapGestureRecognizer()..onTap = (_isLoading || _isOAuthLoading) ? null : _showTermsOfService,
+                          ),
+                          const TextSpan(text: " and "),
+                          TextSpan(
+                            text: "Privacy Policy",
+                            style: const TextStyle(
+                              color: Color(0xFFE91E63),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            recognizer: TapGestureRecognizer()..onTap = (_isLoading || _isOAuthLoading) ? null : _showPrivacyPolicy,
+                          ),
+                          const TextSpan(text: "."),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFE91E63)))
+                  : _primaryBtn(
+                      "CREATE ACCOUNT",
+                      _handleEmailSignUp,
+                      isEnabled: _agreedToTerms && !_isLoading && !_isOAuthLoading,
+                    ),
+            ],
+          ),
         ),
       ),
     );
@@ -2025,8 +2046,8 @@ You have the right to access, update, or request the deletion of your account in
   }
 
   bool get _isSignUpPhoneValid {
-    final v = _signUpPhoneController.text.trim();
-    return v.isNotEmpty && RegExp(r'^09\d{9}$').hasMatch(v);
+    final v = _signUpPhoneController.text.trim().replaceAll(RegExp(r'[\s()\-]'), '');
+    return v.isNotEmpty && RegExp(r'^(09|\+?639)\d{9}$').hasMatch(v);
   }
 
   bool get _isSignUpAddressValid {
@@ -2067,7 +2088,7 @@ You have the right to access, update, or request the deletion of your account in
 
     return InputDecoration(
       hintText: hint,
-      counterText: "", // Hides character counter
+      counterStyle: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w500),
       hintStyle: GoogleFonts.poppins(color: const Color(0xFF86868B), fontSize: 14),
       prefixIcon: icon != null ? Icon(icon, size: 20, color: isValid == true ? const Color(0xFF34C759) : const Color(0xFF86868B)) : null,
       suffixIcon: suffix,

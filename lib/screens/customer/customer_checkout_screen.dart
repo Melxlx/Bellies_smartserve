@@ -661,6 +661,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
           const SizedBox(height: 6),
           TextFormField(
             controller: _refController,
+            enabled: !_isSaving,
             keyboardType: TextInputType.number,
             maxLength: 13,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -694,7 +695,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
             color: Colors.transparent,
             child: CheckboxListTile(
               value: _agreedToOnlineTerms,
-              onChanged: (val) => setState(() => _agreedToOnlineTerms = val ?? false),
+              onChanged: _isSaving ? null : (val) => setState(() => _agreedToOnlineTerms = val ?? false),
               title: RichText(
                 text: TextSpan(
                   style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),

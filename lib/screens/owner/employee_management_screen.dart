@@ -1608,6 +1608,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                 const Divider(height: 20),
                 TextFormField(
                   controller: _firstNameController,
+                  enabled: !_isSaving,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: "First Name",
@@ -1622,6 +1623,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _middleNameController,
+                  enabled: !_isSaving,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: "Middle Name (Optional)",
@@ -1631,6 +1633,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _lastNameController,
+                  enabled: !_isSaving,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: "Last Name",
@@ -1654,6 +1657,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _contactController,
+                  enabled: !_isSaving,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: "Contact Number",
@@ -1674,11 +1678,12 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                     DropdownMenuItem(value: UserRole.rider, child: Text("RIDER")),
                     DropdownMenuItem(value: UserRole.owner, child: Text("OWNER / MANAGER")),
                   ],
-                  onChanged: (v) => setState(() => _selectedRole = v ?? UserRole.cashier),
+                  onChanged: _isSaving ? null : (v) => setState(() => _selectedRole = v ?? UserRole.cashier),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _positionController,
+                  enabled: !_isSaving,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: "Position Title",
@@ -1698,11 +1703,12 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                     DropdownMenuItem(value: AccountStatus.archived, child: Text("ARCHIVED")),
                     DropdownMenuItem(value: AccountStatus.locked, child: Text("LOCKED")),
                   ],
-                  onChanged: (v) => setState(() => _selectedStatus = v ?? AccountStatus.active),
+                  onChanged: _isSaving ? null : (v) => setState(() => _selectedStatus = v ?? AccountStatus.active),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _rateController,
+                  enabled: !_isSaving,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: "Daily Rate (₱)",
@@ -2361,6 +2367,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
             Expanded(
               child: TextFormField(
                 controller: _firstNameController,
+                enabled: !_isSaving,
                 maxLength: 30,
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
@@ -2377,6 +2384,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
             Expanded(
               child: TextFormField(
                 controller: _lastNameController,
+                enabled: !_isSaving,
                 maxLength: 30,
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
@@ -2397,6 +2405,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
             Expanded(
               child: TextFormField(
                 controller: _middleNameController,
+                enabled: !_isSaving,
                 decoration: InputDecoration(
                   labelText: "Middle Name (Optional)",
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -2416,7 +2425,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
                   DropdownMenuItem(value: 'Female', child: Text('Female')),
                   DropdownMenuItem(value: 'Prefer not to say', child: Text('Prefer not to say')),
                 ],
-                onChanged: (v) => setState(() => _gender = v ?? 'Prefer not to say'),
+                onChanged: _isSaving ? null : (v) => setState(() => _gender = v ?? 'Prefer not to say'),
               ),
             ),
           ],
@@ -2430,6 +2439,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
       children: [
         TextFormField(
           controller: _emailController,
+          enabled: !_isSaving,
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
             labelText: "Work Email Address *",
@@ -2448,6 +2458,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _phoneController,
+          enabled: !_isSaving,
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
             labelText: "Mobile Contact Number",
@@ -2469,7 +2480,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
             DropdownMenuItem(value: 'Contract', child: Text('Contract')),
             DropdownMenuItem(value: 'Shift Basis', child: Text('Shift Basis')),
           ],
-          onChanged: (v) => setState(() => _employmentType = v ?? 'Full Time'),
+          onChanged: _isSaving ? null : (v) => setState(() => _employmentType = v ?? 'Full Time'),
         ),
       ],
     );
@@ -2489,7 +2500,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
             DropdownMenuItem(value: UserRole.kitchen, child: Text("KITCHEN (Food Preparation)")),
             DropdownMenuItem(value: UserRole.rider, child: Text("RIDER (Delivery Logistics)")),
           ],
-          onChanged: (v) {
+          onChanged: _isSaving ? null : (v) {
             setState(() {
               _selectedRole = v ?? UserRole.cashier;
               if (_positionController.text.isEmpty) {
@@ -2503,6 +2514,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _positionController,
+          enabled: !_isSaving,
           decoration: InputDecoration(
             labelText: "Job Position Title",
             hintText: "e.g. Senior Cashier, Head Cook",
@@ -2513,6 +2525,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _rateController,
+          enabled: !_isSaving,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             labelText: "Daily Salary Rate (₱)",
@@ -2555,6 +2568,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
         const SizedBox(height: 16),
         TextFormField(
           controller: _passwordController,
+          enabled: !_isSaving,
           obscureText: !_passwordVisible,
           decoration: InputDecoration(
             labelText: "Login Password *",
@@ -2569,6 +2583,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _confirmPasswordController,
+          enabled: !_isSaving,
           obscureText: !_passwordVisible,
           decoration: InputDecoration(
             labelText: "Confirm Password *",

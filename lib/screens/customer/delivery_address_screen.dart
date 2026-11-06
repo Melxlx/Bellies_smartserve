@@ -260,6 +260,7 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
                   children: [
                     TextFormField(
                       controller: _nameController,
+                      enabled: !_isSearching && !_isCalculatingFee,
                       maxLength: 50,
                       decoration: const InputDecoration(
                         labelText: "Recipient Name",
@@ -274,17 +275,19 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _phoneController,
-                      maxLength: 11,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      enabled: !_isSearching && !_isCalculatingFee,
+                      maxLength: 13,
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+]'))],
                       decoration: const InputDecoration(
-                        labelText: "Phone Number (09XXXXXXXXX)",
+                        labelText: "Phone Number (e.g. 09171234567, +639171234567)",
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.phone,
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Required';
-                        if (!RegExp(r'^09\d{9}$').hasMatch(v)) {
-                          return 'Invalid PH number';
+                        if (v == null || v.trim().isEmpty) return 'Phone number required';
+                        final cleaned = v.trim().replaceAll(RegExp(r'[\s()\-]'), '');
+                        if (!RegExp(r'^(09|\+?639)\d{9}$').hasMatch(cleaned)) {
+                          return 'Invalid PH mobile (09XXXXXXXXX or +639XXXXXXXXX)';
                         }
                         return null;
                       },
@@ -292,6 +295,7 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _unitController,
+                      enabled: !_isSearching && !_isCalculatingFee,
                       maxLength: 20,
                       decoration: const InputDecoration(
                         labelText: "House/Unit/Floor No.",
@@ -323,6 +327,7 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _landmarkController,
+                      enabled: !_isSearching && !_isCalculatingFee,
                       maxLength: 100,
                       decoration: const InputDecoration(
                         labelText: "Landmark / Instructions",

@@ -356,6 +356,7 @@ class _IngredientFormDialogState extends State<IngredientFormDialog> {
             children: [
               TextFormField(
                 controller: _codeController,
+                enabled: !_isSaving,
                 decoration: const InputDecoration(
                   labelText: "Stock Code",
                   hintText: "e.g. CHICKEN-001",
@@ -370,6 +371,7 @@ class _IngredientFormDialogState extends State<IngredientFormDialog> {
               ),
               TextFormField(
                 controller: _nameController,
+                enabled: !_isSaving,
                 decoration: const InputDecoration(labelText: "Name"),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
@@ -387,7 +389,7 @@ class _IngredientFormDialogState extends State<IngredientFormDialog> {
                 items: _categories
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),
-                onChanged: (val) {
+                onChanged: _isSaving ? null : (val) {
                   if (val != null) {
                     setState(() => _selectedCategory = val);
                   }
@@ -396,6 +398,7 @@ class _IngredientFormDialogState extends State<IngredientFormDialog> {
               if (_selectedCategory == 'Other')
                 TextFormField(
                   controller: _catController,
+                  enabled: !_isSaving,
                   decoration: const InputDecoration(
                     labelText: "Custom Category Name",
                   ),
@@ -411,7 +414,7 @@ class _IngredientFormDialogState extends State<IngredientFormDialog> {
                       ),
                     )
                     .toList(),
-                onChanged: (val) {
+                onChanged: _isSaving ? null : (val) {
                   if (val != null) {
                     setState(() => _unit = val);
                   }
@@ -419,6 +422,7 @@ class _IngredientFormDialogState extends State<IngredientFormDialog> {
               ),
               TextFormField(
                 controller: _reorderController,
+                enabled: !_isSaving,
                 decoration: const InputDecoration(labelText: "Reorder Level"),
                 keyboardType: TextInputType.number,
                 validator: (val) {

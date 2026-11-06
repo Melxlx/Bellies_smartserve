@@ -239,6 +239,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               const SizedBox(height: 20),
               TextField(
                 controller: _customerNameController,
+                enabled: !_isProcessing,
                 decoration: const InputDecoration(
                   labelText: "Customer Name (Optional)",
                   hintText: "e.g. Juan or Walk-in",
@@ -330,6 +331,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       children: [
         TextField(
           controller: _cashController,
+          enabled: !_isProcessing,
           decoration: const InputDecoration(
             labelText: "Amount Tendered",
             prefixText: "₱ ",
@@ -464,6 +466,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           const SizedBox(height: 6),
           TextField(
             controller: _referenceController,
+            enabled: !_isProcessing,
             maxLength: 13,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -478,7 +481,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             color: Colors.transparent,
             child: CheckboxListTile(
               value: _agreedToOnlineTerms,
-              onChanged: (val) => setState(() => _agreedToOnlineTerms = val ?? false),
+              onChanged: _isProcessing ? null : (val) => setState(() => _agreedToOnlineTerms = val ?? false),
               title: RichText(
                 text: TextSpan(
                   style: const TextStyle(fontSize: 12, color: Colors.black87),
@@ -491,7 +494,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         decoration: TextDecoration.underline,
                         fontWeight: FontWeight.bold,
                       ),
-                      recognizer: TapGestureRecognizer()..onTap = _showTermsDialog,
+                      recognizer: TapGestureRecognizer()..onTap = _isProcessing ? null : _showTermsDialog,
                     ),
                   ],
                 ),
@@ -503,6 +506,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ] else ...[
           TextField(
             controller: _referenceController,
+            enabled: !_isProcessing,
             maxLength: 13,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],

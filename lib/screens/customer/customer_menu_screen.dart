@@ -1205,6 +1205,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: firstNameController,
+                              enabled: !isSaving,
                               maxLength: 30,
                               inputFormatters: [
                                 FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
@@ -1227,6 +1228,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             const SizedBox(height: 12),
                             TextFormField(
                               controller: middleNameController,
+                              enabled: !isSaving,
                               maxLength: 30,
                               inputFormatters: [
                                 FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
@@ -1249,6 +1251,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             const SizedBox(height: 12),
                             TextFormField(
                               controller: lastNameController,
+                              enabled: !isSaving,
                               maxLength: 30,
                               inputFormatters: [
                                 FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
@@ -1271,6 +1274,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             const SizedBox(height: 12),
                             TextFormField(
                               controller: contactController,
+                              enabled: !isSaving,
                               keyboardType: TextInputType.phone,
                               maxLength: 15,
                               inputFormatters: [
@@ -1295,6 +1299,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             const SizedBox(height: 12),
                             TextFormField(
                               controller: addressController,
+                              enabled: !isSaving,
                               maxLines: 2,
                               maxLength: 150,
                               decoration: const InputDecoration(
@@ -2856,17 +2861,20 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             color: Colors.orange,
                             size: 32,
                           ),
-                          onPressed: () {
-                            setDialogState(() {
-                              selectedStars = starVal;
-                            });
-                          },
+                          onPressed: isSubmitting
+                              ? null
+                              : () {
+                                  setDialogState(() {
+                                    selectedStars = starVal;
+                                  });
+                                },
                         );
                       }),
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: nameController,
+                      enabled: !isSubmitting,
                       maxLength: 30,
                       decoration: InputDecoration(
                         labelText: "Your Name",
@@ -2879,6 +2887,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                     const SizedBox(height: 16),
                     TextField(
                       controller: commentController,
+                      enabled: !isSubmitting,
                       maxLength: 50,
                       maxLines: 2,
                       decoration: InputDecoration(

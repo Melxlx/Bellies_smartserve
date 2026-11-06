@@ -542,6 +542,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: _emailController,
+                      enabled: !_isLoading,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_passwordFocusNode),
@@ -580,9 +581,10 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _passwordController,
+                      enabled: !_isLoading,
                       focusNode: _passwordFocusNode,
                       textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _handleStaffLogin(),
+                      onFieldSubmitted: (_) => _isLoading ? null : _handleStaffLogin(),
                       decoration: InputDecoration(
                         labelText: "Password",
                         labelStyle: TextStyle(color: Colors.grey[700]),
@@ -630,7 +632,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     Row(
                       children: [
                         InkWell(
-                          onTap: () => setState(() => _rememberMe = !_rememberMe),
+                          onTap: _isLoading ? null : () => setState(() => _rememberMe = !_rememberMe),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -641,7 +643,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                                   value: _rememberMe,
                                   activeColor: const Color(0xFFE91E63),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                  onChanged: (val) => setState(() => _rememberMe = val ?? false),
+                                  onChanged: _isLoading ? null : (val) => setState(() => _rememberMe = val ?? false),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -654,7 +656,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                         ),
                         const Spacer(),
                         TextButton(
-                          onPressed: _showForgotPasswordDialog,
+                          onPressed: _isLoading ? null : _showForgotPasswordDialog,
                           style: TextButton.styleFrom(
                             foregroundColor: const Color(0xFFE91E63),
                             padding: EdgeInsets.zero,
