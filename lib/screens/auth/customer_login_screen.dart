@@ -1301,21 +1301,24 @@ You have the right to access, update, or request the deletion of your account in
           Positioned(top: -100, right: -100, child: _backgroundGlow(600, const Color(0xFFFF4081).withAlpha(20))),
           Positioned(bottom: -100, left: -100, child: _backgroundGlow(700, const Color(0xFF448AFF).withAlpha(15))),
           Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-              child: Container(
-                width: isDesktop ? 1050 : 450,
-                decoration: BoxDecoration(
-                  color: Colors.white, // Clean premium white
-                  borderRadius: BorderRadius.circular(24), // iOS typical radius
-                  border: Border.all(color: Colors.white, width: 2), // Frosted edge effect
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 32, offset: const Offset(0, 16)),
-                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4)),
-                  ],
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                child: Container(
+                  width: isDesktop ? 1050 : 450,
+                  decoration: BoxDecoration(
+                    color: Colors.white, // Clean premium white
+                    borderRadius: BorderRadius.circular(24), // iOS typical radius
+                    border: Border.all(color: Colors.white, width: 2), // Frosted edge effect
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 32, offset: const Offset(0, 16)),
+                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
               ),
             ),
           ),
