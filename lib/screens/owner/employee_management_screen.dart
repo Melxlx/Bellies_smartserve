@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/user_model.dart';
 import '../../repositories/employee_repository.dart';
+import '../../widgets/app_modals.dart';
 import '../../widgets/state_widgets.dart';
 
 class EmployeeManagementScreen extends StatefulWidget {

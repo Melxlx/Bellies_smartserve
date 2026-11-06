@@ -43,8 +43,6 @@ class EmployeeRepository {
       return [];
     }
   }
-    }
-  }
 
   /// Fetches customer trust data along with completed order count and total spent
   Future<List<Map<String, dynamic>>> getCustomerTrustData() async {
