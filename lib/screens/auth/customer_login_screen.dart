@@ -1492,11 +1492,11 @@ You have the right to access, update, or request the deletion of your account in
             children: [_buildSignInForm(), _buildSignUpForm()],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         _buildOAuthDivider(),
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
         _buildOAuthButtons(),
-        const SizedBox(height: 32),
+        const SizedBox(height: 16),
         Center(
           child: TextButton.icon(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.staffLogin),
@@ -1550,23 +1550,10 @@ You have the right to access, update, or request the deletion of your account in
 
   Widget _buildOAuthButtons() {
     if (_isOAuthLoading) return const Center(child: CircularProgressIndicator());
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: _oauthBtn("Continue with Google", _googleIcon(), Colors.white, const Color(0xFF1D1D1F), () => _handleOAuthLogin(OAuthProvider.google)),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: _oauthBtn("Continue with Facebook", _facebookIcon(), const Color(0xFF1877F2), Colors.white, () => _handleOAuthLogin(OAuthProvider.facebook)),
-        ),
-      ],
+    return SizedBox(
+      width: double.infinity,
+      child: _oauthBtn("Continue with Google", _googleIcon(), Colors.white, const Color(0xFF1D1D1F), () => _handleOAuthLogin(OAuthProvider.google)),
     );
-  }
-
-  Widget _facebookIcon() {
-    return const Icon(Icons.facebook, color: Colors.white, size: 20);
   }
 
   Widget _oauthBtn(String label, Widget icon, Color bg, Color text, VoidCallback onTap) {
