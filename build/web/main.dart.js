@@ -75417,7 +75417,7 @@ if(B.b.n(s,"crabstick"))return"assets/images/crabstick.png"
 if(B.b.n(s,"gyoza"))return"assets/images/gyoza.png"
 q=B.b.n(s,"mix ball")
 if(q||q)return"assets/images/mixball.png"
-if(B.b.n(s,"bilao"))return"assets/images/bilaopancitbihom.png"
+if(B.b.n(s,"bilao"))return"assets/images/bilao_pancit.png"
 if(B.b.n(s,"cheese"))return"assets/images/cheese.png"}r=B.b.K(this.c)
 if(r.length!==0){if(B.b.aP(r,"http")||B.b.aP(r,"assets/"))return r
 return"assets/images/"+r}return""},

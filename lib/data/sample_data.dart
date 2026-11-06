@@ -76,7 +76,7 @@ class SampleData {
     ProductModel(id: 'P201', sku: 'PN-BIH', name: 'Pancit Bihon', categoryId: 'Pancit & Noodles', sellingPrice: 95.0, estimatedCost: 45.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/korean_noodles.png'),
     ProductModel(id: 'P202', sku: 'PN-CAN', name: 'Pancit Canton', categoryId: 'Pancit & Noodles', sellingPrice: 110.0, estimatedCost: 55.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/korean_noodles.png'),
     ProductModel(id: 'P203', sku: 'PN-MIK', name: 'Pancit Miki', categoryId: 'Pancit & Noodles', sellingPrice: 100.0, estimatedCost: 50.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/korean_noodles.png'),
-    ProductModel(id: 'P204', sku: 'PN-BIL', name: 'Large Bihon Bilao', categoryId: 'Pancit & Noodles', sellingPrice: 800.0, estimatedCost: 400.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/korean_noodles.png'),
+    ProductModel(id: 'P204', sku: 'PN-BIL', name: 'Large Bihon Bilao', categoryId: 'Pancit & Noodles', sellingPrice: 800.0, estimatedCost: 400.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/bilao_pancit.png'),
 
     // SILOG MEALS
     ProductModel(id: 'P301', sku: 'S-TAP', name: 'Tapsilog', categoryId: 'Silog Meals', sellingPrice: 90.0, estimatedCost: 45.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/tapsilog.png'),

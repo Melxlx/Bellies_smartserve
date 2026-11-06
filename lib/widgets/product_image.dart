@@ -89,7 +89,7 @@ class ProductImage extends StatelessWidget {
       if (name.contains('crabstick')) return 'assets/images/crabstick.png';
       if (name.contains('gyoza')) return 'assets/images/gyoza.png';
       if (name.contains('mix ball') || name.contains('mix ball')) return 'assets/images/mixball.png';
-      if (name.contains('bilao')) return 'assets/images/bilaopancitbihom.png';
+      if (name.contains('bilao')) return 'assets/images/bilao_pancit.png';
       if (name.contains('cheese')) return 'assets/images/cheese.png';
     }
 
