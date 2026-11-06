@@ -1,0 +1,21 @@
+# Ignore heavy local development & platform build folders
+.dart_tool
+.git
+.idea
+.vscode
+android
+ios
+linux
+macos
+windows
+test
+node_modules
+build/app
+build/windows
+build/linux
+build/macos
+build/ios
+*.apk
+*.aab
+*.zip
+*.tar.gz
