@@ -333,15 +333,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
               backgroundColor: const Color(0xFFC2416C),
               backgroundImage: _ownerAvatarUrl != null && _ownerAvatarUrl!.isNotEmpty ? NetworkImage(_ownerAvatarUrl!) : null,
               child: _ownerAvatarUrl == null || _ownerAvatarUrl!.isEmpty
-                  ? ClipOval(
-                      child: Image.asset(
-                        'assets/images/mami.png',
-                        width: 28,
-                        height: 28,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => const Icon(Icons.person, size: 16, color: Colors.white),
-                      ),
-                    )
+                  ? const Icon(Icons.person, size: 16, color: Colors.white)
                   : null,
             ),
             tooltip: "Owner Profile",
@@ -432,15 +424,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
                       backgroundColor: const Color(0xFFC2416C),
                       backgroundImage: _ownerAvatarUrl != null && _ownerAvatarUrl!.isNotEmpty ? NetworkImage(_ownerAvatarUrl!) : null,
                       child: _ownerAvatarUrl == null || _ownerAvatarUrl!.isEmpty
-                          ? ClipOval(
-                              child: Image.asset(
-                                'assets/images/mami.png',
-                                width: 40,
-                                height: 40,
-                                fit: BoxFit.cover,
-                                errorBuilder: (ctx, err, stack) => const Icon(Icons.person, color: Colors.white),
-                              ),
-                            )
+                          ? const Icon(Icons.person, size: 22, color: Colors.white)
                           : null,
                     ),
                   ),

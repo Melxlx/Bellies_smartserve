@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../core/app_routes.dart';
 import '../models/system_notification_model.dart';
 import '../models/user_model.dart';
@@ -31,48 +32,64 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         children: [
           const SizedBox(height: 12),
-          // Top Drag Handle
+          // Top iOS Drag Handle
           Container(
-            width: 40,
+            width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: const Color(0xFFE5E5EA),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           
-          // Header Bar matching reference design
+          // Header Bar
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Notifications",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.5,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE91E63).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.notifications_active_outlined, color: Color(0xFFE91E63), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "Notifications",
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1D1D1F),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
                 ),
                 TextButton.icon(
                   onPressed: () async {
                     await NotificationRepository().markAllAsRead();
                     if (mounted) setState(() {});
                   },
-                  icon: const Icon(Icons.done_all_rounded, size: 18, color: Color(0xFF059669)),
-                  label: const Text(
-                    "Mark all as read",
-                    style: TextStyle(
-                      color: Color(0xFF059669),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFE91E63),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  ),
+                  icon: const Icon(Icons.done_all_rounded, size: 18),
+                  label: Text(
+                    "Mark all read",
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5,
                     ),
                   ),
                 ),
@@ -80,7 +97,7 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
             ),
           ),
 
-          // Filter Segment Bar
+          // Segmented Filter Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
             child: Row(
@@ -89,23 +106,24 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                   child: Container(
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
+                      color: const Color(0xFFF2F2F7),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
                         Expanded(
                           child: GestureDetector(
                             onTap: () => setState(() => _filterTab = 0),
-                            child: Container(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               decoration: BoxDecoration(
                                 color: _filterTab == 0 ? Colors.white : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(9),
                                 boxShadow: _filterTab == 0
                                     ? [
                                         BoxShadow(
-                                          color: Colors.black.withAlpha(12),
+                                          color: Colors.black.withValues(alpha: 0.08),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2),
                                         )
@@ -113,14 +131,14 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                                     : null,
                               ),
                               child: Text(
-                                "ALL NOTIFICATIONS",
+                                "ALL",
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
                                   color: _filterTab == 0
                                       ? const Color(0xFFE91E63)
-                                      : const Color(0xFF64748B),
+                                      : const Color(0xFF8E8E93),
                                 ),
                               ),
                             ),
@@ -129,15 +147,16 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                         Expanded(
                           child: GestureDetector(
                             onTap: () => setState(() => _filterTab = 1),
-                            child: Container(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               decoration: BoxDecoration(
                                 color: _filterTab == 1 ? Colors.white : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(9),
                                 boxShadow: _filterTab == 1
                                     ? [
                                         BoxShadow(
-                                          color: Colors.black.withAlpha(12),
+                                          color: Colors.black.withValues(alpha: 0.08),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2),
                                         )
@@ -147,12 +166,12 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                               child: Text(
                                 "UNREAD",
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
                                   color: _filterTab == 1
                                       ? const Color(0xFFE91E63)
-                                      : const Color(0xFF64748B),
+                                      : const Color(0xFF8E8E93),
                                 ),
                               ),
                             ),
@@ -162,42 +181,49 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                IconButton(
-                  tooltip: "Clear All History",
-                  icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (dialogCtx) => AlertDialog(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        title: const Text("Clear Notifications?"),
-                        content: const Text("Are you sure you want to clear stored notification history?"),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(dialogCtx, false),
-                            child: const Text("CANCEL"),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(dialogCtx, true),
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                            child: const Text("CLEAR ALL"),
-                          ),
-                        ],
-                      ),
-                    );
+                const SizedBox(width: 10),
+                Material(
+                  color: const Color(0xFFFF3B30).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogCtx) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          title: Text("Clear Notifications?", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                          content: Text("Are you sure you want to clear all stored notification history?", style: GoogleFonts.poppins(fontSize: 13)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogCtx, false),
+                              child: const Text("CANCEL"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(dialogCtx, true),
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF3B30), foregroundColor: Colors.white),
+                              child: const Text("CLEAR ALL"),
+                            ),
+                          ],
+                        ),
+                      );
 
-                    if (confirm == true) {
-                      await NotificationRepository().clearAllNotifications();
-                      if (mounted) setState(() {});
-                    }
-                  },
+                      if (confirm == true) {
+                        await NotificationRepository().clearAllNotifications();
+                        if (mounted) setState(() {});
+                      }
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Icon(Icons.delete_sweep_outlined, color: Color(0xFFFF3B30), size: 20),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const Divider(height: 1, color: Color(0xFFE5E5EA)),
 
           // Notifications List
           Expanded(
@@ -214,11 +240,11 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.notifications_none_rounded, size: 56, color: Colors.grey[300]),
+                        Icon(Icons.notifications_off_outlined, size: 52, color: Colors.grey[300]),
                         const SizedBox(height: 12),
                         Text(
                           _filterTab == 1 ? "No unread notifications." : "No notifications in history.",
-                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                          style: GoogleFonts.poppins(color: const Color(0xFF8E8E93), fontSize: 13.5),
                         ),
                       ],
                     ),
@@ -246,13 +272,14 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                          color: const Color(0xFFF8FAFC),
+                          color: const Color(0xFFF9F9FB),
                           child: Text(
                             sectionTitle,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF64748B),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF8E8E93),
+                              letterSpacing: 0.8,
                             ),
                           ),
                         ),
@@ -283,25 +310,17 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
         return rawRoute;
 
       case UserRole.kitchen:
-        if (rawRoute.startsWith('/staff/inventory') ||
-            rawRoute.startsWith('/staff/employees') ||
-            rawRoute.startsWith('/staff/payroll') ||
-            rawRoute.startsWith('/staff/reports') ||
-            rawRoute.startsWith('/staff/settings')) {
-          return AppRoutes.staffKitchen;
+        if (rawRoute.contains('inventory') || rawRoute.startsWith('/staff/inventory')) {
+          return AppRoutes.inventoryHub;
         }
-        return rawRoute;
+        return AppRoutes.kitchenQueue;
 
       case UserRole.cashier:
-        if (rawRoute.contains('kitchen') || rawRoute.startsWith('/staff/kitchen')) {
+        if (rawRoute.contains('kitchen') || rawRoute.startsWith('/staff/kitchen') || rawRoute.contains('order')) {
           return AppRoutes.staffOnlineOrders;
         }
-        if (rawRoute.startsWith('/staff/inventory') ||
-            rawRoute.startsWith('/staff/employees') ||
-            rawRoute.startsWith('/staff/payroll') ||
-            rawRoute.startsWith('/staff/reports') ||
-            rawRoute.startsWith('/staff/settings')) {
-          return AppRoutes.cashierDashboard;
+        if (rawRoute.startsWith('/staff/inventory')) {
+          return AppRoutes.inventoryHub;
         }
         return rawRoute;
 
@@ -312,6 +331,16 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
         return rawRoute;
 
       case UserRole.owner:
+        // Owner manages Online Orders for order & preparation alerts, Inventory Hub for inventory alerts
+        if (rawRoute.contains('kitchen') || rawRoute.startsWith('/staff/kitchen') || rawRoute.contains('order')) {
+          return AppRoutes.onlineOrders;
+        }
+        if (rawRoute.contains('inventory') || rawRoute.startsWith('/staff/inventory')) {
+          return AppRoutes.inventoryHub;
+        }
+        if (rawRoute.contains('rider') || rawRoute.contains('delivery')) {
+          return AppRoutes.deliveryProofs;
+        }
         return rawRoute;
     }
   }
@@ -320,21 +349,20 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
     final isUnread = !n.isRead;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       decoration: BoxDecoration(
-        // Soft green highlight tint for unread items matching reference image
-        color: isUnread ? const Color(0xFFEBFDF5) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: isUnread ? const Color(0xFFFFF0F5) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isUnread ? const Color(0xFFA7F3D0) : const Color(0xFFF1F5F9),
+          color: isUnread ? const Color(0xFFFCE4EC) : const Color(0xFFF2F2F7),
           width: isUnread ? 1.5 : 1,
         ),
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           onTap: () async {
             final nav = Navigator.of(context);
             await NotificationRepository().markAsRead(n.id);
@@ -360,18 +388,12 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                   height: 42,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(15),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color: n.color.withValues(alpha: 0.12),
+                    border: Border.all(color: n.color.withValues(alpha: 0.25), width: 1),
                   ),
                   child: Icon(n.icon, color: n.color, size: 20),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
 
                 // Content
                 Expanded(
@@ -389,17 +411,17 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                                     const TextSpan(
                                       text: "• ",
                                       style: TextStyle(
-                                        color: Color(0xFF059669),
+                                        color: Color(0xFFE91E63),
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
                                       ),
                                     ),
                                   TextSpan(
                                     text: n.title,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
-                                      color: isUnread ? const Color(0xFF0F172A) : const Color(0xFF475569),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13.5,
+                                      fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
+                                      color: isUnread ? const Color(0xFF1D1D1F) : const Color(0xFF48484A),
                                     ),
                                   ),
                                 ],
@@ -409,10 +431,10 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                           const SizedBox(width: 8),
                           Text(
                             n.formattedTime,
-                            style: TextStyle(
+                            style: GoogleFonts.poppins(
                               fontSize: 11,
-                              color: isUnread ? const Color(0xFF059669) : const Color(0xFF94A3B8),
-                              fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+                              color: isUnread ? const Color(0xFFE91E63) : const Color(0xFF8E8E93),
+                              fontWeight: isUnread ? FontWeight.w600 : FontWeight.w400,
                             ),
                           ),
                         ],
@@ -420,11 +442,11 @@ class _NotificationsModalSheetState extends State<NotificationsModalSheet> {
                       const SizedBox(height: 4),
                       Text(
                         n.message,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1.35,
-                          fontWeight: isUnread ? FontWeight.w500 : FontWeight.normal,
-                          color: isUnread ? const Color(0xFF1E293B) : const Color(0xFF64748B),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          height: 1.4,
+                          fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
+                          color: isUnread ? const Color(0xFF2C2C2E) : const Color(0xFF636366),
                         ),
                       ),
                     ],

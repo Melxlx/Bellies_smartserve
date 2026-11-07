@@ -35,6 +35,11 @@ class AuthService {
       throw const AuthException('No authenticated user found.');
     }
 
+    final cleanEmail = targetUser.email?.trim().toLowerCase() ?? '';
+    final isOwnerEmail = cleanEmail == 'mberuela11@gmail.com' ||
+        cleanEmail == 'jubileealfonnn@gmail.com' ||
+        cleanEmail == 'owner@bellies.com';
+
     try {
       final response = await _supabase
           .from('profiles')
@@ -43,6 +48,16 @@ class AuthService {
           .maybeSingle();
 
       if (response != null) {
+        if (isOwnerEmail && (response['role'] != 'OWNER' || response['position'] != 'Owner / Manager')) {
+          try {
+            await _supabase.from('profiles').update({
+              'role': 'OWNER',
+              'position': 'Owner / Manager',
+            }).eq('id', targetUser.id);
+            response['role'] = 'OWNER';
+            response['position'] = 'Owner / Manager';
+          } catch (_) {}
+        }
         return UserModel.fromJson(response);
       }
     } catch (_) {
@@ -54,6 +69,16 @@ class AuthService {
             .eq('id', targetUser.id)
             .maybeSingle();
         if (response != null) {
+          if (isOwnerEmail && (response['role'] != 'OWNER' || response['position'] != 'Owner / Manager')) {
+            try {
+              await _supabase.from('profiles').update({
+                'role': 'OWNER',
+                'position': 'Owner / Manager',
+              }).eq('id', targetUser.id);
+              response['role'] = 'OWNER';
+              response['position'] = 'Owner / Manager';
+            } catch (_) {}
+          }
           return UserModel.fromJson(response);
         }
       } catch (_) {}
@@ -95,8 +120,8 @@ class AuthService {
       if (metaContact != null && metaContact.isNotEmpty) 'contact_number': metaContact,
       if (metaAddress != null && metaAddress.isNotEmpty) 'address': metaAddress,
       'avatar_url': avatarUrl,
-      'position': 'Customer',
-      'role': 'CUSTOMER',
+      'position': isOwnerEmail ? 'Owner / Manager' : 'Customer',
+      'role': isOwnerEmail ? 'OWNER' : 'CUSTOMER',
       'account_status': 'ACTIVE',
     };
 
@@ -374,6 +399,10 @@ class AuthService {
       throw const AuthException("Registration failed: Unable to link user account in Supabase Auth.");
     }
 
+    final isOwnerEmail = cleanEmail == 'mberuela11@gmail.com' ||
+        cleanEmail == 'jubileealfonnn@gmail.com' ||
+        cleanEmail == 'owner@bellies.com';
+
     final profilePayload = {
       'id': userId,
       'email': cleanEmail,
@@ -386,8 +415,8 @@ class AuthService {
         'contact_number': cleanContactNumber,
       if (cleanAddress != null && cleanAddress.isNotEmpty)
         'address': cleanAddress,
-      'position': 'Customer',
-      'role': 'CUSTOMER',
+      'position': isOwnerEmail ? 'Owner / Manager' : 'Customer',
+      'role': isOwnerEmail ? 'OWNER' : 'CUSTOMER',
       'account_status': 'ACTIVE',
     };
 

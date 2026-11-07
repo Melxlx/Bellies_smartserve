@@ -250,15 +250,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                     child: _isUploading
                                         ? const CircularProgressIndicator(color: Color(0xFFC2416C))
                                         : (_avatarUrl == null || _avatarUrl!.isEmpty
-                                            ? ClipOval(
-                                                child: Image.asset(
-                                                  'assets/images/mami.png',
-                                                  width: 100,
-                                                  height: 100,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (ctx, err, stack) => const Icon(Icons.restaurant, size: 40, color: Color(0xFFC2416C)),
-                                                ),
-                                              )
+                                            ? const Icon(Icons.person, size: 50, color: Color(0xFFC2416C))
                                             : null),
                                   ),
                                   if (_isEditing)

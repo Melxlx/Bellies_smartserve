@@ -80,6 +80,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
 
     final cleanEmail = profile.email.trim().toLowerCase();
     final isOwnerEmail = cleanEmail == 'mberuela11@gmail.com' ||
+        cleanEmail == 'jubileealfonnn@gmail.com' ||
         cleanEmail == 'owner@bellies.com' ||
         profile.position.toLowerCase().contains('owner');
 
