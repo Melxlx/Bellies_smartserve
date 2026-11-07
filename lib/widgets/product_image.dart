@@ -116,6 +116,7 @@ class ProductImage extends StatelessWidget {
         width: width,
         fit: fit,
         gaplessPlayback: true,
+        cacheWidth: 600,
         errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded || frame != null) return child;
@@ -131,6 +132,7 @@ class ProductImage extends StatelessWidget {
         width: width,
         fit: fit,
         gaplessPlayback: true,
+        cacheWidth: 600,
         errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
       );
     }
