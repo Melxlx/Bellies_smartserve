@@ -320,33 +320,36 @@ class _InventoryScreenState extends State<InventoryScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: count,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: isDesktop ? 2.8 : 2.2,
+      crossAxisSpacing: 18,
+      mainAxisSpacing: 18,
+      childAspectRatio: isDesktop ? 2.6 : 2.2,
       children: [
         _metricCard(
           title: "Total Items",
           subtitle: "Total items in stock",
           value: "$_totalItems",
           icon: Icons.inventory_2_rounded,
-          iconBg: const Color(0xFFE8F5E9),
-          iconColor: const Color(0xFF2E7D32),
+          gradientColors: [const Color(0xFF10B981), const Color(0xFF059669)],
+          badgeText: "Active Stock",
+          badgeColor: const Color(0xFF10B981),
         ),
         _metricCard(
           title: "Low Stock Items",
           subtitle: "Items running low",
           value: "$_lowStockCount",
           icon: Icons.warning_amber_rounded,
-          iconBg: const Color(0xFFFFF3E0),
-          iconColor: const Color(0xFFEF6C00),
+          gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+          badgeText: "Action Needed",
+          badgeColor: const Color(0xFFF59E0B),
         ),
         _metricCard(
           title: "Out of Stock",
           subtitle: "Items currently out of stock",
           value: "$_outOfStockCount",
           icon: Icons.remove_shopping_cart_rounded,
-          iconBg: const Color(0xFFFFEBEE),
-          iconColor: const Color(0xFFC62828),
+          gradientColors: [const Color(0xFFEF4444), const Color(0xFFDC2626)],
+          badgeText: "Critical",
+          badgeColor: const Color(0xFFEF4444),
         ),
       ],
     );
@@ -357,16 +360,22 @@ class _InventoryScreenState extends State<InventoryScreen> {
     required String subtitle,
     required String value,
     required IconData icon,
-    required Color iconBg,
-    required Color iconColor,
+    required List<Color> gradientColors,
+    required String badgeText,
+    required Color badgeColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4)),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -374,35 +383,79 @@ class _InventoryScreenState extends State<InventoryScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: iconColor, size: 22),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: gradientColors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gradientColors.first.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
-                  overflow: TextOverflow.ellipsis,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: badgeColor.withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      badgeText,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: badgeColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                subtitle,
-                style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600]),
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1E293B),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF64748B),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
             ],
           ),
@@ -423,12 +476,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final paginatedList = filtered.isEmpty ? <IngredientModel>[] : filtered.sublist(start, end > totalItems ? totalItems : end);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 4)),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -437,24 +495,63 @@ class _InventoryScreenState extends State<InventoryScreen> {
           // Header Bar Responsive Layout
           LayoutBuilder(
             builder: (context, constraints) {
-              final isNarrow = constraints.maxWidth < 800;
+              final isNarrow = constraints.maxWidth < 850;
 
-              final titleWidget = Text(
-                "Inventory Overview",
-                style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+              final titleWidget = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Stock Inventory List",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  Text(
+                    "Manage raw ingredients, stock levels and unit costs",
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
               );
 
               final searchField = SizedBox(
-                width: isNarrow ? double.infinity : 200,
+                width: isNarrow ? double.infinity : 220,
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: "Search Ingredient...",
-                    hintStyle: const TextStyle(fontSize: 12),
-                    prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                    hintText: "Search ingredient...",
+                    hintStyle: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade500),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 16),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _currentPage = 1);
+                            },
+                          )
+                        : null,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE91E63)),
+                    ),
                   ),
                   onChanged: (_) => setState(() {
                     _currentPage = 1;
@@ -463,22 +560,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
               );
 
               final categoryDropdown = SizedBox(
-                width: isNarrow ? 140 : 150,
+                width: isNarrow ? 150 : 160,
                 child: DropdownButtonFormField<String>(
                   initialValue: _categoryFilter,
                   isDense: true,
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey.shade200),
+                    ),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'All', child: Text('All Categories', style: TextStyle(fontSize: 11))),
-                    DropdownMenuItem(value: 'Grains', child: Text('Grains (Rice)', style: TextStyle(fontSize: 11))),
-                    DropdownMenuItem(value: 'Meat', child: Text('Meat (Beef/Pork)', style: TextStyle(fontSize: 11))),
-                    DropdownMenuItem(value: 'Poultry', child: Text('Poultry & Eggs', style: TextStyle(fontSize: 11))),
-                    DropdownMenuItem(value: 'Noodles', child: Text('Noodles', style: TextStyle(fontSize: 11))),
-                    DropdownMenuItem(value: 'Oil & Fats', child: Text('Oil & Fats', style: TextStyle(fontSize: 11))),
-                    DropdownMenuItem(value: 'Seasoning', child: Text('Seasonings', style: TextStyle(fontSize: 11))),
+                    DropdownMenuItem(value: 'All', child: Text('All Categories', style: TextStyle(fontSize: 12))),
+                    DropdownMenuItem(value: 'Grains', child: Text('Grains (Rice)', style: TextStyle(fontSize: 12))),
+                    DropdownMenuItem(value: 'Meat', child: Text('Meat (Beef/Pork)', style: TextStyle(fontSize: 12))),
+                    DropdownMenuItem(value: 'Poultry', child: Text('Poultry & Eggs', style: TextStyle(fontSize: 12))),
+                    DropdownMenuItem(value: 'Noodles', child: Text('Noodles', style: TextStyle(fontSize: 12))),
+                    DropdownMenuItem(value: 'Oil & Fats', child: Text('Oil & Fats', style: TextStyle(fontSize: 12))),
+                    DropdownMenuItem(value: 'Seasoning', child: Text('Seasonings', style: TextStyle(fontSize: 12))),
                   ],
                   onChanged: (val) {
                     setState(() {
@@ -498,30 +604,34 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 }),
                 itemBuilder: (_) => const [
                   PopupMenuItem(value: 'All', child: Text('All Status')),
-                  PopupMenuItem(value: 'Good', child: Text('Good')),
+                  PopupMenuItem(value: 'Good', child: Text('Good Stock')),
                   PopupMenuItem(value: 'Low Stock', child: Text('Low Stock')),
                   PopupMenuItem(value: 'Out of Stock', child: Text('Out of Stock')),
                 ],
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: _statusFilter != 'All' ? const Color(0xFFE8F5E9) : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
+                    color: _statusFilter != 'All' ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: _statusFilter != 'All' ? const Color(0xFF2E7D32) : Colors.grey[300]!,
+                      color: _statusFilter != 'All' ? const Color(0xFF10B981) : Colors.grey.shade200,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.filter_list_rounded, size: 16),
+                      Icon(
+                        Icons.filter_list_rounded,
+                        size: 16,
+                        color: _statusFilter != 'All' ? const Color(0xFF10B981) : const Color(0xFF64748B),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         _statusFilter == 'All' ? 'Filter' : _statusFilter,
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: _statusFilter != 'All' ? const Color(0xFF2E7D32) : Colors.black87,
+                          color: _statusFilter != 'All' ? const Color(0xFF047857) : const Color(0xFF334155),
                         ),
                       ),
                     ],
@@ -530,31 +640,53 @@ class _InventoryScreenState extends State<InventoryScreen> {
               );
 
               final actionButtons = Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 10,
+                runSpacing: 10,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   if (_selectedIds.isNotEmpty)
                     ElevatedButton.icon(
                       onPressed: _confirmDeleteSelected,
-                      icon: const Icon(Icons.delete_outline, size: 18),
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
                       label: Text("Delete (${_selectedIds.length})"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: const Color(0xFFEF4444),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
-                  ElevatedButton.icon(
-                    onPressed: () => _showIngredientDialog(),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text("Add Ingredient"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF008080),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFE91E63), Color(0xFF9C27B0)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFE91E63).withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showIngredientDialog(),
+                      icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                      label: Text(
+                        "Add Ingredient",
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      ),
                     ),
                   ),
                 ],
@@ -694,20 +826,55 @@ class _InventoryScreenState extends State<InventoryScreen> {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.add_box_outlined, color: Colors.green, size: 20),
-                                    tooltip: "Stock In (+)",
-                                    onPressed: () => _recordStockMovement(ingredient, true),
+                                  Tooltip(
+                                    message: "Stock In (+)",
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(8),
+                                      onTap: () => _recordStockMovement(ingredient, true),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFECFDF5),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                                        ),
+                                        child: const Icon(Icons.add_rounded, color: Color(0xFF047857), size: 16),
+                                      ),
+                                    ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.remove_circle_outline, color: Colors.orange, size: 20),
-                                    tooltip: "Stock Out (-)",
-                                    onPressed: () => _recordStockMovement(ingredient, false),
+                                  const SizedBox(width: 6),
+                                  Tooltip(
+                                    message: "Stock Out (-)",
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(8),
+                                      onTap: () => _recordStockMovement(ingredient, false),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFFBEB),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                                        ),
+                                        child: const Icon(Icons.remove_rounded, color: Color(0xFFB45309), size: 16),
+                                      ),
+                                    ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined, size: 20),
-                                    tooltip: "Edit Details",
-                                    onPressed: () => _showIngredientDialog(ingredient: ingredient),
+                                  const SizedBox(width: 6),
+                                  Tooltip(
+                                    message: "Edit Details",
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(8),
+                                      onTap: () => _showIngredientDialog(ingredient: ingredient),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.grey.shade300),
+                                        ),
+                                        child: const Icon(Icons.edit_rounded, color: Color(0xFF475569), size: 16),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -739,42 +906,58 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _statusPill(InventoryStatus status) {
-    Color bg = const Color(0xFFE8F5E9);
-    Color fg = const Color(0xFF2E7D32);
+    Color bg = const Color(0xFFECFDF5);
+    Color fg = const Color(0xFF047857);
+    Color dot = const Color(0xFF10B981);
     String label = "Good";
 
     switch (status) {
       case InventoryStatus.available:
-        bg = const Color(0xFFE8F5E9);
-        fg = const Color(0xFF2E7D32);
+        bg = const Color(0xFFECFDF5);
+        fg = const Color(0xFF047857);
+        dot = const Color(0xFF10B981);
         label = "Good";
         break;
       case InventoryStatus.lowStock:
-        bg = const Color(0xFFFFF3E0);
-        fg = const Color(0xFFEF6C00);
+        bg = const Color(0xFFFFFBEB);
+        fg = const Color(0xFFB45309);
+        dot = const Color(0xFFF59E0B);
         label = "Low Stock";
         break;
       case InventoryStatus.outOfStock:
       case InventoryStatus.expiringSoon:
-        bg = const Color(0xFFFFEBEE);
-        fg = const Color(0xFFC62828);
+        bg = const Color(0xFFFEF2F2);
+        fg = const Color(0xFFB91C1C);
+        dot = const Color(0xFFEF4444);
         label = status == InventoryStatus.outOfStock ? "Out of Stock" : "Expiring Soon";
         break;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: dot.withValues(alpha: 0.25)),
       ),
-      child: Text(
-        label,
-        style: GoogleFonts.poppins(
-          color: fg,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: fg,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
