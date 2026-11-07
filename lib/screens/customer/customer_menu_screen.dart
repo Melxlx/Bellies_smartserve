@@ -2717,25 +2717,31 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          Container(
+            height: 130,
+            width: double.infinity,
+            padding: const EdgeInsets.all(8.0),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFAFAFA),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
             child: Stack(
               children: [
-                Positioned.fill(
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: ProductImage(
-                        path: product.imagePath ?? '',
-                        productName: product.name,
-                      ),
+                Center(
+                  child: SizedBox(
+                    height: 110,
+                    width: 110,
+                    child: ProductImage(
+                      path: product.imagePath ?? '',
+                      productName: product.name,
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),
                 if (isBestSeller)
                   Positioned(
-                    top: 12,
-                    left: 12,
+                    top: 2,
+                    left: 2,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
@@ -2749,48 +2755,50 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                     ),
                   ),
                 if (isOutOfStock)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black38,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black38,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text("SOLD OUT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
                     ),
-                    alignment: Alignment.center,
-                    child: const Text("SOLD OUT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
                   ),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   product.name,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13.5, color: Colors.black87),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   product.description ?? "Freshly prepared meal",
                   style: TextStyle(color: Colors.grey[500], fontSize: 10),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       "₱${product.sellingPrice.toStringAsFixed(0)}",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: Colors.black87, fontSize: 16),
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: Colors.black87, fontSize: 15),
                     ),
                     InkWell(
                       onTap: (isOutOfStock || _addingProductIds.contains(product.id)) ? null : () => _addToCart(product),
                       child: Container(
-                        height: 32,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        height: 30,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
                           color: (isOutOfStock || _addingProductIds.contains(product.id)) ? Colors.grey[300] : const Color(0xFFFFD700),
                           borderRadius: BorderRadius.circular(8),
@@ -2800,14 +2808,14 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                           children: [
                             if (_addingProductIds.contains(product.id))
                               const SizedBox(
-                                width: 16,
-                                height: 16,
+                                width: 14,
+                                height: 14,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black87),
                               )
                             else ...[
                               Text("Add", style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 11)),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.add_rounded, color: Colors.black87, size: 16),
+                              const SizedBox(width: 2),
+                              const Icon(Icons.add_rounded, color: Colors.black87, size: 14),
                             ],
                           ],
                         ),
@@ -2817,7 +2825,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );

@@ -603,14 +603,22 @@ class _PosScreenState extends State<PosScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
+                Container(
                   height: 125,
                   width: double.infinity,
+                  color: const Color(0xFFFAFAFA),
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: ProductImage(
-                      path: product.imagePath ?? '',
-                      productName: product.name,
+                    child: Center(
+                      child: SizedBox(
+                        height: 105,
+                        width: 105,
+                        child: ProductImage(
+                          path: product.imagePath ?? '',
+                          productName: product.name,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
                   ),
                 ),

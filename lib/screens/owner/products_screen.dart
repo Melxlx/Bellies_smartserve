@@ -293,10 +293,20 @@ class ProductsScreenState extends State<ProductsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: ProductImage(
-              path: product.imagePath ?? '',
-              productName: product.name,
+          Container(
+            height: 120,
+            width: double.infinity,
+            color: const Color(0xFFFAFAFA),
+            child: Center(
+              child: SizedBox(
+                height: 100,
+                width: 100,
+                child: ProductImage(
+                  path: product.imagePath ?? '',
+                  productName: product.name,
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
           Padding(
