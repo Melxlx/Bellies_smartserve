@@ -1181,26 +1181,28 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
             title: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFCE4EC),
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFFE91E63).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.person_outline_rounded, color: Color(0xFFE91E63)),
+                  child: const Icon(Icons.person_outline_rounded, color: Color(0xFFE91E63), size: 20),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   isEditing ? "Edit Customer Profile" : "My Customer Profile",
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 18, color: const Color(0xFF1D1D1F)),
                 ),
               ],
             ),
             content: SizedBox(
-              width: 440,
+              width: 450,
               child: SingleChildScrollView(
                 child: isEditing
                     ? Form(
@@ -1214,24 +1216,31 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             Center(
                               child: Stack(
                                 children: [
-                                  CircleAvatar(
-                                    radius: 45,
-                                    backgroundColor: const Color(0xFFFCE4EC),
-                                    backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty ? NetworkImage(avatarUrl!) : null,
-                                    child: avatarUrl == null || avatarUrl!.isEmpty
-                                        ? const Icon(Icons.person, size: 45, color: Color(0xFFE91E63))
-                                        : null,
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: const Color(0xFFE91E63).withValues(alpha: 0.2), width: 2),
+                                    ),
+                                    child: CircleAvatar(
+                                      radius: 46,
+                                      backgroundColor: const Color(0xFFFCE4EC),
+                                      backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty ? NetworkImage(avatarUrl!) : null,
+                                      child: avatarUrl == null || avatarUrl!.isEmpty
+                                          ? const Icon(Icons.person, size: 46, color: Color(0xFFE91E63))
+                                          : null,
+                                    ),
                                   ),
                                   Positioned(
                                     bottom: 0,
                                     right: 0,
                                     child: CircleAvatar(
-                                      radius: 16,
+                                      radius: 17,
                                       backgroundColor: const Color(0xFFE91E63),
                                       child: IconButton(
+                                        padding: EdgeInsets.zero,
                                         icon: isUploadingPhoto
-                                            ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                            : const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                            : const Icon(Icons.camera_alt, size: 15, color: Colors.white),
                                         onPressed: isUploadingPhoto ? null : () => pickAndUploadPhoto(setDialogState),
                                         tooltip: 'Upload Profile Picture',
                                       ),
@@ -1241,15 +1250,20 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Center(
+                            Center(
                               child: Text(
-                                "Accepted formats: JPEG, PNG only (Max 5MB)",
-                                style: TextStyle(fontSize: 11, color: Colors.grey),
+                                "Accepted: JPEG, PNG only (Max 5MB)",
+                                style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF8E8E93)),
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Text("Update your profile information. Real-time validation enabled.", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                            Text(
+                              "Update your profile details below. Live validation active.",
+                              style: GoogleFonts.poppins(color: const Color(0xFF8E8E93), fontSize: 12.5),
+                            ),
                             const SizedBox(height: 16),
+                            
+                            // First Name
                             TextFormField(
                               controller: firstNameController,
                               enabled: !isSaving,
@@ -1258,10 +1272,10 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                                 FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
                                 TextInputFormatter.withFunction((oldVal, newVal) => newVal.text.startsWith(' ') ? oldVal : newVal),
                               ],
-                              decoration: const InputDecoration(
-                                labelText: "First Name *",
-                                prefixIcon: Icon(Icons.badge_outlined),
-                                border: OutlineInputBorder(),
+                              decoration: _inputDecoration(
+                                label: "First Name *",
+                                icon: Icons.badge_outlined,
+                                hint: "e.g. Hallel",
                               ),
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) return "First name is required";
@@ -1273,6 +1287,8 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                               },
                             ),
                             const SizedBox(height: 12),
+                            
+                            // Middle Name
                             TextFormField(
                               controller: middleNameController,
                               enabled: !isSaving,
@@ -1281,10 +1297,10 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                                 FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
                                 TextInputFormatter.withFunction((oldVal, newVal) => newVal.text.startsWith(' ') ? oldVal : newVal),
                               ],
-                              decoration: const InputDecoration(
-                                labelText: "Middle Name (Optional)",
-                                prefixIcon: Icon(Icons.badge_outlined),
-                                border: OutlineInputBorder(),
+                              decoration: _inputDecoration(
+                                label: "Middle Name (Optional)",
+                                icon: Icons.badge_outlined,
+                                hint: "Middle Name",
                               ),
                               validator: (v) {
                                 if (v != null && v.trim().isNotEmpty) {
@@ -1296,6 +1312,8 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                               },
                             ),
                             const SizedBox(height: 12),
+                            
+                            // Last Name
                             TextFormField(
                               controller: lastNameController,
                               enabled: !isSaving,
@@ -1304,10 +1322,10 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                                 FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
                                 TextInputFormatter.withFunction((oldVal, newVal) => newVal.text.startsWith(' ') ? oldVal : newVal),
                               ],
-                              decoration: const InputDecoration(
-                                labelText: "Last Name *",
-                                prefixIcon: Icon(Icons.badge_outlined),
-                                border: OutlineInputBorder(),
+                              decoration: _inputDecoration(
+                                label: "Last Name *",
+                                icon: Icons.badge_outlined,
+                                hint: "e.g. Lovely",
                               ),
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) return "Last name is required";
@@ -1319,41 +1337,43 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                               },
                             ),
                             const SizedBox(height: 12),
+                            
+                            // Contact Number (Supports 09, 639, +639)
                             TextFormField(
                               controller: contactController,
                               enabled: !isSaving,
                               keyboardType: TextInputType.phone,
-                              maxLength: 15,
+                              maxLength: 16,
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-]')),
+                                FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s()]')),
                                 TextInputFormatter.withFunction((oldVal, newVal) => newVal.text.startsWith(' ') ? oldVal : newVal),
                               ],
-                              decoration: const InputDecoration(
-                                labelText: "Contact Number *",
-                                prefixIcon: Icon(Icons.phone_outlined),
-                                border: OutlineInputBorder(),
-                                hintText: "e.g. 09123456789",
+                              decoration: _inputDecoration(
+                                label: "Contact Number *",
+                                icon: Icons.phone_outlined,
+                                hint: "e.g. 09171234567, 639171234567, or +639171234567",
                               ),
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) return "Contact number is required";
                                 final cleaned = v.replaceAll(RegExp(r'[\s()\-]'), '');
-                                if (!RegExp(r'^(09|\+639)\d{9}$').hasMatch(cleaned)) {
-                                  return "Enter valid PH mobile (e.g. 09171234567)";
+                                if (!RegExp(r'^(09|639|\+639)\d{9}$').hasMatch(cleaned)) {
+                                  return "Enter valid PH mobile (e.g. 09171234567, 639171234567, or +639171234567)";
                                 }
                                 return null;
                               },
                             ),
                             const SizedBox(height: 12),
+                            
+                            // Delivery Address
                             TextFormField(
                               controller: addressController,
                               enabled: !isSaving,
                               maxLines: 2,
                               maxLength: 150,
-                              decoration: const InputDecoration(
-                                labelText: "Delivery Address *",
-                                prefixIcon: Icon(Icons.location_on_outlined),
-                                border: OutlineInputBorder(),
-                                hintText: "Street, Barangay, City",
+                              decoration: _inputDecoration(
+                                label: "Delivery Address *",
+                                icon: Icons.location_on_outlined,
+                                hint: "Street, Barangay, City, Province",
                               ),
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) return "Delivery address is required";
@@ -1368,18 +1388,22 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Center(
-                            child: CircleAvatar(
-                              radius: 46,
-                              backgroundColor: const Color(0xFFFCE4EC),
-                              backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty ? NetworkImage(avatarUrl!) : null,
-                              child: avatarUrl == null || avatarUrl!.isEmpty
-                                  ? const Icon(Icons.person, size: 46, color: Color(0xFFE91E63))
-                                  : null,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFFE91E63).withValues(alpha: 0.2), width: 2),
+                              ),
+                              child: CircleAvatar(
+                                radius: 46,
+                                backgroundColor: const Color(0xFFFCE4EC),
+                                backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty ? NetworkImage(avatarUrl!) : null,
+                                child: avatarUrl == null || avatarUrl!.isEmpty
+                                    ? const Icon(Icons.person, size: 46, color: Color(0xFFE91E63))
+                                    : null,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          const Divider(),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 20),
                           
                           // First Name Card
                           _buildProfileViewItem(
@@ -1387,7 +1411,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             label: "First Name",
                             value: firstNameController.text.trim().isNotEmpty ? firstNameController.text.trim() : "Not provided",
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
 
                           // Middle Name Card
                           _buildProfileViewItem(
@@ -1395,7 +1419,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             label: "Middle Name",
                             value: middleNameController.text.trim().isNotEmpty ? middleNameController.text.trim() : "None",
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
 
                           // Last Name Card
                           _buildProfileViewItem(
@@ -1403,7 +1427,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             label: "Last Name",
                             value: lastNameController.text.trim().isNotEmpty ? lastNameController.text.trim() : "Not provided",
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
 
                           // Contact Number Card
                           _buildProfileViewItem(
@@ -1411,7 +1435,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             label: "Contact Number",
                             value: contactController.text.trim().isNotEmpty ? contactController.text.trim() : "Not provided",
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
 
                           // Delivery Address Card
                           _buildProfileViewItem(
@@ -1426,6 +1450,10 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
             actions: isEditing
                 ? [
                     TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF8E8E93),
+                        textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
                       onPressed: isSaving ? null : () => setDialogState(() => isEditing = false),
                       child: const Text("Cancel"),
                     ),
@@ -1433,7 +1461,10 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE91E63),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 4,
+                        shadowColor: const Color(0xFFE91E63).withValues(alpha: 0.3),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       onPressed: isSaving
                           ? null
@@ -1511,11 +1542,15 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             },
                       child: isSaving
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text("Save Changes"),
+                          : Text("Save Changes", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                     ),
                   ]
                 : [
                     TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF8E8E93),
+                        textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
                       onPressed: () => Navigator.pop(context),
                       child: const Text("Close"),
                     ),
@@ -1523,16 +1558,44 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE91E63),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 4,
+                        shadowColor: const Color(0xFFE91E63).withValues(alpha: 0.3),
+                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text("Edit Profile"),
+                      label: Text("Edit Profile", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                       onPressed: () => setDialogState(() => isEditing = true),
                     ),
                   ],
           );
         },
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData icon,
+    required String hint,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: const Color(0xFF8E8E93), size: 20),
+      filled: true,
+      fillColor: const Color(0xFFF9F9FB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE5E5EA))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE5E5EA))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE91E63), width: 1.5)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFFF3B30), width: 1.5)),
+      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFFF3B30), width: 1.5)),
+      labelStyle: GoogleFonts.poppins(color: const Color(0xFF8E8E93), fontSize: 13),
+      floatingLabelStyle: GoogleFonts.poppins(color: const Color(0xFFE91E63), fontWeight: FontWeight.w600, fontSize: 13),
+      hintStyle: GoogleFonts.poppins(color: const Color(0xFFC7C7CC), fontSize: 13),
+      errorStyle: GoogleFonts.poppins(color: const Color(0xFFFF3B30), fontSize: 11),
+      counterStyle: GoogleFonts.poppins(color: const Color(0xFF8E8E93), fontSize: 11),
     );
   }
 
@@ -1543,28 +1606,35 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   }) {
     final bool isNotProvided = value == "Not provided" || value == "None";
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        color: const Color(0xFFF5F5F7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFE91E63), size: 18),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE91E63).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: const Color(0xFFE91E63), size: 18),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
+                Text(label, style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF8E8E93), fontWeight: FontWeight.w500)),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w600,
-                    color: isNotProvided ? Colors.grey[400] : const Color(0xFF222222),
+                    color: isNotProvided ? const Color(0xFFC7C7CC) : const Color(0xFF1D1D1F),
                   ),
                 ),
               ],
