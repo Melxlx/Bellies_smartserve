@@ -126,7 +126,7 @@ class _CashierDashboardState extends State<CashierDashboard> {
     if (routeName != null) {
       updateBrowserUrl(routeName);
     }
-    if (MediaQuery.sizeOf(context).width < 900 && Navigator.canPop(context)) {
+    if (Scaffold.maybeOf(context)?.isDrawerOpen == true) {
       Navigator.pop(context);
     }
   }
