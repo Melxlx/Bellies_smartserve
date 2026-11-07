@@ -50,6 +50,7 @@ class _PosScreenState extends State<PosScreen> {
   String? _selectedCategoryId;
   ServiceType _selectedServiceType = ServiceType.dineIn;
   PosSortOption _sortOption = PosSortOption.nameAsc;
+  bool _isCartBottomSheetOpen = false;
 
   @override
   void initState() {
@@ -351,6 +352,11 @@ class _PosScreenState extends State<PosScreen> {
       return;
     }
 
+    if (_isCartBottomSheetOpen) {
+      Navigator.pop(context);
+      _isCartBottomSheetOpen = false;
+    }
+
     final tempOrder = OrderModel(
       id: "TEMP",
       queueNumber: "000",
@@ -365,8 +371,13 @@ class _PosScreenState extends State<PosScreen> {
       customerDetails: null,
     );
 
-    await Navigator.pushNamed(context, AppRoutes.payment, arguments: tempOrder);
-    if (mounted) {
+    final paymentCompleted = await Navigator.pushNamed(
+      context,
+      AppRoutes.payment,
+      arguments: tempOrder,
+    );
+
+    if (mounted && paymentCompleted == true) {
       setState(() => _cart.clear());
     }
   }
@@ -944,6 +955,7 @@ class _PosScreenState extends State<PosScreen> {
   }
 
   void _showCartBottomSheet() {
+    _isCartBottomSheetOpen = true;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -962,7 +974,9 @@ class _PosScreenState extends State<PosScreen> {
           );
         },
       ),
-    );
+    ).whenComplete(() {
+      _isCartBottomSheetOpen = false;
+    });
   }
 }
 

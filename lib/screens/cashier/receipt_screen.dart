@@ -153,7 +153,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         leading: canPop
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context, true),
               )
             : null,
       ),
@@ -313,7 +313,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pop(context, true),
                     icon: const Icon(Icons.close_rounded),
                     label: const Text("CLOSE RECEIPT"),
                     style: ElevatedButton.styleFrom(
