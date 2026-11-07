@@ -302,8 +302,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
-          const SizedBox(height: 24),
           _buildTopMetricCards(),
           const SizedBox(height: 28),
           _buildOverviewSection(),
@@ -312,23 +310,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    final dateStr = DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now());
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Inventory Management",
-          style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          dateStr,
-          style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildTopMetricCards() {
     final bool isDesktop = ResponsiveLayout.isDesktop(context);
