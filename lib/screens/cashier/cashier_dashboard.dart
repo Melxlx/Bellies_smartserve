@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/web_url_observer.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
 import '../../repositories/analytics_repository.dart';
@@ -98,8 +99,33 @@ class _CashierDashboardState extends State<CashierDashboard> {
     );
   }
 
+  String? _routeForSection(CashierSection section) {
+    switch (section) {
+      case CashierSection.dashboard:
+        return AppRoutes.cashierDashboard;
+      case CashierSection.pos:
+        return AppRoutes.staffPos;
+      case CashierSection.onlineOrders:
+        return AppRoutes.staffOnlineOrders;
+      case CashierSection.delivery:
+        return AppRoutes.staffDeliveries;
+      case CashierSection.orderHistory:
+        return AppRoutes.posOrders;
+      case CashierSection.receipts:
+        return '/staff/receipts';
+      case CashierSection.notifications:
+        return '/staff/notifications';
+      case CashierSection.profile:
+        return AppRoutes.staffProfile;
+    }
+  }
+
   void _selectSection(CashierSection section) {
     setState(() => _selectedSection = section);
+    final routeName = _routeForSection(section);
+    if (routeName != null) {
+      updateBrowserUrl(routeName);
+    }
     if (MediaQuery.sizeOf(context).width < 900 && Navigator.canPop(context)) {
       Navigator.pop(context);
     }

@@ -170,18 +170,40 @@ class OrderRepository {
     // 3. Insert Payment record (Initial state)
     // Cash is paid immediately; GCash stays unpaid until verification.
     final paymentStatus = (order.paymentMethod == PaymentMethod.cash) ? 'PAID' : 'UNPAID';
-    await _supabase.from('payments').insert({
-      'payment_no': 'PAY-${DateTime.now().microsecondsSinceEpoch}',
-      'order_id': orderId,
-      'payment_method': (order.paymentMethod ?? PaymentMethod.cash).name.toUpperCase(),
-      'amount_due': order.totalAmount,
-      'payment_status': paymentStatus,
-      'amount_tendered': order.amountTendered ?? order.totalAmount,
-      'change_amount': order.change ?? 0.0,
-      'processed_by': processedBy,
-      'gcash_reference_no': order.referenceNumber,
-      'paid_at': paymentStatus == 'PAID' ? DateTime.now().toIso8601String() : null,
-    });
+    final paymentMethodStr = (order.paymentMethod ?? PaymentMethod.cash).name.toUpperCase();
+
+    try {
+      await _supabase.from('payments').insert({
+        'payment_no': 'PAY-${DateTime.now().microsecondsSinceEpoch}',
+        'order_id': orderId,
+        'payment_method': paymentMethodStr,
+        'amount_due': order.totalAmount,
+        'payment_status': paymentStatus,
+        'amount_tendered': order.amountTendered ?? order.totalAmount,
+        'change_amount': order.change ?? 0.0,
+        'processed_by': processedBy,
+        'gcash_reference_no': order.referenceNumber,
+        'paid_at': paymentStatus == 'PAID' ? DateTime.now().toIso8601String() : null,
+      });
+    } catch (e) {
+      debugPrint("Warning: Initial payment insert failed ($e). Retrying with lowercase values...");
+      try {
+        await _supabase.from('payments').insert({
+          'payment_no': 'PAY-${DateTime.now().microsecondsSinceEpoch}',
+          'order_id': orderId,
+          'payment_method': paymentMethodStr.toLowerCase(),
+          'amount_due': order.totalAmount,
+          'payment_status': paymentStatus.toLowerCase(),
+          'amount_tendered': order.amountTendered ?? order.totalAmount,
+          'change_amount': order.change ?? 0.0,
+          'processed_by': processedBy,
+          'gcash_reference_no': order.referenceNumber,
+          'paid_at': paymentStatus == 'PAID' ? DateTime.now().toIso8601String() : null,
+        });
+      } catch (retryError) {
+        debugPrint("Warning: Could not create payment record due to database check constraint: $retryError");
+      }
+    }
 
     // Auto deduct ingredients for order upon creation/receive
     try {

@@ -2,6 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
+void updateBrowserUrl(String urlPath) {
+  try {
+    web.window.history.pushState(web.window.history.state, '', urlPath);
+  } catch (e) {
+    debugPrint("Error updating browser history: $e");
+  }
+}
+
 class WebUrlNavigatorObserver extends NavigatorObserver {
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
@@ -27,12 +35,8 @@ class WebUrlNavigatorObserver extends NavigatorObserver {
 
   void _updateUrl(Route<dynamic> route) {
     final name = route.settings.name;
-    if (name != null && name.isNotEmpty) {
-      try {
-        web.window.history.pushState(web.window.history.state, '', name);
-      } catch (e) {
-        debugPrint("Error updating browser history: $e");
-      }
+    if (name != null && name.isNotEmpty && name != '/') {
+      updateBrowserUrl(name);
     }
   }
 }

@@ -78,7 +78,13 @@ class _SplashScreenState extends State<SplashScreen> {
       if (session == null || session.user.isAnonymous) {
         if (!mounted) return;
         final requestedRoute = _getInitialRequestedRoute();
-        if (requestedRoute != null && (requestedRoute.startsWith('/menu') || requestedRoute.startsWith('/customer'))) {
+        if (requestedRoute != null && (
+            requestedRoute.startsWith('/menu') ||
+            requestedRoute.startsWith('/customer') ||
+            requestedRoute.startsWith('/checkout') ||
+            requestedRoute.startsWith('/tracking') ||
+            requestedRoute.startsWith('/reset-password')
+        )) {
           Navigator.pushReplacementNamed(context, requestedRoute);
         } else {
           Navigator.pushReplacementNamed(context, AppRoutes.customerMenu);
@@ -103,11 +109,24 @@ class _SplashScreenState extends State<SplashScreen> {
 
       // Preserve current URL route if user reloads / refreshes the page
       final requestedRoute = _getInitialRequestedRoute();
-      if (requestedRoute != null) {
+      if (requestedRoute != null && requestedRoute != '/' && requestedRoute != '/splash') {
         if (requestedRoute == '/staff' || requestedRoute == '/staff/') {
-          if (session.user.isAnonymous) {
-            Navigator.pushReplacementNamed(context, AppRoutes.staffLogin);
-            return;
+          switch (profile.role) {
+            case UserRole.owner:
+              Navigator.pushReplacementNamed(context, AppRoutes.staffDashboard);
+              return;
+            case UserRole.cashier:
+              Navigator.pushReplacementNamed(context, AppRoutes.cashierDashboard);
+              return;
+            case UserRole.kitchen:
+              Navigator.pushReplacementNamed(context, AppRoutes.staffKitchen);
+              return;
+            case UserRole.rider:
+              Navigator.pushReplacementNamed(context, AppRoutes.riderDashboard);
+              return;
+            default:
+              Navigator.pushReplacementNamed(context, AppRoutes.customerMenu);
+              return;
           }
         } else {
           Navigator.pushReplacementNamed(context, requestedRoute);

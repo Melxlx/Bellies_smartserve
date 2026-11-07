@@ -235,7 +235,23 @@ class AppRoutes {
       case ingredients:
         return _staffRoute(const InventoryScreen(), [UserRole.owner], routeSettings);
       case posOrders:
-        return _staffRoute(const PosScreen(), [UserRole.owner, UserRole.cashier], routeSettings);
+        return _staffRoute(
+          const CashierDashboard(initialSection: CashierSection.orderHistory),
+          [UserRole.owner, UserRole.cashier],
+          routeSettings,
+        );
+      case '/staff/receipts':
+        return _staffRoute(
+          const CashierDashboard(initialSection: CashierSection.receipts),
+          [UserRole.owner, UserRole.cashier],
+          routeSettings,
+        );
+      case '/staff/notifications':
+        return _staffRoute(
+          const CashierDashboard(initialSection: CashierSection.notifications),
+          [UserRole.owner, UserRole.cashier],
+          routeSettings,
+        );
       case systemInfo:
         return _staffRoute(const SystemInfoScreen(), [UserRole.owner], routeSettings);
       case activityLogs:
