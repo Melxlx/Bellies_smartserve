@@ -1053,7 +1053,13 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       }
     }
 
-    // Auto-sync healed profile back to Supabase if first_name was missing
+    // If first_name is still empty but last_name holds the name (e.g. "Lovely")
+    if (fetchedFirstName.isEmpty && fetchedLastName.isNotEmpty) {
+      fetchedFirstName = fetchedLastName;
+      fetchedLastName = '';
+    }
+
+    // Auto-sync healed profile back to Supabase if first_name was missing in DB
     final dbFirstName = profileData?['first_name']?.toString().trim();
     if (fetchedFirstName.isNotEmpty && (dbFirstName == null || dbFirstName.isEmpty)) {
       try {
@@ -1061,7 +1067,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
           'first_name': fetchedFirstName,
           if (fetchedMiddleName.isNotEmpty) 'middle_name': fetchedMiddleName,
           if (fetchedLastName.isNotEmpty) 'last_name': fetchedLastName,
-          'full_name': rawFullName.isNotEmpty ? rawFullName : [fetchedFirstName, fetchedMiddleName, fetchedLastName].where((s) => s.isNotEmpty).join(' '),
+          'full_name': [fetchedFirstName, fetchedMiddleName, fetchedLastName].where((s) => s.isNotEmpty).join(' '),
         };
         Supabase.instance.client.from('profiles').update(healedUpdates).eq('id', user.id);
       } catch (_) {}
