@@ -308,31 +308,40 @@ class OrderRepository {
     return _supabase
         .from('orders')
         .stream(primaryKey: ['id'])
-        .eq('status', 'completed')
         .order('created_at', ascending: false)
-        .limit(20)
         .asyncMap((data) async {
           final List<OrderModel> orders = [];
           for (var row in data) {
-            final itemsResponse = await _supabase
-                .from('order_items')
-                .select('*, products(*)')
-                .eq('order_id', row['id']);
-            
-            row['order_items'] = itemsResponse;
-
-            if (row['created_by'] != null) {
-              final creatorProfile = await _supabase
-                  .from('profiles')
-                  .select('full_name, role, position')
-                  .eq('id', row['created_by'])
-                  .maybeSingle();
-              if (creatorProfile != null) {
-                row['created_by_profile'] = creatorProfile;
+            final status = (row['status'] ?? '').toString().toLowerCase();
+            if (status == 'completed' ||
+                status == 'served' ||
+                status == 'delivered' ||
+                status == 'cancelled') {
+              try {
+                final itemsResponse = await _supabase
+                    .from('order_items')
+                    .select('*, products(*)')
+                    .eq('order_id', row['id']);
+                row['order_items'] = itemsResponse;
+              } catch (_) {
+                row['order_items'] = [];
               }
-            }
 
-            orders.add(OrderModel.fromJson(row));
+              if (row['created_by'] != null) {
+                try {
+                  final creatorProfile = await _supabase
+                      .from('profiles')
+                      .select('full_name, role, position')
+                      .eq('id', row['created_by'])
+                      .maybeSingle();
+                  if (creatorProfile != null) {
+                    row['created_by_profile'] = creatorProfile;
+                  }
+                } catch (_) {}
+              }
+
+              orders.add(OrderModel.fromJson(row));
+            }
           }
           return orders;
         });

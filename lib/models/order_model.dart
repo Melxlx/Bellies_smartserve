@@ -87,7 +87,7 @@ class OrderModel {
       items: (json['order_items'] as List? ?? [])
           .map((i) => OrderItem.fromJson(i))
           .toList(),
-      timestamp: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      timestamp: json['created_at'] != null ? DateTime.parse(json['created_at']).toLocal() : DateTime.now(),
       subtotal: (json['subtotal'] as num? ?? 0).toDouble(),
       deliveryFee: (json['delivery_fee'] as num? ?? 0).toDouble(),
       totalAmount: (json['total_amount'] as num? ?? 0).toDouble(),
@@ -107,7 +107,7 @@ class OrderModel {
       amountTendered: (json['amount_tendered'] as num?)?.toDouble(),
       change: (json['change_amount'] as num? ?? json['change'] as num? ?? 0).toDouble(),
       referenceNumber: json['reference_number'],
-      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : null,
+      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']).toLocal() : null,
       estimatedDeliveryTime: json['estimated_delivery_time'],
       riderId: json['rider_id']?.toString(),
       riderName: json['profiles']?['full_name']?.toString(),
@@ -194,6 +194,25 @@ class OrderModel {
       deliveryProofUrl: deliveryProofUrl ?? this.deliveryProofUrl,
     );
   }
+
+  String get itemsSummary {
+    if (items.isEmpty) return 'No items listed';
+    return items.map((i) {
+      final qty = i.quantity > 1 ? " x${i.quantity}" : " x1";
+      final instr = (i.instructions != null && i.instructions!.isNotEmpty) ? " (${i.instructions})" : "";
+      return "${i.product.name}$qty$instr";
+    }).join(", ");
+  }
+
+  String get relativeTime {
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+    if (diff.inSeconds < 45) return "Just now";
+    if (diff.inMinutes < 60) return "${diff.inMinutes}m ago";
+    if (diff.inHours < 24) return "${diff.inHours}h ago";
+    if (diff.inDays < 7) return "${diff.inDays}d ago";
+    return "";
+  }
 }
 
 class OrderItem {
@@ -208,10 +227,28 @@ class OrderItem {
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
+    final instr = json['item_instructions'] ?? json['instructions'];
+
+    ProductModel resolvedProduct;
+    if (json['product'] != null || json['products'] != null) {
+      resolvedProduct = ProductModel.fromJson(json['product'] ?? json['products']);
+    } else {
+      resolvedProduct = ProductModel(
+        id: json['product_id']?.toString() ?? '',
+        sku: '',
+        name: json['product_name_snapshot']?.toString() ?? json['product_name']?.toString() ?? 'Item',
+        sellingPrice: (json['unit_price'] as num? ?? json['selling_price'] as num? ?? 0).toDouble(),
+        estimatedCost: (json['unit_cost'] as num? ?? 0).toDouble(),
+        categoryId: '',
+        status: ProductStatus.available,
+        createdAt: DateTime.now(),
+      );
+    }
+
     return OrderItem(
-      product: ProductModel.fromJson(json['product'] ?? json['products']),
-      quantity: json['quantity'] ?? 1,
-      instructions: json['instructions'],
+      product: resolvedProduct,
+      quantity: (json['quantity'] as num? ?? 1).toInt(),
+      instructions: instr?.toString(),
     );
   }
 

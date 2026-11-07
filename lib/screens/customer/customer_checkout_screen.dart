@@ -14,6 +14,7 @@ import '../../models/order_model.dart';
 import '../../repositories/order_repository.dart';
 import '../../services/order_tracking_service.dart';
 import '../../services/delivery_fee_calculator.dart';
+import '../../services/receipt_ocr_service.dart';
 import '../../widgets/state_widgets.dart';
 import '../../widgets/app_modals.dart';
 import 'delivery_address_screen.dart';
@@ -250,11 +251,22 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     }
 
     final bool isCod = _selectedPaymentMethod == 'COD';
-    if (!isCod && !_agreedToOnlineTerms) {
-      await _showCheckoutError(
-        'Please agree to the Online Payment Terms & Conditions before proceeding with online payment.',
-      );
-      return;
+    if (!isCod) {
+      final inputRef = _refController.text.trim();
+      if (inputRef.isEmpty) {
+        await _showCheckoutError('Please enter your 13-digit GCash Reference Number.');
+        return;
+      }
+      if (!ReceiptOcrService.isValidGcashRefNumber(inputRef)) {
+        await _showCheckoutError('Invalid GCash Reference Number. Please enter a valid 10 to 13-digit reference number from your payment receipt.');
+        return;
+      }
+      if (!_agreedToOnlineTerms) {
+        await _showCheckoutError(
+          'Please agree to the Online Payment Terms & Conditions before proceeding with online payment.',
+        );
+        return;
+      }
     }
 
     setState(() {
@@ -816,34 +828,37 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       final base64Str = base64Encode(bytes);
       _draft.paymentProofUrl = 'data:image/jpeg;base64,$base64Str';
 
-      String extractedRef = '';
-      final name = file.name;
-      final digitMatch = RegExp(r'\d{13}').firstMatch(name);
-      if (digitMatch != null) {
-        extractedRef = digitMatch.group(0)!;
-      } else {
-        final hashInt = bytes.fold<int>(0, (prev, element) => prev + element) % 9000000000000 + 1000000000000;
-        extractedRef = hashInt.toString();
-      }
+      final extractedRef = await ReceiptOcrService.extractGcashReferenceNumber(
+        file.path,
+        fileName: file.name,
+      );
 
       if (mounted) {
         Navigator.pop(context); // close loading dialog
-        setState(() {
-          _refController.text = extractedRef;
-        });
-        AppModals.showSuccess(
-          context,
-          title: "Receipt Scanned!",
-          message: "GCash Reference Number successfully auto-filled:\n$extractedRef",
-        );
+        if (extractedRef != null && extractedRef.isNotEmpty) {
+          setState(() {
+            _refController.text = extractedRef;
+          });
+          AppModals.showSuccess(
+            context,
+            title: "Receipt Scanned!",
+            message: "GCash Reference Number successfully detected:\n$extractedRef",
+          );
+        } else {
+          AppModals.showError(
+            context,
+            title: "No Reference Number Found",
+            message: "No valid 10 to 13-digit GCash Reference Number was detected in this image.\n\nPlease upload a clear screenshot of your GCash payment receipt, or enter your 13-digit reference number manually.",
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
         AppModals.showError(
           context,
-          title: "OCR Scan Failed",
-          message: "Unable to read receipt image: $e",
+          title: "OCR Scan Error",
+          message: "Unable to process receipt image: $e",
         );
       }
     }

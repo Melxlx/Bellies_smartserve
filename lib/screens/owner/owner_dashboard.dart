@@ -47,6 +47,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
 
   StreamSubscription? _onlineOrdersSub;
   StreamSubscription? _activeDeliveriesSub;
+  StreamSubscription? _completedOrdersSub;
 
   @override
   void initState() {
@@ -59,6 +60,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
   void dispose() {
     _onlineOrdersSub?.cancel();
     _activeDeliveriesSub?.cancel();
+    _completedOrdersSub?.cancel();
     super.dispose();
   }
 
@@ -74,6 +76,9 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
     });
     _activeDeliveriesSub = _orderRepo.getActiveDeliveriesStream().listen((orders) {
       if (mounted) setState(() => _activeDeliveries = orders);
+    });
+    _completedOrdersSub = _orderRepo.getCompletedOrdersStream().listen((_) {
+      if (mounted) _loadDashboardData();
     });
   }
 

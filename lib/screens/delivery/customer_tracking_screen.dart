@@ -133,87 +133,98 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
   }
 
   Widget _buildMyOrdersSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            "MY ORDERS",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
-          ),
-        ),
-        SizedBox(
-          height: 90,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _customerOrders.length,
-            itemBuilder: (context, index) {
-              final order = _customerOrders[index];
-              final isSelected = _initialOrder?.id == order.id ||
-                  _trackingController.text.trim().toUpperCase() == order.trackingNumber.toUpperCase();
+    return StreamBuilder<List<OrderModel>>(
+      stream: _repo.streamCustomerOrders(),
+      initialData: _customerOrders,
+      builder: (context, snapshot) {
+        final orders = snapshot.data ?? _customerOrders;
+        if (orders.isEmpty) return const SizedBox.shrink();
 
-              final isCompleted = order.status.toLowerCase() == 'completed';
-              final isCancelled = order.status.toLowerCase() == 'cancelled';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(left: 4, bottom: 8),
+              child: Text(
+                "MY ORDERS (LIVE)",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
+              ),
+            ),
+            SizedBox(
+              height: 90,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: orders.length,
+                itemBuilder: (context, index) {
+                  final order = orders[index];
+                  final isSelected = _initialOrder?.id == order.id ||
+                      _trackingController.text.trim().toUpperCase() == order.trackingNumber.toUpperCase();
 
-              Color badgeColor = Colors.orange;
-              if (isCompleted) badgeColor = Colors.green;
-              if (isCancelled) badgeColor = Colors.red;
-              if (order.status.toLowerCase() == 'ready' || order.deliveryStatus == DeliveryStatus.outForDelivery) {
-                badgeColor = const Color(0xFFE91E63);
-              }
+                  final isCompleted = order.status.toLowerCase() == 'completed';
+                  final isCancelled = order.status.toLowerCase() == 'cancelled';
 
-              return InkWell(
-                onTap: () => _searchOrder(order.trackingNumber),
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  width: 200,
-                  margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFE91E63).withAlpha(20) : Colors.white,
+                  Color badgeColor = Colors.orange;
+                  if (isCompleted) badgeColor = Colors.green;
+                  if (isCancelled) badgeColor = Colors.red;
+                  if (order.status.toLowerCase() == 'ready' || order.deliveryStatus == DeliveryStatus.outForDelivery) {
+                    badgeColor = const Color(0xFFE91E63);
+                  }
+
+                  return InkWell(
+                    onTap: () => _searchOrder(order.trackingNumber),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? const Color(0xFFE91E63) : Colors.grey[200]!,
-                      width: isSelected ? 2 : 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+                    child: Container(
+                      width: 200,
+                      margin: const EdgeInsets.only(right: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFFE91E63).withAlpha(20) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFFE91E63) : Colors.grey[200]!,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            "Order #${order.queueNumber}",
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Order #${order.queueNumber}",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: badgeColor.withAlpha(30),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  order.status.toUpperCase(),
+                                  style: TextStyle(color: badgeColor, fontSize: 9, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: badgeColor.withAlpha(30),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              order.status.toUpperCase(),
-                              style: TextStyle(color: badgeColor, fontSize: 9, fontWeight: FontWeight.bold),
-                            ),
+                          Text(
+                            order.itemsSummary,
+                            style: TextStyle(color: Colors.grey[700], fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
-                      Text(
-                        "₱${order.totalAmount.toStringAsFixed(2)} • ${order.items.length} item(s)",
-                        style: TextStyle(color: Colors.grey[700], fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

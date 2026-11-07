@@ -237,17 +237,36 @@ class _RiderHistoryScreenState extends State<RiderHistoryScreen> {
                               ),
                               const SizedBox(height: 4),
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(Icons.fastfood_outlined, size: 16, color: Color(0xFFC2416C)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      order.itemsSummary,
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
                                 children: [
                                   const Icon(Icons.access_time, size: 16, color: Colors.grey),
                                   const SizedBox(width: 6),
-                                  Text(DateFormat('MMM d, yyyy • hh:mm a').format(order.timestamp), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                  Text(
+                                    "${DateFormat('MMM d, yyyy • hh:mm a').format(order.timestamp)}${order.relativeTime.isNotEmpty ? ' (${order.relativeTime})' : ''}",
+                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                  ),
                                 ],
                               ),
                               const Divider(height: 20),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text("${order.items.length} items", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                  Text("${order.items.length} item(s)", style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                   Text("₱${order.totalAmount.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFC2416C))),
                                 ],
                               ),

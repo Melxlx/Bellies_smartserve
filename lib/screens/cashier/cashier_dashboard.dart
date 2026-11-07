@@ -1646,7 +1646,9 @@ class _CashierOrderListPageState extends State<_CashierOrderListPage> {
   }
 
   Widget _buildOrderTile(OrderModel order) {
-    final formattedTime = DateFormat('MMM dd, yyyy • hh:mm a').format(order.timestamp);
+    final timeStr = DateFormat('MMM dd, yyyy • hh:mm a').format(order.timestamp);
+    final relTime = order.relativeTime.isNotEmpty ? " (${order.relativeTime})" : "";
+    final formattedTime = "$timeStr$relTime";
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1663,7 +1665,12 @@ class _CashierOrderListPageState extends State<_CashierOrderListPage> {
         ],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        onTap: () => Navigator.pushNamed(
+          context,
+          AppRoutes.receipt,
+          arguments: ReceiptArguments(order: order),
+        ),
         leading: CircleAvatar(
           backgroundColor: const Color(0xFFFFF0F5),
           child: Text(
@@ -1676,10 +1683,35 @@ class _CashierOrderListPageState extends State<_CashierOrderListPage> {
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13.5, color: const Color(0xFF0F172A)),
         ),
         subtitle: Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(
-            '$formattedTime • ${order.items.length} item(s) • ${order.serviceType.name.toUpperCase()}',
-            style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
+          padding: const EdgeInsets.only(top: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.fastfood_outlined, size: 14, color: Color(0xFFE91E63)),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      order.itemsSummary,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '$formattedTime • ${order.serviceType.name.toUpperCase()}',
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              ),
+            ],
           ),
         ),
         trailing: Row(

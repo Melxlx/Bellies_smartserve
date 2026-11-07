@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 
+import '../../core/app_routes.dart';
 import '../../models/order_model.dart';
 import '../../repositories/order_repository.dart';
 import '../../widgets/state_widgets.dart';
@@ -643,6 +644,11 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen>
               ),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.receipt,
+                  arguments: ReceiptArguments(order: order),
+                ),
                 leading: CircleAvatar(
                   backgroundColor: isPaid ? const Color(0xFFE8F5E9) : (isRejected ? const Color(0xFFFFEBEE) : const Color(0xFFFFF8E1)),
                   child: Icon(
@@ -654,7 +660,7 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      order.customerDetails?.name ?? "Customer",
+                      order.customerDetails?.name.isNotEmpty == true ? order.customerDetails!.name : "Customer",
                       style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14.5, color: const Color(0xFF0F172A)),
                     ),
                     Text(
@@ -667,6 +673,26 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.fastfood_outlined, size: 14, color: Color(0xFFE91E63)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            order.itemsSummary,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1E293B),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         Container(
@@ -700,7 +726,7 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      dateFormat.format(order.timestamp),
+                      "${dateFormat.format(order.timestamp)}${order.relativeTime.isNotEmpty ? ' (${order.relativeTime})' : ''}",
                       style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                     ),
                   ],

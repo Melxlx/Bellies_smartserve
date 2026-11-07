@@ -9,6 +9,7 @@ import '../../models/order_model.dart';
 import '../../models/payment_qr_model.dart';
 import '../../repositories/order_repository.dart';
 import '../../repositories/payment_qr_repository.dart';
+import '../../services/receipt_ocr_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   final OrderModel order;
@@ -82,13 +83,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
         return;
       }
     } else {
+      final inputRef = _referenceController.text.trim();
       final isCounterPos = widget.order.serviceType == ServiceType.dineIn || widget.order.serviceType == ServiceType.takeout;
-      if (!isCounterPos) {
-        if (_referenceController.text.isEmpty) {
+      if (!isCounterPos || inputRef.isNotEmpty) {
+        if (inputRef.isEmpty) {
           setState(() => _error = "Reference number required");
           return;
         }
-        if (!_agreedToOnlineTerms) {
+        if (!ReceiptOcrService.isValidGcashRefNumber(inputRef)) {
+          setState(() => _error = "Invalid GCash Reference Number (Must be 10 to 13 digits)");
+          return;
+        }
+        if (!isCounterPos && !_agreedToOnlineTerms) {
           setState(() => _error = "Please agree to the Online Payment Terms & Conditions");
           return;
         }
@@ -168,14 +174,36 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void _scanReceiptOcr() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (pickedFile != null) {
-      // Simulate OCR extraction of reference number
-      setState(() {
-        _referenceController.text = "9{DateTime.now().millisecondsSinceEpoch.toString().substring(3, 12)}";
-      });
-      if (mounted) {
+    if (pickedFile == null) return;
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Scanning receipt via OCR..."), duration: Duration(seconds: 1)),
+    );
+
+    final extractedRef = await ReceiptOcrService.extractGcashReferenceNumber(
+      pickedFile.path,
+      fileName: pickedFile.name,
+    );
+
+    if (mounted) {
+      if (extractedRef != null && extractedRef.isNotEmpty) {
+        setState(() {
+          _referenceController.text = extractedRef;
+          _error = null;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Receipt scanned successfully via OCR! Reference extracted."), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text("Receipt scanned successfully via OCR! Reference: $extractedRef"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("No valid 10-13 digit GCash Reference Number found in the selected image."),
+            backgroundColor: Colors.orange,
+          ),
         );
       }
     }

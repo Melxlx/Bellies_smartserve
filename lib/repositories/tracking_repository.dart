@@ -103,4 +103,36 @@ class TrackingRepository {
       return [];
     }
   }
+
+  // Real-time stream of all customer orders
+  Stream<List<OrderModel>> streamCustomerOrders() {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return Stream.value([]);
+
+    return _supabase
+        .from('orders')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .asyncMap((data) async {
+          final List<OrderModel> orders = [];
+          for (var row in data) {
+            final createdBy = row['created_by']?.toString();
+            final custEmail = row['customer_details']?['email']?.toString();
+            if (createdBy == user.id ||
+                (user.email != null && user.email!.isNotEmpty && custEmail == user.email)) {
+              try {
+                final itemsResponse = await _supabase
+                    .from('order_items')
+                    .select('*, products(*)')
+                    .eq('order_id', row['id']);
+                row['order_items'] = itemsResponse;
+              } catch (_) {
+                row['order_items'] = [];
+              }
+              orders.add(OrderModel.fromJson(row));
+            }
+          }
+          return orders;
+        });
+  }
 }
