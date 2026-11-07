@@ -21,7 +21,7 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
+      if (!_tabController.indexIsChanging && _selectedIndex != _tabController.index) {
         setState(() => _selectedIndex = _tabController.index);
       }
     });
@@ -36,11 +36,13 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isMobile = screenWidth < 600;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(115),
+        preferredSize: Size.fromHeight(isMobile ? 120 : 130),
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurface : Colors.white,
@@ -52,54 +54,77 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
             ),
           ),
           child: SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Row(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title Row
+                  Row(
                     children: [
                       const SmartBackButton(),
                       const SizedBox(width: 8),
-                      Text(
-                        "Inventory Management",
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : AppColors.textPrimary,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Inventory Management",
+                              style: GoogleFonts.poppins(
+                                fontSize: isMobile ? 18 : 22,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (!isMobile)
+                              Text(
+                                "Track stock levels, raw ingredients, and realtime movement logs",
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.grey.shade400 : AppColors.textSecondary,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: Container(
-                    height: 44,
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.black26 : const Color(0xFFF2F2F7),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        _buildSegmentTab(
-                          index: 0,
-                          label: "Stock Control",
-                          icon: Icons.inventory_2_outlined,
-                          isDark: isDark,
-                        ),
-                        _buildSegmentTab(
-                          index: 1,
-                          label: "Movement Logs",
-                          icon: Icons.history_toggle_off_outlined,
-                          isDark: isDark,
-                        ),
-                      ],
+
+                  // Segmented Control Pill Bar
+                  Align(
+                    alignment: isMobile ? Alignment.center : Alignment.centerLeft,
+                    child: Container(
+                      height: 42,
+                      width: isMobile ? double.infinity : 380,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.black26 : const Color(0xFFF2F2F7),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildSegmentTab(
+                            index: 0,
+                            label: "Stock Control",
+                            icon: Icons.inventory_2_outlined,
+                            isDark: isDark,
+                          ),
+                          _buildSegmentTab(
+                            index: 1,
+                            label: "Movement Logs",
+                            icon: Icons.history_toggle_off_outlined,
+                            isDark: isDark,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
