@@ -10,6 +10,7 @@ import 'dart:convert';
 
 import '../../core/app_routes.dart';
 import '../../core/responsive_layout.dart';
+import '../../core/utils/input_validators.dart';
 import '../../models/product_model.dart';
 import '../../models/category_model.dart';
 import '../../models/order_model.dart';
@@ -1267,24 +1268,13 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             TextFormField(
                               controller: firstNameController,
                               enabled: !isSaving,
-                              maxLength: 30,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
-                                TextInputFormatter.withFunction((oldVal, newVal) => newVal.text.startsWith(' ') ? oldVal : newVal),
-                              ],
+                              inputFormatters: InputValidators.nameFormatters,
                               decoration: _inputDecoration(
                                 label: "First Name *",
                                 icon: Icons.badge_outlined,
                                 hint: "e.g. Hallel",
                               ),
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) return "First name is required";
-                                if (v.trim().length < 2) return "Must be at least 2 characters";
-                                if (!RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(v.trim())) {
-                                  return "Only letters, spaces, and hyphens allowed";
-                                }
-                                return null;
-                              },
+                              validator: (v) => InputValidators.validateName(v, fieldName: "First Name"),
                             ),
                             const SizedBox(height: 12),
                             
@@ -1292,24 +1282,13 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             TextFormField(
                               controller: middleNameController,
                               enabled: !isSaving,
-                              maxLength: 30,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
-                                TextInputFormatter.withFunction((oldVal, newVal) => newVal.text.startsWith(' ') ? oldVal : newVal),
-                              ],
+                              inputFormatters: InputValidators.nameFormatters,
                               decoration: _inputDecoration(
                                 label: "Middle Name (Optional)",
                                 icon: Icons.badge_outlined,
                                 hint: "Middle Name",
                               ),
-                              validator: (v) {
-                                if (v != null && v.trim().isNotEmpty) {
-                                  if (!RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(v.trim())) {
-                                    return "Only letters, spaces, and hyphens allowed";
-                                  }
-                                }
-                                return null;
-                              },
+                              validator: (v) => InputValidators.validateName(v, fieldName: "Middle Name", isRequired: false),
                             ),
                             const SizedBox(height: 12),
                             
@@ -1317,50 +1296,28 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                             TextFormField(
                               controller: lastNameController,
                               enabled: !isSaving,
-                              maxLength: 30,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
-                                TextInputFormatter.withFunction((oldVal, newVal) => newVal.text.startsWith(' ') ? oldVal : newVal),
-                              ],
+                              inputFormatters: InputValidators.nameFormatters,
                               decoration: _inputDecoration(
                                 label: "Last Name *",
                                 icon: Icons.badge_outlined,
                                 hint: "e.g. Lovely",
                               ),
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) return "Last name is required";
-                                if (v.trim().length < 2) return "Must be at least 2 characters";
-                                if (!RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(v.trim())) {
-                                  return "Only letters, spaces, and hyphens allowed";
-                                }
-                                return null;
-                              },
+                              validator: (v) => InputValidators.validateName(v, fieldName: "Last Name"),
                             ),
                             const SizedBox(height: 12),
                             
-                            // Contact Number (Supports 09, 639, +639)
+                            // Contact Number
                             TextFormField(
                               controller: contactController,
                               enabled: !isSaving,
                               keyboardType: TextInputType.phone,
-                              maxLength: 16,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s()]')),
-                                TextInputFormatter.withFunction((oldVal, newVal) => newVal.text.startsWith(' ') ? oldVal : newVal),
-                              ],
+                              inputFormatters: InputValidators.phoneFormatters,
                               decoration: _inputDecoration(
                                 label: "Contact Number *",
                                 icon: Icons.phone_outlined,
-                                hint: "e.g. 09171234567, 639171234567, or +639171234567",
+                                hint: "e.g. 09171234567 or +639171234567",
                               ),
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) return "Contact number is required";
-                                final cleaned = v.replaceAll(RegExp(r'[\s()\-]'), '');
-                                if (!RegExp(r'^(09|639|\+639)\d{9}$').hasMatch(cleaned)) {
-                                  return "Enter valid PH mobile (e.g. 09171234567, 639171234567, or +639171234567)";
-                                }
-                                return null;
-                              },
+                              validator: (v) => InputValidators.validatePhoneNumber(v),
                             ),
                             const SizedBox(height: 12),
                             
@@ -1369,17 +1326,13 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                               controller: addressController,
                               enabled: !isSaving,
                               maxLines: 2,
-                              maxLength: 150,
+                              inputFormatters: InputValidators.addressFormatters,
                               decoration: _inputDecoration(
                                 label: "Delivery Address *",
                                 icon: Icons.location_on_outlined,
                                 hint: "Street, Barangay, City, Province",
                               ),
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) return "Delivery address is required";
-                                if (v.trim().length < 5) return "Please enter a complete address (min 5 chars)";
-                                return null;
-                              },
+                              validator: (v) => InputValidators.validateAddress(v),
                             ),
                           ],
                         ),

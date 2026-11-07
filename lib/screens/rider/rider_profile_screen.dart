@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/app_routes.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/utils/input_validators.dart';
 import '../../models/user_model.dart';
 import '../../repositories/rider_dashboard_repository.dart';
 import '../../widgets/state_widgets.dart';
@@ -55,7 +57,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       _avatarUrl = p.avatarUrl;
       _initControllers(p);
       if (mounted) setState(() => _isLoading = false);
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -91,7 +93,6 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     final path = file.path.toLowerCase();
     final mime = file.mimeType?.toLowerCase() ?? '';
 
-    // Validation: JPEG or PNG ONLY
     final allowedExts = ['.jpg', '.jpeg', '.png'];
     final hasValidExt = allowedExts.any((ext) => name.endsWith(ext) || path.endsWith(ext));
     final hasValidMime = mime == 'image/jpeg' || mime == 'image/png' || mime == 'image/jpg';
@@ -100,23 +101,22 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Invalid file format. Only JPEG (.jpg, .jpeg) and PNG (.png) images are accepted.'),
-          backgroundColor: Colors.red,
+          content: Text('Only JPG, JPEG, and PNG images are accepted for profile photo.'),
+          backgroundColor: AppColors.error,
         ),
       );
       return;
     }
 
-    // Validation: Max 5 MB
     final bytes = await file.readAsBytes();
-    const maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+    const maxSizeBytes = 5 * 1024 * 1024;
     if (bytes.length > maxSizeBytes) {
       final mbSize = (bytes.length / (1024 * 1024)).toStringAsFixed(1);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('File size ($mbSize MB) exceeds the 5 MB maximum limit. Please choose a smaller image.'),
-          backgroundColor: Colors.red,
+          content: Text('File size ($mbSize MB) exceeds 5 MB limit. Choose a smaller image.'),
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -141,7 +141,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not upload photo: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Could not upload photo: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -156,28 +156,30 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
 
-      final fName = _firstNameController.text.trim();
-      final lName = _lastNameController.text.trim();
+      final fName = InputValidators.sanitize(_firstNameController.text);
+      final lName = InputValidators.sanitize(_lastNameController.text);
       final fullName = "$fName $lName".trim();
+      final phone = InputValidators.sanitize(_phoneController.text);
 
       await _supabase.from('profiles').update({
         'full_name': fullName,
         'first_name': fName,
         'last_name': lName,
-        'contact_number': _phoneController.text.trim(),
+        'contact_number': phone,
         if (_avatarUrl != null) 'avatar_url': _avatarUrl,
+        'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', user.id);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Rider profile updated successfully!"), backgroundColor: Colors.green),
+        const SnackBar(content: Text("Rider profile updated successfully!"), backgroundColor: AppColors.success),
       );
       await _loadProfile();
       setState(() => _isEditing = false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error updating profile: $e"), backgroundColor: Colors.red),
+        SnackBar(content: Text("Error updating profile: $e"), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -191,7 +193,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.logout, color: Colors.red),
+            Icon(Icons.logout, color: AppColors.error),
             SizedBox(width: 8),
             Text("Log Out Rider App"),
           ],
@@ -205,7 +207,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
             child: const Text("LOG OUT"),
@@ -225,7 +227,10 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     if (_isLoading) return const LoadingState();
     if (_profile == null) return ErrorState(error: "Profile not found", onRetry: _loadProfile);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 680),
@@ -256,7 +261,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
       decoration: const BoxDecoration(
-        color: Color(0xFFC2416C),
+        color: AppColors.adminPrimary,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
       ),
       child: Column(
@@ -264,13 +269,13 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
           Stack(
             children: [
               CircleAvatar(
-                radius: 48,
+                radius: 50,
                 backgroundColor: Colors.white,
                 backgroundImage: _avatarUrl != null && _avatarUrl!.isNotEmpty ? NetworkImage(_avatarUrl!) : null,
                 child: _isUploading
-                    ? const CircularProgressIndicator(color: Color(0xFFC2416C))
+                    ? const CircularProgressIndicator(color: AppColors.adminPrimary)
                     : (_avatarUrl == null || _avatarUrl!.isEmpty
-                        ? const Icon(Icons.person, size: 52, color: Color(0xFFC2416C))
+                        ? const Icon(Icons.person, size: 52, color: AppColors.adminPrimary)
                         : null),
               ),
               if (_isEditing)
@@ -281,7 +286,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                     radius: 18,
                     backgroundColor: Colors.white,
                     child: IconButton(
-                      icon: const Icon(Icons.camera_alt, size: 16, color: Color(0xFFC2416C)),
+                      icon: const Icon(Icons.camera_alt_rounded, size: 16, color: AppColors.adminPrimary),
                       onPressed: _isUploading ? null : _pickPhoto,
                       tooltip: "Change Photo",
                     ),
@@ -301,7 +306,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
               label: const Text("EDIT PROFILE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFFC2416C),
+                foregroundColor: AppColors.adminPrimary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),
@@ -312,11 +317,16 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   }
 
   Widget _buildEditForm() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Card(
-        elevation: 1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade200),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Form(
@@ -327,98 +337,72 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
               children: [
                 Text(
                   "Edit Rider Profile",
-                  style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFFC2416C)),
+                  style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.adminPrimary),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   "Update your name and contact details below.",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: TextFormField(
                         controller: _firstNameController,
-                        enabled: !_isSaving,
-                        maxLength: 30,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
-                          DenyLeadingSpaceFormatter(),
-                        ],
+                        enabled: !_isSaving && !_isUploading,
+                        inputFormatters: InputValidators.nameFormatters,
                         decoration: const InputDecoration(
                           labelText: "First Name *",
-                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.person_outline_rounded, size: 18),
                           counterText: "",
                         ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'First name is required';
-                          if (v.trim().length < 2) return 'Min 2 characters';
-                          return null;
-                        },
+                        validator: (v) => InputValidators.validateName(v, fieldName: "First Name"),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: TextFormField(
                         controller: _lastNameController,
-                        enabled: !_isSaving,
-                        maxLength: 30,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
-                          DenyLeadingSpaceFormatter(),
-                        ],
+                        enabled: !_isSaving && !_isUploading,
+                        inputFormatters: InputValidators.nameFormatters,
                         decoration: const InputDecoration(
                           labelText: "Last Name *",
-                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.person_outline_rounded, size: 18),
                           counterText: "",
                         ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Last name is required';
-                          if (v.trim().length < 2) return 'Min 2 characters';
-                          return null;
-                        },
+                        validator: (v) => InputValidators.validateName(v, fieldName: "Last Name"),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 TextFormField(
                   initialValue: _profile!.email,
                   readOnly: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: "Email Address (Read-only)",
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.email_outlined, size: 18),
                     filled: true,
-                    fillColor: Color(0xFFF8FAFC),
+                    fillColor: isDark ? Colors.black26 : const Color(0xFFF8FAFC),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 TextFormField(
                   controller: _phoneController,
-                  enabled: !_isSaving,
-                  maxLength: 13,
+                  enabled: !_isSaving && !_isUploading,
                   keyboardType: TextInputType.phone,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-]')),
-                    DenyLeadingSpaceFormatter(),
-                  ],
+                  inputFormatters: InputValidators.phoneFormatters,
                   decoration: const InputDecoration(
                     labelText: "Contact Number *",
-                    border: OutlineInputBorder(),
-                    hintText: "e.g. 09171234567",
+                    prefixIcon: Icon(Icons.phone_iphone_rounded, size: 18),
+                    hintText: "09171234567",
                     counterText: "",
                   ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Contact number is required';
-                    final phone = v.trim().replaceAll(RegExp(r'[\s()\-]'), '');
-                    if (!RegExp(r'^(09|\+639)\d{9}$').hasMatch(phone)) {
-                      return 'Enter valid PH mobile (e.g. 09171234567)';
-                    }
-                    return null;
-                  },
+                  validator: (v) => InputValidators.validatePhoneNumber(v),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
                 Row(
                   children: [
                     Expanded(
@@ -426,21 +410,21 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                         onPressed: _isSaving ? null : _cancelEditing,
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                         child: const Text("CANCEL"),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: SizedBox(
                         height: 48,
                         child: ElevatedButton(
                           onPressed: _isSaving ? null : _saveProfile,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFC2416C),
+                            backgroundColor: AppColors.adminPrimary,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                           child: _isSaving
                               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
@@ -463,9 +447,9 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
-          _statItem("Deliveries", "48", Icons.local_shipping),
+          _statItem("Deliveries", "48", Icons.local_shipping_outlined),
           const SizedBox(width: 16),
-          _statItem("Vehicle", "Motorcycle", Icons.directions_bike),
+          _statItem("Vehicle", "Motorcycle", Icons.directions_bike_outlined),
         ],
       ),
     );
@@ -474,14 +458,15 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   Widget _statItem(String label, String value, IconData icon) {
     return Expanded(
       child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Icon(icon, color: const Color(0xFFD4AF37)),
+              Icon(icon, color: AppColors.accent),
               const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text(value, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(label, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12)),
             ],
           ),
         ),
@@ -493,12 +478,13 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Employee & Account Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text("Employee & Account Details", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
               const Divider(height: 24),
               _profileRow('Role', _profile!.role.name.toUpperCase()),
               _profileRow('Position', _profile!.position),
@@ -520,8 +506,8 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(label, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
+          Text(value, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
         ],
       ),
     );
@@ -532,29 +518,20 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       padding: const EdgeInsets.all(24.0),
       child: Column(
         children: [
-          ElevatedButton(
+          OutlinedButton.icon(
             onPressed: _logout,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[200],
-              foregroundColor: Colors.red,
-              elevation: 0,
-              minimumSize: const Size(double.infinity, 55),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: const Text("LOGOUT", style: TextStyle(fontWeight: FontWeight.bold)),
+            icon: const Icon(Icons.logout_rounded, size: 18),
+            label: Text("LOGOUT RIDER APP", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
-  }
-}
-
-class DenyLeadingSpaceFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    if (newValue.text.startsWith(' ')) {
-      return oldValue;
-    }
-    return newValue;
   }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/app_routes.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/utils/input_validators.dart';
 import '../../widgets/state_widgets.dart';
 
 class OwnerProfileScreen extends StatefulWidget {
@@ -64,7 +66,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
         }
       }
       if (mounted) setState(() => _isLoading = false);
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -77,7 +79,6 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     final path = file.path.toLowerCase();
     final mime = file.mimeType?.toLowerCase() ?? '';
 
-    // Validation: JPEG or PNG ONLY
     final allowedExts = ['.jpg', '.jpeg', '.png'];
     final hasValidExt = allowedExts.any((ext) => name.endsWith(ext) || path.endsWith(ext));
     final hasValidMime = mime == 'image/jpeg' || mime == 'image/png' || mime == 'image/jpg';
@@ -86,23 +87,22 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Invalid file format. Only JPEG (.jpg, .jpeg) and PNG (.png) images are accepted.'),
-          backgroundColor: Colors.red,
+          content: Text('Only JPG, JPEG, and PNG images are accepted for profile photo.'),
+          backgroundColor: AppColors.error,
         ),
       );
       return;
     }
 
-    // Validation: Max 5 MB
     final bytes = await file.readAsBytes();
-    const maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+    const maxSizeBytes = 5 * 1024 * 1024;
     if (bytes.length > maxSizeBytes) {
       final mbSize = (bytes.length / (1024 * 1024)).toStringAsFixed(1);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('File size ($mbSize MB) exceeds the 5 MB maximum limit. Please choose a smaller image.'),
-          backgroundColor: Colors.red,
+          content: Text('File size ($mbSize MB) exceeds 5 MB limit. Choose a smaller image.'),
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -127,7 +127,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not upload photo: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Could not upload photo: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -142,27 +142,29 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
 
-      final fName = _firstNameController.text.trim();
-      final lName = _lastNameController.text.trim();
+      final fName = InputValidators.sanitize(_firstNameController.text);
+      final lName = InputValidators.sanitize(_lastNameController.text);
       final fullName = "$fName $lName".trim();
+      final phone = InputValidators.sanitize(_phoneController.text);
 
       await _supabase.from('profiles').update({
         'full_name': fullName,
         'first_name': fName,
         'last_name': lName,
-        'contact_number': _phoneController.text.trim(),
+        'contact_number': phone,
         if (_avatarUrl != null) 'avatar_url': _avatarUrl,
+        'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', user.id);
 
       if (!mounted) return;
       setState(() => _isEditing = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Owner profile updated successfully!"), backgroundColor: Colors.green),
+        const SnackBar(content: Text("Owner profile updated successfully!"), backgroundColor: AppColors.success),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error updating profile: $e"), backgroundColor: Colors.red),
+        SnackBar(content: Text("Error updating profile: $e"), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -176,7 +178,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.logout_rounded, color: Colors.red),
+            Icon(Icons.logout_rounded, color: AppColors.error),
             SizedBox(width: 8),
             Text("Sign Out"),
           ],
@@ -185,7 +187,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("CANCEL")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
             child: const Text("SIGN OUT"),
           ),
@@ -201,10 +203,15 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
         leading: const SmartBackButton(),
-        title: Text("Owner Profile", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        title: Text("Owner Profile", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+        elevation: 0,
         actions: [
           if (!_isEditing)
             Padding(
@@ -214,9 +221,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                 icon: const Icon(Icons.edit_outlined, size: 16),
                 label: const Text("EDIT PROFILE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFC2416C),
+                  backgroundColor: AppColors.adminPrimary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -226,12 +233,15 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
           ? const LoadingState()
           : Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
+                constraints: const BoxConstraints(maxWidth: 620),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
                   child: Card(
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      side: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(28.0),
                       child: Form(
@@ -244,13 +254,13 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                               child: Stack(
                                 children: [
                                   CircleAvatar(
-                                    radius: 50,
-                                    backgroundColor: const Color(0xFFFFF0F5),
+                                    radius: 52,
+                                    backgroundColor: const Color(0xFFFFE4EE),
                                     backgroundImage: _avatarUrl != null && _avatarUrl!.isNotEmpty ? NetworkImage(_avatarUrl!) : null,
                                     child: _isUploading
-                                        ? const CircularProgressIndicator(color: Color(0xFFC2416C))
+                                        ? const CircularProgressIndicator(color: AppColors.adminPrimary)
                                         : (_avatarUrl == null || _avatarUrl!.isEmpty
-                                            ? const Icon(Icons.person, size: 50, color: Color(0xFFC2416C))
+                                            ? const Icon(Icons.person, size: 52, color: AppColors.adminPrimary)
                                             : null),
                                   ),
                                   if (_isEditing)
@@ -259,9 +269,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                       right: 0,
                                       child: CircleAvatar(
                                         radius: 18,
-                                        backgroundColor: const Color(0xFFC2416C),
+                                        backgroundColor: AppColors.adminPrimary,
                                         child: IconButton(
-                                          icon: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                                          icon: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
                                           onPressed: _isUploading ? null : _pickPhoto,
                                           tooltip: "Change Photo",
                                         ),
@@ -274,93 +284,66 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                             Center(
                               child: Text(
                                 "Owner / Administrator",
-                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: const Color(0xFFC2416C)),
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.adminPrimary),
                               ),
                             ),
                             const SizedBox(height: 28),
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
                                   child: TextFormField(
                                     controller: _firstNameController,
                                     readOnly: !_isEditing || _isSaving || _isLoading || _isUploading,
-                                    maxLength: 30,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
-                                      DenyLeadingSpaceFormatter(),
-                                    ],
-                                    decoration: InputDecoration(
-                                      labelText: "First Name",
-                                      border: const OutlineInputBorder(),
-                                      filled: !_isEditing || _isSaving || _isLoading || _isUploading,
-                                      fillColor: (_isEditing && !_isSaving && !_isLoading && !_isUploading) ? Colors.white : const Color(0xFFF8FAFC),
+                                    inputFormatters: InputValidators.nameFormatters,
+                                    decoration: const InputDecoration(
+                                      labelText: "First Name *",
+                                      prefixIcon: Icon(Icons.person_outline_rounded, size: 18),
                                       counterText: "",
                                     ),
-                                    validator: (v) {
-                                      if (v == null || v.trim().isEmpty) return 'Required';
-                                      if (v.trim().length < 2) return 'Min 2 chars';
-                                      return null;
-                                    },
+                                    validator: (v) => InputValidators.validateName(v, fieldName: "First Name"),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 14),
                                 Expanded(
                                   child: TextFormField(
                                     controller: _lastNameController,
                                     readOnly: !_isEditing || _isSaving || _isLoading || _isUploading,
-                                    maxLength: 30,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s'-]")),
-                                      DenyLeadingSpaceFormatter(),
-                                    ],
-                                    decoration: InputDecoration(
-                                      labelText: "Last Name",
-                                      border: const OutlineInputBorder(),
-                                      filled: !_isEditing || _isSaving || _isLoading || _isUploading,
-                                      fillColor: (_isEditing && !_isSaving && !_isLoading && !_isUploading) ? Colors.white : const Color(0xFFF8FAFC),
+                                    inputFormatters: InputValidators.nameFormatters,
+                                    decoration: const InputDecoration(
+                                      labelText: "Last Name *",
+                                      prefixIcon: Icon(Icons.person_outline_rounded, size: 18),
                                       counterText: "",
                                     ),
-                                    validator: (v) {
-                                      if (v == null || v.trim().isEmpty) return 'Required';
-                                      if (v.trim().length < 2) return 'Min 2 chars';
-                                      return null;
-                                    },
+                                    validator: (v) => InputValidators.validateName(v, fieldName: "Last Name"),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 18),
                             TextFormField(
                               initialValue: _email,
                               readOnly: true,
-                              decoration: const InputDecoration(labelText: "Email Address (Read-only)", border: OutlineInputBorder(), filled: true, fillColor: Color(0xFFF8FAFC)),
+                              decoration: InputDecoration(
+                                labelText: "Email Address (Read-only)",
+                                prefixIcon: const Icon(Icons.email_outlined, size: 18),
+                                filled: true,
+                                fillColor: isDark ? Colors.black26 : const Color(0xFFF8FAFC),
+                              ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 18),
                             TextFormField(
                               controller: _phoneController,
                               readOnly: !_isEditing || _isSaving || _isLoading || _isUploading,
-                              maxLength: 13,
                               keyboardType: TextInputType.phone,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-]')),
-                                DenyLeadingSpaceFormatter(),
-                              ],
-                              decoration: InputDecoration(
-                                labelText: "Contact Number",
-                                border: const OutlineInputBorder(),
-                                filled: !_isEditing || _isSaving || _isLoading || _isUploading,
-                                fillColor: (_isEditing && !_isSaving && !_isLoading && !_isUploading) ? Colors.white : const Color(0xFFF8FAFC),
+                              inputFormatters: InputValidators.phoneFormatters,
+                              decoration: const InputDecoration(
+                                labelText: "Contact Number *",
+                                prefixIcon: Icon(Icons.phone_iphone_rounded, size: 18),
+                                hintText: "09171234567",
                                 counterText: "",
                               ),
-                              validator: (v) {
-                                if (v != null && v.trim().isNotEmpty) {
-                                  final phone = v.trim().replaceAll(RegExp(r'[\s()\-]'), '');
-                                  if (!RegExp(r'^(09|\+639)\d{9}$').hasMatch(phone)) {
-                                    return 'Enter valid PH mobile (e.g. 09171234567)';
-                                  }
-                                }
-                                return null;
-                              },
+                              validator: (v) => InputValidators.validatePhoneNumber(v),
                             ),
                             const SizedBox(height: 32),
                             if (_isEditing) ...[
@@ -370,7 +353,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                     child: OutlinedButton(
                                       onPressed: _isSaving ? null : () {
                                         setState(() => _isEditing = false);
-                                        _loadProfile(); // reset changes
+                                        _loadProfile();
                                       },
                                       style: OutlinedButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -379,19 +362,23 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                       child: const Text("CANCEL"),
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
+                                  const SizedBox(width: 14),
                                   Expanded(
                                     child: SizedBox(
-                                      height: 50,
+                                      height: 48,
                                       child: ElevatedButton(
                                         onPressed: _isSaving ? null : _saveProfile,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFFC2416C),
+                                          backgroundColor: AppColors.adminPrimary,
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                         ),
                                         child: _isSaving
-                                            ? const CircularProgressIndicator(color: Colors.white)
+                                            ? const SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                              )
                                             : Text("SAVE CHANGES", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                                       ),
                                     ),
@@ -402,13 +389,13 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                               OutlinedButton.icon(
                                 onPressed: _logout,
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                  side: const BorderSide(color: Colors.red),
+                                  foregroundColor: AppColors.error,
+                                  side: const BorderSide(color: AppColors.error),
                                   padding: const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 ),
-                                icon: const Icon(Icons.logout_rounded),
-                                label: const Text("SIGN OUT", style: TextStyle(fontWeight: FontWeight.bold)),
+                                icon: const Icon(Icons.logout_rounded, size: 18),
+                                label: Text("SIGN OUT", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                               ),
                             ],
                           ],
@@ -420,15 +407,5 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
               ),
             ),
     );
-  }
-}
-
-class DenyLeadingSpaceFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    if (newValue.text.startsWith(' ')) {
-      return oldValue;
-    }
-    return newValue;
   }
 }
