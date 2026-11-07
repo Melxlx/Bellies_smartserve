@@ -294,13 +294,13 @@ class ProductsScreenState extends State<ProductsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 120,
+            height: 105,
             width: double.infinity,
             color: const Color(0xFFFAFAFA),
             child: Center(
               child: SizedBox(
-                height: 100,
-                width: 100,
+                height: 85,
+                width: 85,
                 child: ProductImage(
                   path: product.imagePath ?? '',
                   productName: product.name,

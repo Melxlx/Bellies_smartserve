@@ -2617,9 +2617,9 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       sliver: SliverGrid(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: ResponsiveLayout.isMobile(context) ? 2 : (ResponsiveLayout.isTablet(context) ? 3 : 4),
-          crossAxisSpacing: 20,
-          mainAxisSpacing: 24,
-          childAspectRatio: 0.72,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 20,
+          childAspectRatio: ResponsiveLayout.isMobile(context) ? 0.78 : 0.82,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) => _buildProductCard(filtered[index]),
@@ -2676,7 +2676,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
-                  height: 290,
+                  height: 235,
                   child: ListView.builder(
                     controller: controller,
                     scrollDirection: Axis.horizontal,
@@ -2685,7 +2685,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                     itemBuilder: (context, pIndex) {
                       final product = catProducts[pIndex];
                       return Container(
-                        width: 200,
+                        width: 175,
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         child: _buildProductCard(product),
                       );
@@ -2708,29 +2708,29 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey[100]!),
         boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 12, offset: const Offset(0, 6)),
+          BoxShadow(color: Colors.black.withAlpha(6), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 130,
+            height: 110,
             width: double.infinity,
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(6.0),
             decoration: const BoxDecoration(
               color: Color(0xFFFAFAFA),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Stack(
               children: [
                 Center(
                   child: SizedBox(
-                    height: 110,
-                    width: 110,
+                    height: 90,
+                    width: 90,
                     child: ProductImage(
                       path: product.imagePath ?? '',
                       productName: product.name,
@@ -2743,13 +2743,13 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                     top: 2,
                     left: 2,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(6)),
                       child: Row(
                         children: [
-                          const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 10),
-                          const SizedBox(width: 4),
-                          Text("BEST SELLER", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 8)),
+                          const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 9),
+                          const SizedBox(width: 3),
+                          Text("BEST SELLER", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 7.5)),
                         ],
                       ),
                     ),
@@ -2759,7 +2759,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.black38,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       alignment: Alignment.center,
                       child: const Text("SOLD OUT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
@@ -2769,20 +2769,20 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   product.name,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13.5, color: Colors.black87),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   product.description ?? "Freshly prepared meal",
-                  style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 9.5),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -2792,12 +2792,12 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                   children: [
                     Text(
                       "₱${product.sellingPrice.toStringAsFixed(0)}",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: Colors.black87, fontSize: 15),
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: Colors.black87, fontSize: 14.5),
                     ),
                     InkWell(
                       onTap: (isOutOfStock || _addingProductIds.contains(product.id)) ? null : () => _addToCart(product),
                       child: Container(
-                        height: 30,
+                        height: 28,
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
                           color: (isOutOfStock || _addingProductIds.contains(product.id)) ? Colors.grey[300] : const Color(0xFFFFD700),
@@ -2808,14 +2808,14 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                           children: [
                             if (_addingProductIds.contains(product.id))
                               const SizedBox(
-                                width: 14,
-                                height: 14,
+                                width: 12,
+                                height: 12,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black87),
                               )
                             else ...[
-                              Text("Add", style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 11)),
+                              Text("Add", style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 10.5)),
                               const SizedBox(width: 2),
-                              const Icon(Icons.add_rounded, color: Colors.black87, size: 14),
+                              const Icon(Icons.add_rounded, color: Colors.black87, size: 13),
                             ],
                           ],
                         ),
