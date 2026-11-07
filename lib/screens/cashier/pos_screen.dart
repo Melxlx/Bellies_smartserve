@@ -339,16 +339,9 @@ class _PosScreenState extends State<PosScreen> {
       customerDetails: null,
     );
 
-    final result = await Navigator.pushNamed(context, AppRoutes.payment, arguments: tempOrder);
-    if (result != null) {
+    await Navigator.pushNamed(context, AppRoutes.payment, arguments: tempOrder);
+    if (mounted) {
       setState(() => _cart.clear());
-      if (result is OrderModel && mounted) {
-        await Navigator.pushNamed(
-          context,
-          AppRoutes.receipt,
-          arguments: ReceiptArguments(order: result),
-        );
-      }
     }
   }
 
