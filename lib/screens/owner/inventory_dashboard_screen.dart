@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../models/inventory_movement_model.dart';
 import '../../models/product_model.dart';
 import '../../repositories/inventory_repository.dart';
@@ -181,51 +183,163 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     if (_history.isEmpty) {
       return const EmptyState(message: 'No inventory movements recorded.');
     }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: _history.length,
       itemBuilder: (context, index) {
         final movement = _history[index];
         final isStockIn = movement.movementType == MovementType.stockIn;
-        final color = isStockIn
-            ? Colors.green[700]!
-            : (movement.rawMovementType == 'ORDER_DEDUCTION'
-                ? const Color(0xFFE91E63)
-                : Colors.orange[800]!);
+        final isOrderDeduction = movement.rawMovementType == 'ORDER_DEDUCTION';
 
-        return Card(
-          elevation: 1,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        final Color themeColor = isStockIn
+            ? const Color(0xFF34C759) // iOS Emerald Green
+            : (isOrderDeduction
+                ? const Color(0xFFD6336C) // Bellie's Rose Pink
+                : const Color(0xFFFF9500)); // iOS Amber Orange
+
+        final Color bgTint = isStockIn
+            ? (isDark ? const Color(0xFF1B382B) : const Color(0xFFE8F9ED))
+            : (isOrderDeduction
+                ? (isDark ? const Color(0xFF3B1E29) : const Color(0xFFFFEBF0))
+                : (isDark ? const Color(0xFF3A2D1A) : const Color(0xFFFFF8E7)));
+
+        final IconData movementIcon = isStockIn
+            ? Icons.arrow_downward_rounded
+            : (isOrderDeduction
+                ? Icons.shopping_bag_outlined
+                : Icons.arrow_upward_rounded);
+
+        return Container(
           margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              backgroundColor: color.withAlpha(25),
-              child: Icon(
-                isStockIn ? Icons.add_rounded : Icons.remove_rounded,
-                color: color,
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark ? Colors.white12 : Colors.grey.shade200,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
-            ),
-            title: Text(
-              '${movement.productCode.isNotEmpty ? "${movement.productCode} - " : ""}${movement.productName}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            subtitle: Text(
-              '${movement.formattedMovementType} • ${movement.reason ?? "No reason"}\n'
-              '${movement.userName ?? "System"} • '
-              '${DateFormat("MMM dd, yyyy hh:mm a").format(movement.createdAt)}',
-              style: const TextStyle(fontSize: 12, height: 1.4),
-            ),
-            isThreeLine: true,
-            trailing: Text(
-              '${isStockIn ? "+" : "-"}${_formatQty(movement.quantity)}\n'
-              '${_formatQty(movement.previousQuantity)} → ${_formatQty(movement.updatedQuantity)}',
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: color,
-                fontSize: 13,
-              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // iOS Squircle Icon Badge
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: bgTint,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(movementIcon, color: themeColor, size: 24),
+                ),
+                const SizedBox(width: 14),
+
+                // Main Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${movement.productCode.isNotEmpty ? "${movement.productCode} - " : ""}${movement.productName}',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: themeColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              movement.formattedMovementType,
+                              style: GoogleFonts.poppins(
+                                color: themeColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                          if (movement.reason != null && movement.reason!.isNotEmpty)
+                            Text(
+                              '• ${movement.reason}',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: isDark ? Colors.grey.shade400 : AppColors.textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${movement.displayUserName} • ${DateFormat("MMM dd, yyyy  hh:mm a").format(movement.createdAt)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // Trailing Quantity Pill & Transition
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: themeColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${isStockIn ? "+" : "-"}${_formatQty(movement.quantity)}',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          color: themeColor,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_formatQty(movement.previousQuantity)} → ${_formatQty(movement.updatedQuantity)}',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         );

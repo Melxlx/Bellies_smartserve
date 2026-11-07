@@ -73,6 +73,18 @@ class InventoryMovementModel {
     }
   }
 
+  String get displayUserName {
+    final name = userName?.trim();
+    if (name == null || name.isEmpty) return 'System';
+    if (RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(name)) {
+      if (rawMovementType == 'ORDER_DEDUCTION') {
+        return 'POS System';
+      }
+      return 'Staff';
+    }
+    return name;
+  }
+
   // Compatibility aliases for existing activity-log consumers.
   String get ingredientName => productName;
   String get ingredientId => productId;
