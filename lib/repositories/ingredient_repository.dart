@@ -452,15 +452,16 @@ class IngredientRepository {
     required double quantity,
     String? reason,
   }) async {
-    try {
-      final typeStr = switch (movementType) {
-        MovementType.stockIn => 'STOCK_IN',
-        MovementType.stockOut => 'MANUAL_STOCK_OUT',
-        MovementType.wastage => 'WASTAGE',
-        MovementType.damaged => 'DAMAGED',
-      };
+    final typeStr = switch (movementType) {
+      MovementType.stockIn => 'STOCK_IN',
+      MovementType.stockOut => 'MANUAL_STOCK_OUT',
+      MovementType.wastage => 'WASTAGE',
+      MovementType.damaged => 'DAMAGED',
+    };
 
-      if (_isUuid(ingredientId)) {
+    bool rpcSuccess = false;
+    if (_isUuid(ingredientId)) {
+      try {
         await _supabase.rpc(
           'record_ingredient_inventory_movement',
           params: {
@@ -470,10 +471,17 @@ class IngredientRepository {
             'p_reason': reason,
           },
         );
-      } else {
+        rpcSuccess = true;
+      } catch (rpcError) {
+        debugPrint("Warning: RPC 'record_ingredient_inventory_movement' failed ($rpcError). Executing direct DB movement fallback...");
+      }
+    }
+
+    if (!rpcSuccess) {
+      try {
         final ing = await _supabase
             .from('ingredients')
-            .select('current_quantity')
+            .select('id, name, code, current_quantity')
             .eq('id', ingredientId)
             .maybeSingle();
 
@@ -481,6 +489,8 @@ class IngredientRepository {
           final current = (ing['current_quantity'] as num? ?? 0).toDouble();
           final delta = movementType == MovementType.stockIn ? quantity : -quantity;
           final updated = (current + delta).clamp(0.0, double.infinity);
+          final user = _supabase.auth.currentUser;
+          final userName = user?.email ?? 'Staff';
 
           await _supabase
               .from('ingredients')
@@ -489,13 +499,38 @@ class IngredientRepository {
                 'updated_at': DateTime.now().toIso8601String(),
               })
               .eq('id', ingredientId);
+
+          try {
+            await _supabase.from('inventory_movements').insert({
+              'ingredient_id': ingredientId,
+              'product_id': ingredientId,
+              'product_code': ing['code'] ?? '',
+              'product_name': ing['name'] ?? '',
+              'movement_type': typeStr,
+              'quantity': quantity,
+              'previous_quantity': current,
+              'updated_quantity': updated,
+              'new_quantity': updated,
+              'reference_type': typeStr,
+              'performed_by': userName,
+              'reason': reason,
+              'user_id': user?.id,
+              'user_name': userName,
+              'created_at': DateTime.now().toIso8601String(),
+            });
+          } catch (mError) {
+            debugPrint("Warning: Direct insert into inventory_movements failed: $mError");
+          }
         }
+      } catch (e) {
+        debugPrint("Error in direct ingredient movement fallback: $e");
+        rethrow;
       }
-      await checkProductAvailabilityFromInventory();
-    } catch (e) {
-      debugPrint("Error recording ingredient movement: $e");
-      rethrow;
     }
+
+    try {
+      await checkProductAvailabilityFromInventory();
+    } catch (_) {}
   }
 
   Future<void> toggleActive(String id, bool isActive) async {
