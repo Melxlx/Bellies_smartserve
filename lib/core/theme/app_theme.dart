@@ -31,20 +31,40 @@ class AppTheme {
         bodyLarge: GoogleFonts.inter(color: AppColors.textPrimary),
         bodyMedium: GoogleFonts.inter(color: AppColors.textSecondary),
       ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+        ),
+        labelStyle: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          minimumSize: const Size(64, 52),
+          minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           elevation: 0,
+          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.white,
         elevation: 0,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(color: Colors.grey.shade200, width: 1),
@@ -52,7 +72,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: const Color(0xFF1C1C1E),
         contentTextStyle: GoogleFonts.poppins(
           color: Colors.white,
           fontSize: 13,

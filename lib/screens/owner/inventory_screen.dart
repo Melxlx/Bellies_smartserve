@@ -29,6 +29,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
   int _itemsPerPage = 10;
   String? _error;
 
+  static String _formatStockQuantity(double qty) {
+    if (qty == qty.roundToDouble()) {
+      return qty.toInt().toString();
+    }
+    return qty.toStringAsFixed(1);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -216,7 +223,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       return 'Enter a quantity greater than zero';
                     }
                     if (selectedType != MovementType.stockIn && qty > ingredient.currentQuantity) {
-                      return 'Cannot deduct more than current stock (${ingredient.currentQuantity})';
+                      return 'Cannot deduct more than current stock (${_formatStockQuantity(ingredient.currentQuantity)})';
                     }
                     return null;
                   },
@@ -684,7 +691,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             ),
                             DataCell(
                               Text(
-                                '${ingredient.currentQuantity.toStringAsFixed(0)} ${ingredient.unit.name.toLowerCase()}',
+                                '${_formatStockQuantity(ingredient.currentQuantity)} ${ingredient.unit.name.toLowerCase()}',
                                 style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                             ),

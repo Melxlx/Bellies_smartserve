@@ -218,8 +218,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             ),
             isThreeLine: true,
             trailing: Text(
-              '${isStockIn ? "+" : "-"}${movement.quantity.toStringAsFixed(0)}\n'
-              '${movement.previousQuantity.toStringAsFixed(0)} → ${movement.updatedQuantity.toStringAsFixed(0)}',
+              '${isStockIn ? "+" : "-"}${_formatQty(movement.quantity)}\n'
+              '${_formatQty(movement.previousQuantity)} → ${_formatQty(movement.updatedQuantity)}',
               textAlign: TextAlign.end,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -231,6 +231,13 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         );
       },
     );
+  }
+
+  static String _formatQty(double qty) {
+    if (qty == qty.roundToDouble()) {
+      return qty.toInt().toString();
+    }
+    return qty.toStringAsFixed(1);
   }
 
   String _statusLabel(InventoryStatus status) {
