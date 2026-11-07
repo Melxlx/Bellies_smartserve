@@ -75899,8 +75899,8 @@ $0(){var s=this.a
 return s.r.$1(s.c+1)},
 $S:0}
 A.a0G.prototype={
-aLS(){var s,r,q="assets/images/bilao_pancit.png",p=this.d
-if(p!=null&&p.length!==0){s=p.toLowerCase()
+aLS(){var s,r,q="assets/images/bilao_pancit.png",p="rice",o=this.d
+if(o!=null&&o.length!==0){s=o.toLowerCase()
 if(B.b.m(s,"bilao"))return q
 if(B.b.m(s,"tapsilog"))return"assets/images/Tapsilog.png"
 if(B.b.m(s,"tocilog"))return"assets/images/Tocilog.png"
@@ -75920,12 +75920,12 @@ if(B.b.m(s,"plain lugaw"))return"assets/images/Plain_Lugaw.png"
 if(B.b.m(s,"lugaw with egg"))return"assets/images/Lugaw_with_Egg.png"
 if(B.b.m(s,"goto"))return"assets/images/Goto.png"
 if(B.b.m(s,"lugaw"))return"assets/images/Lugaw.png"
-p=B.b.m(s,"pares")
-if(p&&B.b.m(s,"rice"))return"assets/images/pares_rice.png"
-if(p)return"assets/images/pares.png"
-p=B.b.m(s,"mami")
-if(p&&B.b.m(s,"rice"))return"assets/images/mami_rice.png"
-if(p)return"assets/images/mami.png"
+o=B.b.m(s,"pares")
+if(o&&B.b.m(s,p))return"assets/images/pares_rice.png"
+if(o)return"assets/images/pares.png"
+o=B.b.m(s,"mami")
+if(o&&B.b.m(s,p))return"assets/images/mami_rice.png"
+if(o)return"assets/images/mami.png"
 if(B.b.m(s,"adobo"))return"assets/images/Adobo.png"
 if(B.b.m(s,"buttered chicken"))return"assets/images/Buttered_Chicken_Wings.png"
 if(B.b.m(s,"buffalo"))return"assets/images/BuffaloWings.png"
@@ -75960,13 +75960,17 @@ if(B.b.m(s,"royal"))return"assets/images/royal.png"
 if(B.b.m(s,"latte"))return"assets/images/Spanish_Latte.png"
 if(B.b.m(s,"americano"))return"assets/images/Americano.png"
 if(B.b.m(s,"matcha"))return"assets/images/Matcha.png"
+if(B.b.m(s,"fried rice")||B.b.m(s,"sinangag")||B.b.m(s,"chao fan")||B.b.m(s,"garlic rice"))return"assets/images/fried_rice.png"
+o=!0
+if(!B.b.m(s,"plain rice"))if(!B.b.m(s,"extra rice"))if(!B.b.m(s,"steamed rice"))if(!B.b.m(s,"kanin"))o=B.b.m(s,p)
+if(o)return"assets/images/plain_rice.png"
 if(B.b.m(s,"egg"))return"assets/images/BoiledEgg.png"
 if(B.b.m(s,"tokwa"))return"assets/images/Tokwa.png"
 if(B.b.m(s,"toge"))return"assets/images/Lumpiang_Toge.png"
 if(B.b.m(s,"crabstick"))return"assets/images/crabstick.png"
 if(B.b.m(s,"gyoza"))return"assets/images/gyoza.png"
-p=B.b.m(s,"mix ball")
-if(p||p)return"assets/images/mixball.png"
+o=B.b.m(s,"mix ball")
+if(o||o)return"assets/images/mixball.png"
 if(B.b.m(s,"cheese"))return"assets/images/cheese.png"}r=B.b.J(this.c)
 if(r.length!==0){if(B.b.aZ(r,"http")||B.b.aZ(r,"assets/"))return r
 return"assets/images/"+r}return""},

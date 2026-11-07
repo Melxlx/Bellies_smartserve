@@ -85,6 +85,9 @@ class ProductImage extends StatelessWidget {
       if (name.contains('americano')) return 'assets/images/Americano.png';
       if (name.contains('matcha')) return 'assets/images/Matcha.png';
 
+      if (name.contains('fried rice') || name.contains('sinangag') || name.contains('chao fan') || name.contains('garlic rice')) return 'assets/images/fried_rice.png';
+      if (name.contains('plain rice') || name.contains('extra rice') || name.contains('steamed rice') || name.contains('kanin') || (name.contains('rice') && !name.contains('pares') && !name.contains('mami'))) return 'assets/images/plain_rice.png';
+
       if (name.contains('egg')) return 'assets/images/BoiledEgg.png';
       if (name.contains('tokwa')) return 'assets/images/Tokwa.png';
       if (name.contains('toge')) return 'assets/images/Lumpiang_Toge.png';

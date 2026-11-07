@@ -135,6 +135,8 @@ class SampleData {
     ProductModel(id: 'P905', sku: 'A-CHS', name: 'Cheese', categoryId: 'Add-ons', sellingPrice: 15.0, estimatedCost: 7.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/korean_noodles.png'),
     ProductModel(id: 'P906', sku: 'A-CRB', name: 'Crabstick', categoryId: 'Add-ons', sellingPrice: 10.0, estimatedCost: 5.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/korean_noodles.png'),
     ProductModel(id: 'P907', sku: 'A-MIX', name: 'Mix Balls (3 pcs)', categoryId: 'Add-ons', sellingPrice: 20.0, estimatedCost: 10.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/korean_noodles.png'),
+    ProductModel(id: 'P908', sku: 'A-PLN-RICE', name: 'Plain Rice', categoryId: 'Add-ons', sellingPrice: 15.0, estimatedCost: 7.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/plain_rice.png'),
+    ProductModel(id: 'P909', sku: 'A-FRD-RICE', name: 'Fried Rice', categoryId: 'Add-ons', sellingPrice: 20.0, estimatedCost: 10.0, status: ProductStatus.available, createdAt: DateTime.now(), imagePath: 'assets/images/fried_rice.png'),
   ];
 
   static Map<String, double> salesOverview = {'Daily': 0, 'Weekly': 0, 'Monthly': 0};
