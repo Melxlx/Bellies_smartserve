@@ -56,6 +56,7 @@ class ProductImage extends StatelessWidget {
       if (name.contains('bihon')) return 'assets/images/Pancit_Bihon.png';
       if (name.contains('canton')) return 'assets/images/Pancit_Canton.png';
       if (name.contains('miki')) return 'assets/images/Pancit_Miki.png';
+      if (name.contains('pancit')) return 'assets/images/bilao_pancit.png';
 
       if (name.contains('pastilog')) return 'assets/images/Pastilog.png';
       if (name.contains('siomai')) return 'assets/images/Fried_Siomai_Silog.png';

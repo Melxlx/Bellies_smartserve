@@ -1805,12 +1805,29 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                   } else if (name.contains('add') || name.contains('on')) {
                     imgPath = 'assets/images/adds-on.png';
                     catIcon = Icons.add_circle_outline_rounded;
+                  } else if (name.contains('pancit') || name.contains('bihon') || name.contains('canton')) {
+                    imgPath = 'assets/images/bilao_pancit.png';
+                    catIcon = Icons.dinner_dining_rounded;
+                  } else if (name.contains('silog')) {
+                    imgPath = 'assets/images/Tapsilog.png';
+                    catIcon = Icons.egg_outlined;
+                  } else if (name.contains('student')) {
+                    imgPath = 'assets/images/Fried_Siomai_Silog.png';
+                    catIcon = Icons.school_rounded;
+                  } else if (name.contains('noodle') || name.contains('ramen') || name.contains('korean')) {
+                    imgPath = 'assets/images/korean_noodles.png';
+                    catIcon = Icons.ramen_dining_rounded;
+                  } else if (name.contains('lugaw') || name.contains('goto')) {
+                    imgPath = 'assets/images/Lugaw.png';
+                    catIcon = Icons.soup_kitchen_rounded;
+                  } else if (name.contains('pares') || name.contains('mami')) {
+                    imgPath = 'assets/images/pares_rice.png';
+                    catIcon = Icons.rice_bowl_rounded;
                   } else {
                     final catProd = _products.firstWhere((p) => p.categoryId == cat.id, orElse: () => _products.first);
-                    imgPath = catProd.imagePath ?? imgPath;
-                    
-                    if (name.contains('silog')) catIcon = Icons.egg_outlined;
-                    if (name.contains('noodle')) catIcon = Icons.ramen_dining_rounded;
+                    imgPath = (catProd.imagePath != null && catProd.imagePath!.trim().isNotEmpty)
+                        ? catProd.imagePath!
+                        : 'assets/images/bilao_pancit.png';
                   }
                 } else {
                   imgPath = 'assets/images/allmenu.png';
@@ -1841,7 +1858,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         ),
                         SizedBox(
                           height: 52,
-                          child: ProductImage(path: imgPath),
+                          child: ProductImage(path: imgPath, productName: cat?.name),
                         ),
                         const SizedBox(height: 6),
                         Text(
