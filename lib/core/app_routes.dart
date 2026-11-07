@@ -112,7 +112,15 @@ class AppRoutes {
       return args is T ? args : null;
     }
 
-    switch (routeSettings.name) {
+    String cleanName = routeSettings.name ?? '';
+    if (cleanName.contains('?')) {
+      cleanName = cleanName.split('?').first;
+    }
+    if (cleanName.length > 1 && cleanName.endsWith('/')) {
+      cleanName = cleanName.substring(0, cleanName.length - 1);
+    }
+
+    switch (cleanName) {
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen(), settings: routeSettings);
 

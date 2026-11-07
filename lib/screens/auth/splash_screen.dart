@@ -30,6 +30,9 @@ class _SplashScreenState extends State<SplashScreen> {
       if (fragment.contains('?')) {
         fragment = fragment.split('?').first;
       }
+      if (fragment.length > 1 && fragment.endsWith('/')) {
+        fragment = fragment.substring(0, fragment.length - 1);
+      }
       if (fragment != '/' && fragment != '/splash' && fragment != AppRoutes.splash) {
         return fragment;
       }
@@ -39,6 +42,12 @@ class _SplashScreenState extends State<SplashScreen> {
     if (path.isNotEmpty && path != '/' && path != '/splash' && path != AppRoutes.splash) {
       if (!path.startsWith('/')) {
         path = '/$path';
+      }
+      if (path.contains('?')) {
+        path = path.split('?').first;
+      }
+      if (path.length > 1 && path.endsWith('/')) {
+        path = path.substring(0, path.length - 1);
       }
       return path;
     }
