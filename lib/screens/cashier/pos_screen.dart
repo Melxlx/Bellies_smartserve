@@ -221,6 +221,7 @@ class _PosScreenState extends State<PosScreen> {
   }
 
   void _updateQuantity(int index, int delta) {
+    FocusScope.of(context).unfocus();
     setState(() {
       _cart[index].quantity += delta;
       if (_cart[index].quantity <= 0) {
@@ -230,6 +231,7 @@ class _PosScreenState extends State<PosScreen> {
   }
 
   void _removeItem(int index) {
+    FocusScope.of(context).unfocus();
     setState(() {
       _cart.removeAt(index);
     });
@@ -337,9 +339,16 @@ class _PosScreenState extends State<PosScreen> {
       customerDetails: null,
     );
 
-    final success = await Navigator.pushNamed(context, AppRoutes.payment, arguments: tempOrder);
-    if (success == true) {
+    final result = await Navigator.pushNamed(context, AppRoutes.payment, arguments: tempOrder);
+    if (result != null) {
       setState(() => _cart.clear());
+      if (result is OrderModel && mounted) {
+        await Navigator.pushNamed(
+          context,
+          AppRoutes.receipt,
+          arguments: ReceiptArguments(order: result),
+        );
+      }
     }
   }
 
@@ -695,6 +704,7 @@ class _PosScreenState extends State<PosScreen> {
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                           onPressed: () {
                             Navigator.pop(ctx);
+                            FocusScope.of(context).unfocus();
                             setState(() => _cart.clear());
                           },
                           child: const Text("CLEAR ALL"),
@@ -728,6 +738,7 @@ class _PosScreenState extends State<PosScreen> {
                   itemBuilder: (context, index) {
                     final item = _cart[index];
                     return Container(
+                      key: ValueKey('${item.product.id}_$index'),
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
