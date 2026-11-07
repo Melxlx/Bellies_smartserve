@@ -75,7 +75,7 @@ begin
       v_updated,
       v_updated,
       v_type,
-      v_user_name,
+      v_user_id,
       p_reason,
       v_user_id,
       v_user_name,
