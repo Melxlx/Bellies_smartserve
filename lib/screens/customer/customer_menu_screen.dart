@@ -1015,20 +1015,57 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
 
     final String emailPrefix = user.email?.split('@').first ?? '';
 
-    String fetchedFirstName = profileData?['first_name']?.toString() ?? user.userMetadata?['first_name']?.toString() ?? '';
-    if (fetchedFirstName == emailPrefix) {
-      fetchedFirstName = '';
+    final String rawFullName = (profileData?['full_name'] ??
+        user.userMetadata?['full_name'] ??
+        user.userMetadata?['name'])?.toString().trim() ??
+        '';
+
+    String fetchedFirstName = (profileData?['first_name'] ??
+        user.userMetadata?['first_name'])?.toString().trim() ??
+        '';
+    String fetchedMiddleName = (profileData?['middle_name'] ??
+        user.userMetadata?['middle_name'])?.toString().trim() ??
+        '';
+    String fetchedLastName = (profileData?['last_name'] ??
+        user.userMetadata?['last_name'])?.toString().trim() ??
+        '';
+
+    // Auto-heal/split name if first_name is empty or equal to emailPrefix
+    if (fetchedFirstName.isEmpty || fetchedFirstName == emailPrefix) {
+      if (rawFullName.isNotEmpty && rawFullName != emailPrefix) {
+        final parts = rawFullName.replaceAll(RegExp(r'\s+'), ' ').split(' ');
+        if (parts.length == 1) {
+          fetchedFirstName = parts[0];
+          if (fetchedLastName == parts[0]) {
+            fetchedLastName = '';
+          }
+        } else if (parts.length == 2) {
+          fetchedFirstName = parts[0];
+          fetchedLastName = parts[1];
+        } else if (parts.length >= 3) {
+          fetchedFirstName = parts[0];
+          fetchedMiddleName = parts.sublist(1, parts.length - 1).join(' ');
+          fetchedLastName = parts.last;
+        }
+      }
     }
 
-    String fetchedLastName = profileData?['last_name']?.toString() ?? user.userMetadata?['last_name']?.toString() ?? '';
-    if (fetchedLastName == emailPrefix) {
-      fetchedLastName = '';
+    // Auto-sync healed profile back to Supabase if first_name was missing
+    final dbFirstName = profileData?['first_name']?.toString().trim();
+    if (fetchedFirstName.isNotEmpty && (dbFirstName == null || dbFirstName.isEmpty)) {
+      try {
+        final healedUpdates = {
+          'first_name': fetchedFirstName,
+          if (fetchedMiddleName.isNotEmpty) 'middle_name': fetchedMiddleName,
+          if (fetchedLastName.isNotEmpty) 'last_name': fetchedLastName,
+          'full_name': rawFullName.isNotEmpty ? rawFullName : [fetchedFirstName, fetchedMiddleName, fetchedLastName].where((s) => s.isNotEmpty).join(' '),
+        };
+        Supabase.instance.client.from('profiles').update(healedUpdates).eq('id', user.id);
+      } catch (_) {}
     }
 
     final firstNameController = TextEditingController(text: fetchedFirstName);
-    final middleNameController = TextEditingController(
-      text: profileData?['middle_name']?.toString() ?? user.userMetadata?['middle_name']?.toString() ?? '',
-    );
+    final middleNameController = TextEditingController(text: fetchedMiddleName);
     final lastNameController = TextEditingController(text: fetchedLastName);
     final contactController = TextEditingController(
       text: profileData?['contact_number']?.toString() ?? user.userMetadata?['contact_number']?.toString() ?? '',
