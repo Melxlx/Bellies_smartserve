@@ -1015,20 +1015,22 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
 
     final String emailPrefix = user.email?.split('@').first ?? '';
 
-    final String rawFullName = (profileData?['full_name'] ??
-        user.userMetadata?['full_name'] ??
-        user.userMetadata?['name'])?.toString().trim() ??
-        '';
+    String getValidName(dynamic primary, dynamic fallback) {
+      final p = primary?.toString().trim();
+      if (p != null && p.isNotEmpty) return p;
+      final f = fallback?.toString().trim();
+      if (f != null && f.isNotEmpty) return f;
+      return '';
+    }
 
-    String fetchedFirstName = (profileData?['first_name'] ??
-        user.userMetadata?['first_name'])?.toString().trim() ??
-        '';
-    String fetchedMiddleName = (profileData?['middle_name'] ??
-        user.userMetadata?['middle_name'])?.toString().trim() ??
-        '';
-    String fetchedLastName = (profileData?['last_name'] ??
-        user.userMetadata?['last_name'])?.toString().trim() ??
-        '';
+    final String rawFullName = getValidName(
+      profileData?['full_name'],
+      getValidName(user.userMetadata?['full_name'], user.userMetadata?['name']),
+    );
+
+      String fetchedFirstName = getValidName(profileData?['first_name'], user.userMetadata?['first_name']);
+    String fetchedMiddleName = getValidName(profileData?['middle_name'], user.userMetadata?['middle_name']);
+    String fetchedLastName = getValidName(profileData?['last_name'], user.userMetadata?['last_name']);
 
     // Discard emailPrefix if set as first_name or last_name
     if (fetchedFirstName == emailPrefix) {
