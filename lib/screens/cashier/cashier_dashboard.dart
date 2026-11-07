@@ -1011,16 +1011,19 @@ class _ReadyOrdersList extends StatefulWidget {
 
 class _ReadyOrdersListState extends State<_ReadyOrdersList> {
   final _orderRepo = OrderRepository();
+  final Set<String> _locallyServedIds = {};
   String? _servingOrderId;
 
   Future<void> _markServed(OrderModel order) async {
     if (_servingOrderId != null) return;
-    setState(() => _servingOrderId = order.id);
+    setState(() {
+      _servingOrderId = order.id;
+      _locallyServedIds.add(order.id);
+    });
     try {
       await _orderRepo.updateOrderStatus(order.id, 'completed');
       if (!mounted) return;
       setState(() {
-        widget.orders.removeWhere((o) => o.id == order.id);
         _servingOrderId = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1028,7 +1031,10 @@ class _ReadyOrdersListState extends State<_ReadyOrdersList> {
       );
     } catch (error) {
       if (!mounted) return;
-      setState(() => _servingOrderId = null);
+      setState(() {
+        _locallyServedIds.remove(order.id);
+        _servingOrderId = null;
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Unable to serve order: $error')));
@@ -1037,64 +1043,167 @@ class _ReadyOrdersListState extends State<_ReadyOrdersList> {
 
   @override
   Widget build(BuildContext context) {
-    final counterOrders = widget.orders.where((o) => o.serviceType != ServiceType.delivery).toList();
-    final deliveryOrders = widget.orders.where((o) => o.serviceType == ServiceType.delivery).toList();
+    final counterOrders = widget.orders
+        .where((o) => o.serviceType != ServiceType.delivery && !_locallyServedIds.contains(o.id))
+        .toList();
+    final deliveryOrders = widget.orders
+        .where((o) => o.serviceType == ServiceType.delivery && !_locallyServedIds.contains(o.id))
+        .toList();
+
+    if (counterOrders.isEmpty && deliveryOrders.isEmpty) {
+      return const EmptyState(message: 'No orders ready to serve.');
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (counterOrders.isNotEmpty) ...[
           for (final order in counterOrders.take(5))
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                backgroundColor: const Color(0xFFE8F5E9),
-                child: Text(order.queueNumber, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
+            Card(
+              elevation: 0,
+              margin: const EdgeInsets.only(bottom: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.green.shade200, width: 1),
               ),
-              title: Text('Order #${order.queueNumber}'),
-              subtitle: Text(
-                '${order.items.length} item(s) • ${order.serviceType.name.toUpperCase()}',
-              ),
-              trailing: ElevatedButton(
-                onPressed: _servingOrderId == order.id
-                    ? null
-                    : () => _markServed(order),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
-                  foregroundColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: const Color(0xFFE8F5E9),
+                      radius: 20,
+                      child: Text(
+                        order.queueNumber,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E7D32),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Order #${order.queueNumber}',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${order.items.length} item(s) • ${order.serviceType.name.toUpperCase()}',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: Colors.grey.shade700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _servingOrderId == order.id ? null : () => _markServed(order),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _servingOrderId == order.id
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text(
+                              'SERVE COUNTER',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                  ],
                 ),
-                child: _servingOrderId == order.id
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('SERVE COUNTER'),
               ),
             ),
         ],
         if (deliveryOrders.isNotEmpty) ...[
           if (counterOrders.isNotEmpty) const Divider(height: 24),
-          Text("Ready for Delivery Dispatch:", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFFEF6C00))),
+          Text(
+            "Ready for Delivery Dispatch:",
+            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFFEF6C00)),
+          ),
           const SizedBox(height: 8),
           for (final order in deliveryOrders.take(5))
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                backgroundColor: const Color(0xFFFFF3E0),
-                child: const Icon(Icons.local_shipping_outlined, color: Color(0xFFEF6C00), size: 20),
+            Card(
+              elevation: 0,
+              margin: const EdgeInsets.only(bottom: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.orange.shade200, width: 1),
               ),
-              title: Text('Delivery Order #${order.queueNumber}'),
-              subtitle: Text(
-                '${order.items.length} item(s) • Delivery: ${order.customerDetails?.address.isNotEmpty == true ? order.customerDetails!.address : "Laguna Area"}',
-              ),
-              trailing: ElevatedButton.icon(
-                onPressed: () => _selectCashierSection(context, CashierSection.delivery),
-                icon: const Icon(Icons.local_shipping_rounded, size: 16),
-                label: const Text('DISPATCH RIDER'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF6C00),
-                  foregroundColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: const Color(0xFFFFF3E0),
+                      radius: 20,
+                      child: const Icon(Icons.local_shipping_outlined, color: Color(0xFFEF6C00), size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Delivery Order #${order.queueNumber}',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${order.items.length} item(s) • ${order.customerDetails?.address.isNotEmpty == true ? order.customerDetails!.address : "Laguna Area"}',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: Colors.grey.shade700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: () => _selectCashierSection(context, CashierSection.delivery),
+                      icon: const Icon(Icons.local_shipping_rounded, size: 14),
+                      label: const Text('DISPATCH', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF6C00),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

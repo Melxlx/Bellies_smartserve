@@ -33,6 +33,31 @@ class OrderRepository {
     return 'PENDING';
   }
 
+  Future<int> _getNextDailyQueueNumber() async {
+    try {
+      final now = DateTime.now();
+      final startOfToday = DateTime(now.year, now.month, now.day).toIso8601String();
+      final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59, 999).toIso8601String();
+
+      final response = await _supabase
+          .from('orders')
+          .select('queue_no')
+          .gte('created_at', startOfToday)
+          .lte('created_at', endOfToday)
+          .order('queue_no', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response != null && response['queue_no'] != null) {
+        final lastQueueNo = (response['queue_no'] as num).toInt();
+        return lastQueueNo + 1;
+      }
+    } catch (e) {
+      debugPrint("Warning: Error fetching daily queue number ($e). Defaulting to 1.");
+    }
+    return 1;
+  }
+
   /// The database transaction saves the address snapshot, items and payment
   /// together. Never fall back to an unauthenticated or partial delivery write.
   Future<OrderModel> createCustomerDeliveryOrder(OrderModel order) async {
@@ -130,11 +155,15 @@ class OrderRepository {
       }
     }
 
+    int nextQueueNo = int.tryParse(order.queueNumber) ?? 0;
+    if (nextQueueNo <= 0) {
+      nextQueueNo = await _getNextDailyQueueNumber();
+    }
+
     // 1. Insert Order
     final orderResponse = await _supabase.from('orders').insert({
       'service_type': databaseServiceType(order.serviceType),
-      'queue_no': int.tryParse(order.queueNumber) ??
-          (DateTime.now().millisecondsSinceEpoch % 1000),
+      'queue_no': nextQueueNo,
       'status': 'received',
       'payment_method': order.paymentMethod?.name ?? 'cash',
       'payment_status': normalizedPaymentStatus,
