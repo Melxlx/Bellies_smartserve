@@ -1030,23 +1030,26 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
         user.userMetadata?['last_name'])?.toString().trim() ??
         '';
 
-    // Auto-heal/split name if first_name is empty or equal to emailPrefix
-    if (fetchedFirstName.isEmpty || fetchedFirstName == emailPrefix) {
-      if (rawFullName.isNotEmpty && rawFullName != emailPrefix) {
-        final parts = rawFullName.replaceAll(RegExp(r'\s+'), ' ').split(' ');
-        if (parts.length == 1) {
-          fetchedFirstName = parts[0];
-          if (fetchedLastName == parts[0]) {
-            fetchedLastName = '';
-          }
-        } else if (parts.length == 2) {
-          fetchedFirstName = parts[0];
-          fetchedLastName = parts[1];
-        } else if (parts.length >= 3) {
-          fetchedFirstName = parts[0];
-          fetchedMiddleName = parts.sublist(1, parts.length - 1).join(' ');
-          fetchedLastName = parts.last;
-        }
+    // Discard emailPrefix if set as first_name or last_name
+    if (fetchedFirstName == emailPrefix) {
+      fetchedFirstName = '';
+    }
+    if (fetchedLastName == emailPrefix) {
+      fetchedLastName = '';
+    }
+
+    // Auto-heal/split name if first_name is empty
+    if (fetchedFirstName.isEmpty && rawFullName.isNotEmpty && rawFullName != emailPrefix) {
+      final parts = rawFullName.replaceAll(RegExp(r'\s+'), ' ').split(' ');
+      if (parts.length == 1) {
+        fetchedFirstName = parts[0];
+      } else if (parts.length == 2) {
+        fetchedFirstName = parts[0];
+        if (fetchedLastName.isEmpty) fetchedLastName = parts[1];
+      } else if (parts.length >= 3) {
+        fetchedFirstName = parts[0];
+        if (fetchedMiddleName.isEmpty) fetchedMiddleName = parts.sublist(1, parts.length - 1).join(' ');
+        if (fetchedLastName.isEmpty) fetchedLastName = parts.last;
       }
     }
 
@@ -1169,10 +1172,6 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          final String displayFullName = [firstNameController.text, middleNameController.text, lastNameController.text]
-              .where((s) => s.trim().isNotEmpty)
-              .join(' ');
-
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             title: Row(
@@ -1370,19 +1369,6 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                                   : null,
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            displayFullName.isNotEmpty ? displayFullName : 'Customer Profile',
-                            style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E1E1E)),
-                            textAlign: TextAlign.center,
-                          ),
-                          if (user.email != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              user.email!,
-                              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
-                            ),
-                          ],
                           const SizedBox(height: 16),
                           const Divider(),
                           const SizedBox(height: 12),

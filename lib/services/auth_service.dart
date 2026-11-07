@@ -77,12 +77,13 @@ class AuthService {
     final avatarUrl = metadata['avatar_url']?.toString() ?? metadata['picture']?.toString();
 
     final nameParts = _splitFullName(finalFullName);
-    final String? firstNameToUse = (metaFirstName != null && metaFirstName.trim().isNotEmpty)
+    final String emailPrefix = email.split('@').first;
+    final String? firstNameToUse = (metaFirstName != null && metaFirstName.trim().isNotEmpty && metaFirstName.trim() != emailPrefix)
         ? metaFirstName.trim()
-        : nameParts['first_name'];
-    final String? lastNameToUse = (metaLastName != null && metaLastName.trim().isNotEmpty)
+        : (nameParts['first_name'] != null && nameParts['first_name'] != emailPrefix ? nameParts['first_name'] : null);
+    final String? lastNameToUse = (metaLastName != null && metaLastName.trim().isNotEmpty && metaLastName.trim() != emailPrefix)
         ? metaLastName.trim()
-        : nameParts['last_name'];
+        : (nameParts['last_name'] != null && nameParts['last_name'] != emailPrefix ? nameParts['last_name'] : null);
 
     final newProfilePayload = {
       'id': targetUser.id,
