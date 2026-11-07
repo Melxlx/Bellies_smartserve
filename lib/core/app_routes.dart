@@ -244,7 +244,7 @@ class AppRoutes {
         return _staffRoute(const InventoryScreen(), [UserRole.owner], routeSettings);
       case posOrders:
         return _staffRoute(
-          const CashierDashboard(initialSection: CashierSection.orderHistory),
+          const PosScreen(showAppBar: true),
           [UserRole.owner, UserRole.cashier],
           routeSettings,
         );
