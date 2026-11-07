@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/app_routes.dart';
-import '../../core/responsive_layout.dart';
 import '../../models/order_model.dart';
 import '../../models/recipe_model.dart';
 import '../../models/ingredient_model.dart';
@@ -280,77 +279,141 @@ class _KitchenDashboardState extends State<KitchenDashboard>
         final allOrders = snapshot.data!;
         _checkPreparationTimeAlerts(allOrders);
 
+        final screenWidth = MediaQuery.sizeOf(context).width;
+        final isMobileScreen = screenWidth < 600;
+
         return Scaffold(
           backgroundColor: const Color(0xFFF0F2F5),
           appBar: AppBar(
             automaticallyImplyLeading: false,
             backgroundColor: Colors.white,
             elevation: 1,
+            titleSpacing: isMobileScreen ? 8 : 16,
             title: Row(
               children: [
-                Image.asset('assets/images/Bellieslogo.png', height: 40),
-                const SizedBox(width: 12),
-                const Column(
+                Image.asset('assets/images/Bellieslogo.png', height: isMobileScreen ? 32 : 40),
+                const SizedBox(width: 8),
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "KITCHEN STATION",
+                      isMobileScreen ? "KITCHEN" : "KITCHEN STATION",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                        fontSize: isMobileScreen ? 14 : 18,
                         color: Colors.black87,
                       ),
                     ),
-                    Text(
-                      "Real-time Order Queue",
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
+                    if (!isMobileScreen)
+                      const Text(
+                        "Real-time Order Queue",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
                   ],
                 ),
               ],
             ),
             actions: [
-              OutlinedButton.icon(
-                onPressed: _showWastageDialog,
-                icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 18),
-                label: const Text("REPORT WASTAGE", style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.redAccent),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              if (isMobileScreen) ...[
+                IconButton(
+                  tooltip: "Report Wastage",
+                  icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
+                  onPressed: _showWastageDialog,
                 ),
-              ),
-              const SizedBox(width: 8),
-              const SizedBox(width: 8),
-              StreamBuilder<List<SystemNotificationModel>>(
-                stream: NotificationRepository().streamNotifications(forRole: UserRole.kitchen),
-                builder: (context, snapshot) {
-                  final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
-                  return IconButton(
-                    tooltip: "Notifications",
-                    icon: unread > 0
-                        ? Badge(
-                            label: Text('$unread'),
-                            child: const Icon(Icons.notifications_outlined, color: Colors.black87),
-                          )
-                        : const Icon(Icons.notifications_outlined, color: Colors.black87),
-                    onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.kitchen),
-                  );
-                },
-              ),
-              _buildQueueBadge(allOrders.length),
-              IconButton(
-                tooltip: "My Profile",
-                icon: const Icon(Icons.person_outline_rounded, color: Colors.black87),
-                onPressed: () => Navigator.pushNamed(context, AppRoutes.staffProfile),
-              ),
-              IconButton(
-                onPressed: _logout,
-                icon: const Icon(Icons.logout, color: Colors.red),
-              ),
-              const SizedBox(width: 8),
+                StreamBuilder<List<SystemNotificationModel>>(
+                  stream: NotificationRepository().streamNotifications(forRole: UserRole.kitchen),
+                  builder: (context, snapshot) {
+                    final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
+                    return IconButton(
+                      tooltip: "Notifications",
+                      icon: unread > 0
+                          ? Badge(
+                              label: Text('$unread'),
+                              child: const Icon(Icons.notifications_outlined, color: Colors.black87),
+                            )
+                          : const Icon(Icons.notifications_outlined, color: Colors.black87),
+                      onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.kitchen),
+                    );
+                  },
+                ),
+                _buildQueueBadge(allOrders.length, compact: true),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Colors.black87),
+                  onSelected: (val) {
+                    if (val == 'profile') {
+                      Navigator.pushNamed(context, AppRoutes.staffProfile);
+                    } else if (val == 'logout') {
+                      _logout();
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    const PopupMenuItem(
+                      value: 'profile',
+                      child: Row(
+                        children: [
+                          Icon(Icons.person_outline_rounded, color: Colors.black87, size: 20),
+                          SizedBox(width: 8),
+                          Text("My Profile"),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout, color: Colors.red, size: 20),
+                          SizedBox(width: 8),
+                          Text("Log Out", style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                OutlinedButton.icon(
+                  onPressed: _showWastageDialog,
+                  icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 18),
+                  label: const Text("REPORT WASTAGE", style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.redAccent),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                StreamBuilder<List<SystemNotificationModel>>(
+                  stream: NotificationRepository().streamNotifications(forRole: UserRole.kitchen),
+                  builder: (context, snapshot) {
+                    final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
+                    return IconButton(
+                      tooltip: "Notifications",
+                      icon: unread > 0
+                          ? Badge(
+                              label: Text('$unread'),
+                              child: const Icon(Icons.notifications_outlined, color: Colors.black87),
+                            )
+                          : const Icon(Icons.notifications_outlined, color: Colors.black87),
+                      onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.kitchen),
+                    );
+                  },
+                ),
+                _buildQueueBadge(allOrders.length),
+                IconButton(
+                  tooltip: "My Profile",
+                  icon: const Icon(Icons.person_outline_rounded, color: Colors.black87),
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.staffProfile),
+                ),
+                IconButton(
+                  onPressed: _logout,
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                ),
+                const SizedBox(width: 8),
+              ],
             ],
             bottom: TabBar(
               controller: _tabController,
+              isScrollable: isMobileScreen,
+              tabAlignment: isMobileScreen ? TabAlignment.start : TabAlignment.fill,
               labelColor: const Color(0xFFE91E63),
               unselectedLabelColor: Colors.grey,
               indicatorColor: const Color(0xFFE91E63),
@@ -391,6 +454,7 @@ class _KitchenDashboardState extends State<KitchenDashboard>
   Widget _buildTab(String label, IconData icon, int? count) {
     return Tab(
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: 18),
@@ -419,20 +483,23 @@ class _KitchenDashboardState extends State<KitchenDashboard>
     );
   }
 
-  Widget _buildQueueBadge(int total) {
+  Widget _buildQueueBadge(int total, {bool compact = false}) {
     return Center(
       child: Container(
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        margin: EdgeInsets.only(right: compact ? 4 : 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 8 : 12,
+          vertical: compact ? 4 : 6,
+        ),
         decoration: BoxDecoration(
           color: Colors.black87,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
-          "TOTAL QUEUE: $total",
-          style: const TextStyle(
+          compact ? "Q: $total" : "TOTAL QUEUE: $total",
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 12,
+            fontSize: compact ? 11 : 12,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -461,15 +528,36 @@ class _KitchenDashboardState extends State<KitchenDashboard>
       );
     }
 
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final isLandscape = screenWidth > screenHeight;
+
+    int crossAxisCount = 3;
+    double aspectRatio = 0.75;
+
+    if (screenWidth < 600) {
+      if (isLandscape) {
+        crossAxisCount = 2;
+        aspectRatio = 1.25;
+      } else {
+        crossAxisCount = 1;
+        aspectRatio = 0.85;
+      }
+    } else if (screenWidth < 1000) {
+      crossAxisCount = 2;
+      aspectRatio = isLandscape ? 1.05 : 0.80;
+    } else {
+      crossAxisCount = 3;
+      aspectRatio = 0.78;
+    }
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: ResponsiveLayout.isMobile(context)
-            ? 1
-            : (ResponsiveLayout.isTablet(context) ? 2 : 3),
+        crossAxisCount: crossAxisCount,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.75,
+        childAspectRatio: aspectRatio,
       ),
       itemCount: orders.length,
       itemBuilder: (context, index) => KitchenOrderCard(
@@ -494,15 +582,36 @@ class _KitchenDashboardState extends State<KitchenDashboard>
           return const Center(child: Text("No completed orders yet."));
         }
 
+        final screenWidth = MediaQuery.sizeOf(context).width;
+        final screenHeight = MediaQuery.sizeOf(context).height;
+        final isLandscape = screenWidth > screenHeight;
+
+        int crossAxisCount = 4;
+        double aspectRatio = 1.1;
+
+        if (screenWidth < 600) {
+          if (isLandscape) {
+            crossAxisCount = 2;
+            aspectRatio = 1.3;
+          } else {
+            crossAxisCount = 1;
+            aspectRatio = 1.0;
+          }
+        } else if (screenWidth < 1000) {
+          crossAxisCount = 2;
+          aspectRatio = isLandscape ? 1.2 : 1.0;
+        } else {
+          crossAxisCount = 4;
+          aspectRatio = 1.1;
+        }
+
         return GridView.builder(
           padding: const EdgeInsets.all(16),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: ResponsiveLayout.isMobile(context)
-                ? 1
-                : (ResponsiveLayout.isTablet(context) ? 2 : 4),
+            crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 1.1,
+            childAspectRatio: aspectRatio,
           ),
           itemCount: snapshot.data!.length,
           itemBuilder: (context, index) => KitchenOrderCard(
