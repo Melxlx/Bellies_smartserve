@@ -62,20 +62,33 @@ class AuthService {
     // New profile creation from OAuth or Email metadata
     final metadata = targetUser.userMetadata ?? {};
     final email = targetUser.email ?? '';
-    final fullName = metadata['full_name']?.toString() ??
-        metadata['name']?.toString() ??
-        (email.isNotEmpty ? email.split('@').first : 'Customer');
-    final avatarUrl = metadata['avatar_url']?.toString() ??
-        metadata['picture']?.toString();
+    final metaFirstName = metadata['first_name']?.toString();
+    final metaMiddleName = metadata['middle_name']?.toString();
+    final metaLastName = metadata['last_name']?.toString();
+    final metaContact = metadata['contact_number']?.toString();
+    final metaAddress = metadata['address']?.toString();
 
-    final nameParts = _splitFullName(fullName);
+    final rawFullName = metadata['full_name']?.toString() ?? metadata['name']?.toString();
+    final derivedFullName = [metaFirstName, metaMiddleName, metaLastName].where((s) => s != null && s.trim().isNotEmpty).join(' ');
+    final String finalFullName = (rawFullName != null && rawFullName.trim().isNotEmpty)
+        ? rawFullName.trim()
+        : (derivedFullName.isNotEmpty ? derivedFullName : (email.isNotEmpty ? email.split('@').first : 'Customer'));
+
+    final avatarUrl = metadata['avatar_url']?.toString() ?? metadata['picture']?.toString();
+
+    final nameParts = _splitFullName(finalFullName);
+    final String? firstNameToUse = metaFirstName ?? (finalFullName != email.split('@').first ? nameParts['first_name'] : null);
+    final String? lastNameToUse = metaLastName ?? (finalFullName != email.split('@').first ? nameParts['last_name'] : null);
+
     final newProfilePayload = {
       'id': targetUser.id,
       'email': email,
-      'full_name': fullName,
-      'first_name': nameParts['first_name'],
-      'middle_name': nameParts['middle_name'],
-      'last_name': nameParts['last_name'],
+      'full_name': finalFullName,
+      'first_name': firstNameToUse,
+      'middle_name': metaMiddleName ?? nameParts['middle_name'],
+      'last_name': lastNameToUse,
+      if (metaContact != null && metaContact.isNotEmpty) 'contact_number': metaContact,
+      if (metaAddress != null && metaAddress.isNotEmpty) 'address': metaAddress,
       'avatar_url': avatarUrl,
       'position': 'Customer',
       'role': 'CUSTOMER',
@@ -149,6 +162,9 @@ class AuthService {
     required String email,
     required String password,
     required String fullName,
+    String? firstName,
+    String? middleName,
+    String? lastName,
     String? username,
     String? contactNumber,
     String? address,
@@ -156,17 +172,7 @@ class AuthService {
     final acceptedAt = DateTime.now().toIso8601String();
     final cleanEmail = email.trim().toLowerCase();
 
-    // Store pending registration info locally (NOT in Supabase yet!)
-    _pendingSignUpData[cleanEmail] = {
-      'password': password,
-      'fullName': fullName.trim(),
-      'username': username?.trim(),
-      'contactNumber': contactNumber?.trim(),
-      'address': address?.trim(),
-      'acceptedAt': acceptedAt,
-    };
-
-    // 1. Generate local OTP and send via Gmail SMTP Service
+    // 1. Generate local OTP and send via Gmail SMTP / Serverless Service
     String otpCode = "123456";
     try {
       otpCode = await GmailEmailService().sendSignUpOtpEmail(
@@ -178,6 +184,20 @@ class AuthService {
       rethrow;
     }
 
+    // Store pending registration info & generated OTP code locally
+    _pendingSignUpData[cleanEmail] = {
+      'password': password,
+      'fullName': fullName.trim(),
+      'firstName': firstName?.trim(),
+      'middleName': middleName?.trim(),
+      'lastName': lastName?.trim(),
+      'username': username?.trim(),
+      'contactNumber': contactNumber?.trim(),
+      'address': address?.trim(),
+      'acceptedAt': acceptedAt,
+      'otpCode': otpCode.trim(),
+    };
+
     return otpCode;
   }
 
@@ -186,6 +206,9 @@ class AuthService {
     required String email,
     required String code,
     required String fullName,
+    String? firstName,
+    String? middleName,
+    String? lastName,
     String? username,
     String? contactNumber,
     String? address,
@@ -195,38 +218,42 @@ class AuthService {
 
     final pendingData = _pendingSignUpData[cleanEmail];
     final password = pendingData?['password'] ?? 'Password123!';
+    final storedOtpCode = pendingData?['otpCode']?.toString().trim();
     final cleanFullName = (pendingData?['fullName'] ?? fullName).toString().trim();
+    final nameParts = _splitFullName(cleanFullName);
+    final cleanFirstName = (pendingData?['firstName'] ?? firstName ?? nameParts['first_name'])?.toString().trim();
+    final cleanMiddleName = (pendingData?['middleName'] ?? middleName ?? nameParts['middle_name'])?.toString().trim();
+    final cleanLastName = (pendingData?['lastName'] ?? lastName ?? nameParts['last_name'])?.toString().trim();
     final cleanUsername = (pendingData?['username'] ?? username)?.toString().trim();
     final cleanContactNumber = (pendingData?['contactNumber'] ?? contactNumber)?.toString().trim();
     final cleanAddress = (pendingData?['address'] ?? address)?.toString().trim();
     final acceptedAt = pendingData?['acceptedAt']?.toString() ?? DateTime.now().toIso8601String();
 
-    // 1. First, verify the OTP code against local Gmail OTP manager or Supabase OTP
-    bool isOtpValid = GmailEmailService().verifyOtpCode(
-      email: cleanEmail,
-      code: cleanCode,
-    );
+    // 1. Verify OTP code against stored OTP code in pendingData, Gmail OTP manager, or Supabase OTP
+    bool isOtpValid = (storedOtpCode != null && storedOtpCode.isNotEmpty && storedOtpCode == cleanCode) ||
+        GmailEmailService().verifyOtpCode(
+          email: cleanEmail,
+          code: cleanCode,
+        );
 
     // Also attempt Supabase OTP verification if local verification didn't match
     if (!isOtpValid) {
-      try {
-        final response = await _supabase.auth.verifyOTP(
-          email: cleanEmail,
-          token: cleanCode,
-          type: OtpType.signup,
-        );
-        if (response.user != null) {
-          isOtpValid = true;
-        }
-      } catch (_) {
+      final otpTypes = [
+        OtpType.email,
+        OtpType.signup,
+        OtpType.magiclink,
+        OtpType.recovery,
+      ];
+      for (final type in otpTypes) {
         try {
           final response = await _supabase.auth.verifyOTP(
             email: cleanEmail,
             token: cleanCode,
-            type: OtpType.email,
+            type: type,
           );
-          if (response.user != null) {
+          if (response.user != null || response.session != null) {
             isOtpValid = true;
+            break;
           }
         } catch (_) {}
       }
@@ -236,69 +263,119 @@ class AuthService {
       throw const AuthException('Incorrect code. Please try again');
     }
 
-    // --- OTP IS CONFIRMED! NOW REGISTER IN SUPABASE ---
+    // --- OTP IS CONFIRMED! NOW REGISTER / LINK USER IN SUPABASE ---
     _pendingSignUpData.remove(cleanEmail);
 
-    AuthResponse? authResponse;
-    try {
-      authResponse = await _supabase.auth.signUp(
-        email: cleanEmail,
-        password: password,
-        data: {
-          'name': cleanFullName,
-          'full_name': cleanFullName,
-          'username': cleanUsername,
-          'contact_number': cleanContactNumber,
-          if (cleanAddress != null && cleanAddress.isNotEmpty) 'address': cleanAddress,
-          'terms_version': '1.0',
-          'privacy_policy_version': '1.0',
-          'consent_accepted_at': acceptedAt,
-        },
-      );
-    } catch (e) {
-      debugPrint("Supabase signUp error during OTP confirmation: $e");
-    }
+    User? user = _supabase.auth.currentUser;
 
-    // Try signing in if signUp didn't yield an active session
-    User? user = authResponse?.user ?? _supabase.auth.currentUser;
-    if (_supabase.auth.currentSession == null) {
+    if (user != null && user.email?.trim().toLowerCase() == cleanEmail) {
+      // User has an active Supabase session (e.g. from verifyOTP)
       try {
-        final res = await _supabase.auth.signInWithPassword(
+        final updateRes = await _supabase.auth.updateUser(
+          UserAttributes(
+            password: password,
+            data: {
+              'first_name': cleanFirstName,
+              if (cleanMiddleName != null && cleanMiddleName.isNotEmpty) 'middle_name': cleanMiddleName,
+              'last_name': cleanLastName,
+              'name': cleanFullName,
+              'full_name': cleanFullName,
+              'username': cleanUsername,
+              'contact_number': cleanContactNumber,
+              if (cleanAddress != null && cleanAddress.isNotEmpty) 'address': cleanAddress,
+              'terms_version': '1.0',
+              'privacy_policy_version': '1.0',
+              'consent_accepted_at': acceptedAt,
+            },
+          ),
+        );
+        user = updateRes.user ?? user;
+      } catch (e) {
+        debugPrint("Update user metadata during OTP confirmation: $e");
+      }
+    } else {
+      // User is not yet authenticated in session
+      AuthResponse? authResponse;
+      try {
+        authResponse = await _supabase.auth.signUp(
           email: cleanEmail,
           password: password,
+          data: {
+            'first_name': cleanFirstName,
+            if (cleanMiddleName != null && cleanMiddleName.isNotEmpty) 'middle_name': cleanMiddleName,
+            'last_name': cleanLastName,
+            'name': cleanFullName,
+            'full_name': cleanFullName,
+            'username': cleanUsername,
+            'contact_number': cleanContactNumber,
+            if (cleanAddress != null && cleanAddress.isNotEmpty) 'address': cleanAddress,
+            'terms_version': '1.0',
+            'privacy_policy_version': '1.0',
+            'consent_accepted_at': acceptedAt,
+          },
         );
-        user = res.user;
+        user = authResponse.user ?? _supabase.auth.currentUser;
       } catch (e) {
-        debugPrint("Supabase signInWithPassword error during OTP confirmation: $e");
+        debugPrint("Supabase signUp error during OTP confirmation: $e");
+        // User may already be registered in auth.users
+        try {
+          final res = await _supabase.auth.signInWithPassword(
+            email: cleanEmail,
+            password: password,
+          );
+          user = res.user;
+        } catch (_) {
+          // If signInWithPassword failed, check if user profile exists in profiles table
+          try {
+            final existingProfile = await _supabase
+                .from('profiles')
+                .select('id')
+                .eq('email', cleanEmail)
+                .maybeSingle();
+
+            if (existingProfile != null) {
+              throw const AuthException("An account with this email is already registered. Please sign in instead.");
+            }
+          } catch (pe) {
+            if (pe is AuthException) rethrow;
+          }
+        }
       }
     }
 
-    // Explicitly update user metadata to ensure Supabase Auth populates Display name
-    try {
-      await _supabase.auth.updateUser(
-        UserAttributes(
-          data: {
-            'name': cleanFullName,
-            'full_name': cleanFullName,
-          },
-        ),
-      );
-    } catch (_) {}
+    // Explicitly update user metadata if session is active
+    if (_supabase.auth.currentUser != null) {
+      try {
+        await _supabase.auth.updateUser(
+          UserAttributes(
+            password: password,
+            data: {
+              'first_name': cleanFirstName,
+              if (cleanMiddleName != null && cleanMiddleName.isNotEmpty) 'middle_name': cleanMiddleName,
+              'last_name': cleanLastName,
+              'name': cleanFullName,
+              'full_name': cleanFullName,
+              'contact_number': cleanContactNumber,
+              if (cleanAddress != null && cleanAddress.isNotEmpty) 'address': cleanAddress,
+            },
+          ),
+        );
+      } catch (_) {}
+    }
 
     // Get real UUID from Supabase Auth
-    final userId = authResponse?.user?.id ?? user?.id ?? _supabase.auth.currentUser?.id;
+    final userId = user?.id ?? _supabase.auth.currentUser?.id;
     if (userId == null) {
-      throw const AuthException("Registration failed: Unable to create user account. Please ensure 'Confirm email' is disabled in Supabase Dashboard.");
+      throw const AuthException("Registration failed: Unable to link user account in Supabase Auth.");
     }
-    final nameParts = _splitFullName(cleanFullName);
 
     final profilePayload = {
       'id': userId,
       'email': cleanEmail,
       'full_name': cleanFullName,
-      'first_name': nameParts['first_name'],
-      'middle_name': nameParts['middle_name'],
-      'last_name': nameParts['last_name'],
+      'first_name': cleanFirstName,
+      'middle_name': cleanMiddleName,
+      'last_name': cleanLastName,
       'username': cleanUsername,
       if (cleanContactNumber != null && cleanContactNumber.isNotEmpty)
         'contact_number': cleanContactNumber,
@@ -349,10 +426,13 @@ class AuthService {
     final recipientName = (pendingData?['fullName'] ?? fullName).toString().trim();
 
     try {
-      await GmailEmailService().sendSignUpOtpEmail(
+      final newOtpCode = await GmailEmailService().sendSignUpOtpEmail(
         recipientEmail: cleanEmail,
         recipientName: recipientName,
       );
+      if (pendingData != null) {
+        pendingData['otpCode'] = newOtpCode.trim();
+      }
     } catch (e) {
       debugPrint("Resend Gmail OTP error: $e");
       throw AuthException("Failed to resend verification code: $e");

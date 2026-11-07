@@ -220,10 +220,15 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
 
     confirmController.dispose();
     if (confirmed != true) return;
+    if (!mounted || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    AppModals.showLoading(context, message: "Deleting ${user.fullName} permanently...");
+
     try {
-      AppModals.showLoading(context, message: "Deleting ${user.fullName} permanently...");
       await _repo.permanentlyDeleteProfile(user.id);
-      if (mounted) Navigator.pop(context); // Close loading modal
+      if (mounted) nav.pop(); // Close loading modal
 
       if (mounted) {
         setState(() {
@@ -234,13 +239,13 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
       await _loadEmployees();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(content: Text("${user.fullName} deleted permanently."), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
-      if (mounted && Navigator.canPop(context)) {
-        Navigator.pop(context); // Close loading modal
+      if (mounted && nav.canPop()) {
+        nav.pop(); // Close loading modal
       }
       if (mounted) {
         showErrorDialog(context, title: "Error Deleting Account", message: e.toString());

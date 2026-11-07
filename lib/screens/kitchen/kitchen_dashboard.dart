@@ -156,12 +156,12 @@ class _KitchenDashboardState extends State<KitchenDashboard>
     IngredientModel selectedIng = ingredients.first;
     final qtyController = TextEditingController(text: '1.0');
     final reasonController = TextEditingController(text: 'Burned / Spoiled in Kitchen');
+    bool saving = false;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
-          bool saving = false;
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -187,8 +187,10 @@ class _KitchenDashboardState extends State<KitchenDashboard>
                   items: ingredients
                       .map((ing) => DropdownMenuItem(value: ing, child: Text("${ing.name} (${ing.unit.name.toUpperCase()})")))
                       .toList(),
-                  onChanged: saving ? null : (val) {
-                    if (val != null) setDialogState(() => selectedIng = val);
+                  onChanged: (val) {
+                    if (val != null) {
+                      setDialogState(() => selectedIng = val);
+                    }
                   },
                 ),
                 const SizedBox(height: 12),

@@ -91,9 +91,10 @@ class GmailEmailService {
     required String otpCode,
   }) async {
     try {
-      // Use our Vercel Serverless Function instead of Brevo to avoid CORS & API Key issues
-      // Uri.base works in Flutter Web to get the current origin (e.g. https://your-app.vercel.app)
-      final url = kIsWeb ? Uri.base.resolve('/api/send-otp') : Uri.parse('https://bellies-smartserve.vercel.app/api/send-otp');
+      final String endpoint = (kIsWeb && !Uri.base.host.contains('localhost') && !Uri.base.host.contains('127.0.0.1'))
+          ? Uri.base.resolve('/api/send-otp').toString()
+          : 'https://bellies-smartserve.vercel.app/api/send-otp';
+      final url = Uri.parse(endpoint);
       
       final response = await http.post(
         url,
@@ -243,17 +244,22 @@ class GmailEmailService {
     final cleanCode = code.trim();
 
     final record = _activeOTPs[cleanRecipient];
-    if (record == null) return false;
+    if (record == null) {
+      debugPrint("⚠️ [OTP VERIFY] No active OTP record found for $cleanRecipient");
+      return false;
+    }
 
     final String storedCode = record['code'] as String;
     final DateTime expiresAt = record['expiresAt'] as DateTime;
 
     if (DateTime.now().isAfter(expiresAt)) {
+      debugPrint("⚠️ [OTP VERIFY] OTP for $cleanRecipient expired at $expiresAt");
       _activeOTPs.remove(cleanRecipient);
       return false;
     }
 
     final isValid = storedCode == cleanCode;
+    debugPrint("🔍 [OTP VERIFY] Email: $cleanRecipient | Stored: $storedCode | Typed: $cleanCode | Match: $isValid");
     if (isValid) {
       _activeOTPs.remove(cleanRecipient);
     }

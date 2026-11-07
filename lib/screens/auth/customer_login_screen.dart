@@ -367,6 +367,8 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
         email: email,
         password: password,
         fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         contactNumber: contactNumber,
         address: address,
       );
@@ -386,6 +388,8 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
       _showOtpVerificationDialog(
         email: email,
         fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         contactNumber: contactNumber,
         address: address,
         testCode: generatedCode,
@@ -407,6 +411,8 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
   void _showOtpVerificationDialog({
     required String email,
     required String fullName,
+    String? firstName,
+    String? lastName,
     String? username,
     String? contactNumber,
     String? address,
@@ -455,6 +461,8 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                   email: email,
                   code: code,
                   fullName: fullName,
+                  firstName: firstName,
+                  lastName: lastName,
                   username: username,
                   contactNumber: contactNumber,
                   address: address,
@@ -482,10 +490,16 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
                   focusNode.requestFocus();
                 });
                 if (dialogContext.mounted) {
+                  final rawMsg = e is AuthException ? e.message : e.toString();
+                  final isCodeError = rawMsg.toLowerCase().contains('incorrect code') ||
+                      rawMsg.toLowerCase().contains('invalid code') ||
+                      rawMsg.toLowerCase().contains('expired');
                   await showErrorDialog(
                     dialogContext,
-                    title: "Invalid Verification Code",
-                    message: "The 6-digit code you entered is incorrect or expired. Please check your Gmail inbox and try again.",
+                    title: isCodeError ? "Invalid Verification Code" : "Registration Error",
+                    message: isCodeError
+                        ? "The 6-digit code you entered is incorrect or expired. Please check your Gmail inbox and try again."
+                        : rawMsg,
                   );
                 }
               }
@@ -1220,8 +1234,8 @@ You have the right to access, update, or request the deletion of your account in
                     borderRadius: BorderRadius.circular(24), // iOS typical radius
                     border: Border.all(color: Colors.white, width: 2), // Frosted edge effect
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 32, offset: const Offset(0, 16)),
-                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4)),
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 32, offset: const Offset(0, 16)),
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 4)),
                     ],
                   ),
                   clipBehavior: Clip.antiAlias,
@@ -1261,7 +1275,7 @@ You have the right to access, update, or request the deletion of your account in
                         begin: Alignment.topCenter, 
                         end: Alignment.bottomCenter, 
                         stops: const [0.0, 0.5, 1.0], 
-                        colors: [Colors.black.withOpacity(0.1), Colors.transparent, Colors.black.withOpacity(0.85)]
+                        colors: [Colors.black.withValues(alpha: 0.1), Colors.transparent, Colors.black.withValues(alpha: 0.85)]
                       ),
                     ),
                   ),
@@ -1274,10 +1288,10 @@ You have the right to access, update, or request the deletion of your account in
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15), 
+                            color: Colors.white.withValues(alpha: 0.15), 
                             borderRadius: BorderRadius.circular(20), 
-                            border: Border.all(color: Colors.white.withOpacity(0.3)),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)]
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)]
                           ),
                           child: Image.asset('assets/images/Bellieslogo.png', height: 60, color: Colors.white),
                         ),
@@ -1289,7 +1303,7 @@ You have the right to access, update, or request the deletion of your account in
                         const SizedBox(height: 16),
                         Text(
                           "Experience freshly cooked Silog and our finest Korean favorites. Elevating your dining experience every day.", 
-                          style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.9), fontSize: 15, fontWeight: FontWeight.w400, height: 1.5)
+                          style: GoogleFonts.poppins(color: Colors.white.withValues(alpha: 0.9), fontSize: 15, fontWeight: FontWeight.w400, height: 1.5)
                         ),
                         const SizedBox(height: 48),
                         Row(
@@ -1430,7 +1444,7 @@ You have the right to access, update, or request the deletion of your account in
           color: active ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(10), // Matched iOS Segmented Control
           boxShadow: active
-              ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))]
               : [],
         ),
         alignment: Alignment.center,
@@ -1474,7 +1488,7 @@ You have the right to access, update, or request the deletion of your account in
         borderRadius: BorderRadius.circular(14),
         border: bg == Colors.white ? Border.all(color: Colors.grey.shade300, width: 1) : null,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 4)),
         ],
       ),
       child: InkWell(
@@ -1983,7 +1997,7 @@ You have the right to access, update, or request the deletion of your account in
       prefixIcon: icon != null ? Icon(icon, size: 20, color: isValid == true ? const Color(0xFF34C759) : const Color(0xFF86868B)) : null,
       suffixIcon: suffix,
       filled: true,
-      fillColor: isValid == true ? const Color(0xFFF2F9F4) : const Color(0xFFF5F5F7).withOpacity(0.5),
+      fillColor: isValid == true ? const Color(0xFFF2F9F4) : const Color(0xFFF5F5F7).withValues(alpha: 0.5),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor, width: 1)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor, width: isValid == true ? 1.5 : 1)),
@@ -2001,7 +2015,7 @@ You have the right to access, update, or request the deletion of your account in
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         boxShadow: isEnabled
-            ? [BoxShadow(color: const Color(0xFFE91E63).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))]
+            ? [BoxShadow(color: const Color(0xFFE91E63).withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 6))]
             : [],
       ),
       child: ElevatedButton(

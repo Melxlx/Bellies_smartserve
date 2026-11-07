@@ -18,7 +18,6 @@ import '../../repositories/product_repository.dart';
 import '../../repositories/category_repository.dart';
 import '../../repositories/tracking_repository.dart';
 import '../../services/order_tracking_service.dart';
-import '../../services/auth_service.dart';
 import '../../widgets/state_widgets.dart';
 import '../../widgets/product_image.dart';
 
@@ -47,12 +46,9 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   bool _isCartVisible = false; // Add this to control cart visibility
   String _activeNavTab = 'home';
 
-  // Newsletter & Testimonials state
-  final TextEditingController _newsletterEmailController = TextEditingController();
   final ScrollController _mainScrollController = ScrollController();
   final ScrollController _categoriesScrollController = ScrollController();
   final Map<String, ScrollController> _laneControllers = {};
-  bool _isSubscribingNewsletter = false;
 
   List<Map<String, dynamic>> _testimonials = [
     {
@@ -259,7 +255,6 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     _mainScrollController.dispose();
     _productsRealtimeChannel?.unsubscribe();
     _authSubscription?.cancel();
-    _newsletterEmailController.dispose();
     _categoriesScrollController.dispose();
     for (var c in _laneControllers.values) {
       c.dispose();
@@ -863,7 +858,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         _cart.clear(); // Clear cart items from memory on sign out
                       });
                     }
-                    await AuthService().signOut();
+                    await Supabase.instance.client.auth.signOut();
                     messenger.showSnackBar(
                       const SnackBar(content: Text("Signed out successfully.")),
                     );
@@ -1018,15 +1013,23 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       debugPrint("Error fetching profile: $e");
     }
 
-    final firstNameController = TextEditingController(
-      text: profileData?['first_name'] ?? user.userMetadata?['first_name'] ?? '',
-    );
+    final String emailPrefix = user.email?.split('@').first ?? '';
+
+    String fetchedFirstName = profileData?['first_name']?.toString() ?? user.userMetadata?['first_name']?.toString() ?? '';
+    if (fetchedFirstName == emailPrefix) {
+      fetchedFirstName = '';
+    }
+
+    String fetchedLastName = profileData?['last_name']?.toString() ?? user.userMetadata?['last_name']?.toString() ?? '';
+    if (fetchedLastName == emailPrefix) {
+      fetchedLastName = '';
+    }
+
+    final firstNameController = TextEditingController(text: fetchedFirstName);
     final middleNameController = TextEditingController(
-      text: profileData?['middle_name'] ?? user.userMetadata?['middle_name'] ?? '',
+      text: profileData?['middle_name']?.toString() ?? user.userMetadata?['middle_name']?.toString() ?? '',
     );
-    final lastNameController = TextEditingController(
-      text: profileData?['last_name'] ?? user.userMetadata?['last_name'] ?? '',
-    );
+    final lastNameController = TextEditingController(text: fetchedLastName);
     final contactController = TextEditingController(
       text: profileData?['contact_number']?.toString() ?? user.userMetadata?['contact_number']?.toString() ?? '',
     );
@@ -1322,11 +1325,11 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         children: [
                           Center(
                             child: CircleAvatar(
-                              radius: 48,
+                              radius: 46,
                               backgroundColor: const Color(0xFFFCE4EC),
                               backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty ? NetworkImage(avatarUrl!) : null,
                               child: avatarUrl == null || avatarUrl!.isEmpty
-                                  ? const Icon(Icons.person, size: 48, color: Color(0xFFE91E63))
+                                  ? const Icon(Icons.person, size: 46, color: Color(0xFFE91E63))
                                   : null,
                             ),
                           ),
@@ -1343,63 +1346,47 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                               style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
                             ),
                           ],
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           const Divider(),
                           const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.phone_outlined, color: Color(0xFFE91E63), size: 20),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text("Contact Number", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        contactController.text.isNotEmpty ? contactController.text : "Not provided",
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF222222)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                          
+                          // First Name Card
+                          _buildProfileViewItem(
+                            icon: Icons.badge_outlined,
+                            label: "First Name",
+                            value: firstNameController.text.trim().isNotEmpty ? firstNameController.text.trim() : "Not provided",
                           ),
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.location_on_outlined, color: Color(0xFFE91E63), size: 20),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text("Delivery Address", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        addressController.text.isNotEmpty ? addressController.text : "Not provided",
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF222222)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                          const SizedBox(height: 8),
+
+                          // Middle Name Card
+                          _buildProfileViewItem(
+                            icon: Icons.badge_outlined,
+                            label: "Middle Name",
+                            value: middleNameController.text.trim().isNotEmpty ? middleNameController.text.trim() : "None",
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Last Name Card
+                          _buildProfileViewItem(
+                            icon: Icons.badge_outlined,
+                            label: "Last Name",
+                            value: lastNameController.text.trim().isNotEmpty ? lastNameController.text.trim() : "Not provided",
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Contact Number Card
+                          _buildProfileViewItem(
+                            icon: Icons.phone_outlined,
+                            label: "Contact Number",
+                            value: contactController.text.trim().isNotEmpty ? contactController.text.trim() : "Not provided",
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Delivery Address Card
+                          _buildProfileViewItem(
+                            icon: Icons.location_on_outlined,
+                            label: "Delivery Address",
+                            value: addressController.text.trim().isNotEmpty ? addressController.text.trim() : "Not provided",
                           ),
                         ],
                       ),
@@ -1514,6 +1501,45 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                   ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildProfileViewItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    final bool isNotProvided = value == "Not provided" || value == "None";
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFFE91E63), size: 18),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isNotProvided ? Colors.grey[400] : const Color(0xFF222222),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2005,7 +2031,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
 
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.4), // iOS-like subtle dark overlay
+      barrierColor: Colors.black.withValues(alpha: 0.4), // iOS-like subtle dark overlay
       builder: (context) {
         final controller = TextEditingController(text: _searchQuery);
         final focusNode = FocusNode();
@@ -2030,7 +2056,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 40, offset: const Offset(0, 10))
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 40, offset: const Offset(0, 10))
                   ],
                 ),
                 child: Column(
@@ -2170,7 +2196,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                                           height: 56,
                                           decoration: BoxDecoration(
                                             borderRadius: BorderRadius.circular(14), // Squircle-like
-                                            border: Border.all(color: Colors.black.withOpacity(0.04)),
+                                            border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                                             color: const Color(0xFFF5F5F7),
                                           ),
                                           clipBehavior: Clip.antiAlias,
@@ -2988,55 +3014,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     );
   }
 
-  // --- Newsletter & Social Logic ---
-  Future<void> _handleSubscribeNewsletter() async {
-    final email = _newsletterEmailController.text.trim();
-    final emailRegex = RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$');
 
-    if (email.isEmpty || !emailRegex.hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter a valid email address."),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isSubscribingNewsletter = true);
-
-    try {
-      await Supabase.instance.client.from('newsletter_subscribers').insert({
-        'email': email,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-    } catch (_) {
-      // Fallback
-    }
-
-    if (mounted) {
-      setState(() => _isSubscribingNewsletter = false);
-      _newsletterEmailController.clear();
-      showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          icon: const Icon(Icons.mark_email_read_outlined, color: Color(0xFFE91E63), size: 48),
-          title: Text("Thank You for Subscribing!", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-          content: const Text(
-            "You are now subscribed! You will receive exclusive offers, discount vouchers, and updates from Bellie's SmartServe.",
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text("OK", style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.bold)),
-            )
-          ],
-        ),
-      );
-    }
-  }
 
   Future<void> _launchSocialUrl(String urlString) async {
     final uri = Uri.parse(urlString);
@@ -3495,99 +3473,278 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     return SliverToBoxAdapter(
       key: _contactKey,
       child: Container(
-        color: Colors.grey[900],
-        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C0E12),
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1,
+            ),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
         child: Column(
           children: [
             Wrap(
-              spacing: 60,
-              runSpacing: 40,
-              alignment: WrapAlignment.start,
+              spacing: 48,
+              runSpacing: 36,
+              alignment: WrapAlignment.spaceAround,
+              crossAxisAlignment: WrapCrossAlignment.start,
               children: [
+                // Brand Column
                 SizedBox(
-                  width: 250,
+                  width: 270,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Image.asset('assets/images/Bellieslogo.png', height: 60, color: Colors.white),
-                      const SizedBox(height: 16),
-                      const Text(
-                        "Freshly cooked meals, traditional Silog, and comfort food delivered directly to you. Proudly serving our local community.",
-                        style: TextStyle(color: Colors.white54, fontSize: 13, height: 1.6),
-                      ),
-                      const SizedBox(height: 24),
                       Row(
                         children: [
-                          _socialIcon(
-                            Icons.facebook,
-                            "https://www.facebook.com/profile.php?id=61591278277020",
-                            tooltip: "Facebook Page",
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            child: Image.asset(
+                              'assets/images/Bellieslogo.png',
+                              height: 40,
+                              color: Colors.white,
+                            ),
                           ),
                           const SizedBox(width: 12),
-                          _socialIcon(
-                            Icons.alternate_email,
-                            "mailto:jubileealfonnn@gmail.com",
-                            tooltip: "Email Support (jubileealfonnn@gmail.com)",
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "BELLIE'S",
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                Text(
+                                  "SMARTSERVE",
+                                  style: GoogleFonts.poppins(
+                                    color: const Color(0xFFE91E63),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 2.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "Kitchen Active & Accepting Orders",
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF34D399),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        "Freshly cooked meals, traditional Silog, and comfort food delivered directly to your doorstep with speed and warmth.",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12.5,
+                          height: 1.6,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          _socialPillButton(
+                            icon: Icons.facebook,
+                            label: "Facebook",
+                            url: "https://www.facebook.com/profile.php?id=61591278277020",
+                          ),
+                          _socialPillButton(
+                            icon: Icons.email_outlined,
+                            label: "Support",
+                            url: "mailto:jubileealfonnn@gmail.com",
                           ),
                         ],
                       )
                     ],
                   ),
                 ),
+
+                // Quick Links Column
                 _footerColumn("QUICK LINKS", [
-                  {'title': "Home", 'onTap': () => _scrollToSection(_homeKey)},
-                  {'title': "Menu", 'onTap': () => _scrollToSection(_menuKey)},
-                  {'title': "About Us", 'onTap': () => _scrollToSection(_aboutKey)},
-                  {'title': "Contact", 'onTap': () => _showContactDialog()},
+                  {'title': "Home", 'icon': Icons.home_outlined, 'onTap': () => _scrollToSection(_homeKey)},
+                  {'title': "Menu", 'icon': Icons.restaurant_menu_outlined, 'onTap': () => _scrollToSection(_menuKey)},
+                  {'title': "About Us", 'icon': Icons.info_outline_rounded, 'onTap': () => _scrollToSection(_aboutKey)},
+                  {'title': "Contact Us", 'icon': Icons.phone_in_talk_outlined, 'onTap': () => _showContactDialog()},
                 ]),
+
+                // Help & Support Column
                 _footerColumn("HELP & SUPPORT", [
-                  {'title': "FAQs", 'onTap': () => _showFaqsDialog()},
-                  {'title': "Delivery Info", 'onTap': () => _showDeliveryInfoDialog()},
-                  {'title': "Return Policy", 'onTap': () => _showReturnPolicyDialog()},
-                  {'title': "Terms & Conditions", 'onTap': () => _showTermsDialog()},
-                  {'title': "Privacy Policy", 'onTap': () => _showPrivacyPolicyDialog()},
+                  {'title': "FAQs", 'icon': Icons.help_outline_rounded, 'onTap': () => _showFaqsDialog()},
+                  {'title': "Delivery Info", 'icon': Icons.local_shipping_outlined, 'onTap': () => _showDeliveryInfoDialog()},
+                  {'title': "Return Policy", 'icon': Icons.assignment_return_outlined, 'onTap': () => _showReturnPolicyDialog()},
+                  {'title': "Terms & Conditions", 'icon': Icons.gavel_outlined, 'onTap': () => _showTermsDialog()},
+                  {'title': "Privacy Policy", 'icon': Icons.privacy_tip_outlined, 'onTap': () => _showPrivacyPolicyDialog()},
                 ]),
+
+                // Store Info Column
                 SizedBox(
-                  width: 250,
+                  width: 210,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("STAY UPDATED", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                      _footerColumnHeader("STORE INFO"),
                       const SizedBox(height: 16),
-                      const Text("Subscribe to get exclusive offers and latest updates.", style: TextStyle(color: Colors.white54, fontSize: 12)),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _newsletterEmailController,
-                        style: const TextStyle(color: Colors.white),
-                        onSubmitted: (_) => _handleSubscribeNewsletter(),
-                        decoration: InputDecoration(
-                          hintText: "Enter your email",
-                          hintStyle: const TextStyle(color: Colors.white38),
-                          filled: true,
-                          fillColor: Colors.white.withAlpha(20),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                          suffixIcon: IconButton(
-                            icon: _isSubscribingNewsletter
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(color: Color(0xFFE91E63), strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.send, color: Color(0xFFE91E63)),
-                            onPressed: _isSubscribingNewsletter ? null : _handleSubscribeNewsletter,
-                          ),
-                        ),
-                      )
+                      _footerInfoItem(
+                        icon: Icons.access_time_rounded,
+                        title: "Opening Hours",
+                        subtitle: "Mon - Sun: 8:00 AM - 10:00 PM",
+                      ),
+                      const SizedBox(height: 14),
+                      _footerInfoItem(
+                        icon: Icons.location_on_outlined,
+                        title: "Service Area",
+                        subtitle: "Local Community Delivery",
+                      ),
+                      const SizedBox(height: 14),
+                      _footerInfoItem(
+                        icon: Icons.verified_user_outlined,
+                        title: "Quality Guarantee",
+                        subtitle: "100% Freshly Prepared Food",
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-            const Divider(color: Colors.white10, height: 60),
-            const Text("© 2026 Bellie's SmartServe. All Rights Reserved.", style: TextStyle(color: Colors.white24, fontSize: 12)),
+
+            const SizedBox(height: 36),
+            Container(
+              height: 1,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.0),
+                    Colors.white.withValues(alpha: 0.12),
+                    Colors.white.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    "© 2026 Bellie's SmartServe • All Rights Reserved.",
+                    style: GoogleFonts.poppins(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () => _scrollToSection(_homeKey),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Back to top",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.arrow_upward_rounded,
+                          size: 14,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _footerColumnHeader(String title) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 3.5,
+          height: 13,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE91E63),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 12.5,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ],
     );
   }
 
@@ -3597,16 +3754,41 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 20),
+          _footerColumnHeader(title),
+          const SizedBox(height: 16),
           ...items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: InkWell(
-              onTap: item['onTap'] as VoidCallback?,
-              borderRadius: BorderRadius.circular(4),
-              child: Text(
-                item['title'] as String,
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: item['onTap'] as VoidCallback?,
+                borderRadius: BorderRadius.circular(8),
+                hoverColor: const Color(0xFFE91E63).withValues(alpha: 0.1),
+                splashColor: const Color(0xFFE91E63).withValues(alpha: 0.2),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (item['icon'] != null) ...[
+                        Icon(
+                          item['icon'] as IconData,
+                          size: 14,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        item['title'] as String,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           )),
@@ -3615,19 +3797,92 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     );
   }
 
-  Widget _socialIcon(IconData icon, String url, {String? tooltip}) {
+  Widget _footerInfoItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 14,
+            color: const Color(0xFFE91E63),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: GoogleFonts.poppins(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _socialPillButton({
+    required IconData icon,
+    required String label,
+    required String url,
+  }) {
     return InkWell(
       onTap: () => _launchSocialUrl(url),
-      borderRadius: BorderRadius.circular(30),
-      child: Tooltip(
-        message: tooltip ?? '',
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.white24),
-            shape: BoxShape.circle,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.12),
           ),
-          child: Icon(icon, color: Colors.white, size: 18),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 14,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

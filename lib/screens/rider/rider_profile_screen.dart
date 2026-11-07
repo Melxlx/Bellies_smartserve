@@ -51,11 +51,9 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     setState(() => _isLoading = true);
     try {
       final p = await _repo.getRiderProfile(widget.riderId);
-      if (p != null) {
-        _profile = p;
-        _avatarUrl = p.avatarUrl;
-        _initControllers(p);
-      }
+      _profile = p;
+      _avatarUrl = p.avatarUrl;
+      _initControllers(p);
       if (mounted) setState(() => _isLoading = false);
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);

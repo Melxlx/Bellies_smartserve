@@ -38,7 +38,6 @@ class TopAlertBanner {
         icon = Icons.warning_rounded;
         break;
       case AlertType.info:
-      default:
         bg = const Color(0xFFFFF0F5);
         border = const Color(0xFFE91E63);
         textColor = const Color(0xFF880E4F);
