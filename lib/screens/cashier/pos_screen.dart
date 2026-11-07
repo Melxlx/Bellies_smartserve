@@ -87,8 +87,6 @@ class _PosScreenState extends State<PosScreen> {
 
       final products = await _productRepo.getProducts(
         status: ProductStatus.available,
-        categoryId: _selectedCategoryId,
-        searchQuery: _searchQuery,
       );
 
       final stockMap = await _productRepo.getBatchStockAvailability(
@@ -116,30 +114,58 @@ class _PosScreenState extends State<PosScreen> {
     }
   }
 
-  List<ProductModel> get _sortedProducts {
-    final list = List<ProductModel>.from(_products);
+  List<ProductModel> get _filteredAndSortedProducts {
+    final query = _searchQuery.trim().toLowerCase();
+
+    final filtered = _products.where((product) {
+      // 1. Filter by category
+      if (_selectedCategoryId != null && _selectedCategoryId != 'All') {
+        final matchesCatId = product.categoryId == _selectedCategoryId;
+        final matchesCatObjId = product.category?.id == _selectedCategoryId;
+        final matchesCatName =
+            product.category?.name.trim().toLowerCase() == _selectedCategoryId?.toLowerCase() ||
+            product.categoryId.trim().toLowerCase() == _selectedCategoryId?.toLowerCase();
+
+        if (!matchesCatId && !matchesCatObjId && !matchesCatName) {
+          return false;
+        }
+      }
+
+      // 2. Filter by search query
+      if (query.isNotEmpty) {
+        final nameMatch = product.name.toLowerCase().contains(query);
+        final skuMatch = product.sku.toLowerCase().contains(query);
+        final codeMatch = product.productCode.toLowerCase().contains(query);
+        if (!nameMatch && !skuMatch && !codeMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+
+    // 3. Sorting
     switch (_sortOption) {
       case PosSortOption.nameAsc:
-        list.sort((a, b) => a.name.compareTo(b.name));
+        filtered.sort((a, b) => a.name.compareTo(b.name));
         break;
       case PosSortOption.nameDesc:
-        list.sort((a, b) => b.name.compareTo(a.name));
+        filtered.sort((a, b) => b.name.compareTo(a.name));
         break;
       case PosSortOption.priceAsc:
-        list.sort((a, b) => a.sellingPrice.compareTo(b.sellingPrice));
+        filtered.sort((a, b) => a.sellingPrice.compareTo(b.sellingPrice));
         break;
       case PosSortOption.priceDesc:
-        list.sort((a, b) => b.sellingPrice.compareTo(a.sellingPrice));
+        filtered.sort((a, b) => b.sellingPrice.compareTo(a.sellingPrice));
         break;
     }
-    return list;
+
+    return filtered;
   }
 
   void _onSearchChanged(String query) {
-    _searchQuery = query;
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-      if (mounted) _loadData();
+    setState(() {
+      _searchQuery = query;
     });
   }
 
@@ -436,7 +462,7 @@ class _PosScreenState extends State<PosScreen> {
   }
 
   Widget _buildProductSection() {
-    final displayProducts = _sortedProducts;
+    final displayProducts = _filteredAndSortedProducts;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,7 +567,6 @@ class _PosScreenState extends State<PosScreen> {
         backgroundColor: Colors.grey[100],
         onSelected: (selected) {
           setState(() => _selectedCategoryId = categoryId);
-          _loadData();
         },
       ),
     );
