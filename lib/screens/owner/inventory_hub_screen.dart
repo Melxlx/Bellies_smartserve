@@ -167,7 +167,7 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                       ),
 
                       if (!isMobile) ...[
-                        const Spacer(),
+                        const SizedBox(width: 24),
                         _buildSegmentedControl(isDark: isDark, isMobile: false),
                       ],
                     ],
