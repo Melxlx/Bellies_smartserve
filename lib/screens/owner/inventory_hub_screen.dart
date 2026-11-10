@@ -103,8 +103,10 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
+                              runSpacing: 4,
                               children: [
                                 Text(
                                   "Inventory Management",
@@ -114,18 +116,15 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                                     color: isDark ? Colors.white : AppColors.textPrimary,
                                     letterSpacing: -0.3,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(width: 10),
                                 // Realtime Live Dot Badge
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                                    color: const Color(0xFF10B981).withAlpha(25),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                      color: const Color(0xFF10B981).withAlpha(60),
                                     ),
                                   ),
                                   child: Row(
@@ -152,6 +151,32 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                                     ],
                                   ),
                                 ),
+                                // System Status Badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE91E63).withAlpha(20),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0xFFE91E63).withAlpha(60),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.bolt_rounded, size: 11, color: Color(0xFFE91E63)),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        "Auto-Deduct Active",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFFE91E63),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 2),
@@ -169,32 +194,7 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                       ),
 
                       if (!isMobile) ...[
-                        const SizedBox(width: 20),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withAlpha(8) : const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.verified_user_outlined, size: 16, color: Color(0xFF10B981)),
-                              const SizedBox(width: 8),
-                              Text(
-                                "System Status:",
-                                style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.black87),
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                "Recipe Auto-Deduct Active",
-                                style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF10B981)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 20),
+                        const SizedBox(width: 16),
                         _buildSegmentedControl(isDark: isDark, isMobile: false),
                       ],
                     ],
@@ -223,8 +223,8 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
 
   Widget _buildSegmentedControl({required bool isDark, required bool isMobile}) {
     return Container(
-      height: 46,
-      width: isMobile ? double.infinity : 480,
+      height: 44,
+      width: isMobile ? double.infinity : 380,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: isDark ? Colors.black38 : const Color(0xFFF0F2F5),
@@ -238,14 +238,14 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
         children: [
           _buildSegmentTab(
             index: 0,
-            label: isMobile ? "Stock Control" : "Stock Control & Ingredients",
+            label: "Stock Control",
             icon: Icons.inventory_2_outlined,
             activeIcon: Icons.inventory_2_rounded,
             isDark: isDark,
           ),
           _buildSegmentTab(
             index: 1,
-            label: isMobile ? "Movement Logs" : "Movement & Audit Logs",
+            label: "Movement Logs",
             icon: Icons.history_toggle_off_outlined,
             activeIcon: Icons.history_rounded,
             isDark: isDark,
