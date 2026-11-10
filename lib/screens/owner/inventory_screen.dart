@@ -101,8 +101,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
+        title: Row(
+          children: const [
             Icon(Icons.warning_amber_rounded, color: Colors.red),
             SizedBox(width: 8),
             Text("Delete Selected Items?"),
@@ -298,58 +298,87 @@ class _InventoryScreenState extends State<InventoryScreen> {
     if (_error != null) return ErrorState(error: _error!, onRetry: _loadData);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildTopMetricCards(),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           _buildOverviewSection(),
         ],
       ),
     );
   }
 
-
-
   Widget _buildTopMetricCards() {
     final bool isDesktop = ResponsiveLayout.isDesktop(context);
-    final count = isDesktop ? 3 : 1;
 
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: count,
-      crossAxisSpacing: 18,
-      mainAxisSpacing: 18,
-      childAspectRatio: isDesktop ? 2.6 : 2.2,
+    if (!isDesktop) {
+      return Column(
+        children: [
+          _metricCard(
+            title: "Total Items",
+            value: "$_totalItems",
+            icon: Icons.inventory_2_rounded,
+            gradientColors: [const Color(0xFF10B981), const Color(0xFF059669)],
+            badgeText: "Active Stock",
+            badgeColor: const Color(0xFF10B981),
+          ),
+          const SizedBox(height: 10),
+          _metricCard(
+            title: "Low Stock Items",
+            value: "$_lowStockCount",
+            icon: Icons.warning_amber_rounded,
+            gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+            badgeText: "Action Needed",
+            badgeColor: const Color(0xFFF59E0B),
+          ),
+          const SizedBox(height: 10),
+          _metricCard(
+            title: "Out of Stock",
+            value: "$_outOfStockCount",
+            icon: Icons.remove_shopping_cart_rounded,
+            gradientColors: [const Color(0xFFEF4444), const Color(0xFFDC2626)],
+            badgeText: "Critical",
+            badgeColor: const Color(0xFFEF4444),
+          ),
+        ],
+      );
+    }
+
+    return Row(
       children: [
-        _metricCard(
-          title: "Total Items",
-          subtitle: "Total items in stock",
-          value: "$_totalItems",
-          icon: Icons.inventory_2_rounded,
-          gradientColors: [const Color(0xFF10B981), const Color(0xFF059669)],
-          badgeText: "Active Stock",
-          badgeColor: const Color(0xFF10B981),
+        Expanded(
+          child: _metricCard(
+            title: "Total Items",
+            value: "$_totalItems",
+            icon: Icons.inventory_2_rounded,
+            gradientColors: [const Color(0xFF10B981), const Color(0xFF059669)],
+            badgeText: "Active Stock",
+            badgeColor: const Color(0xFF10B981),
+          ),
         ),
-        _metricCard(
-          title: "Low Stock Items",
-          subtitle: "Items running low",
-          value: "$_lowStockCount",
-          icon: Icons.warning_amber_rounded,
-          gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
-          badgeText: "Action Needed",
-          badgeColor: const Color(0xFFF59E0B),
+        const SizedBox(width: 14),
+        Expanded(
+          child: _metricCard(
+            title: "Low Stock Items",
+            value: "$_lowStockCount",
+            icon: Icons.warning_amber_rounded,
+            gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+            badgeText: "Action Needed",
+            badgeColor: const Color(0xFFF59E0B),
+          ),
         ),
-        _metricCard(
-          title: "Out of Stock",
-          subtitle: "Items currently out of stock",
-          value: "$_outOfStockCount",
-          icon: Icons.remove_shopping_cart_rounded,
-          gradientColors: [const Color(0xFFEF4444), const Color(0xFFDC2626)],
-          badgeText: "Critical",
-          badgeColor: const Color(0xFFEF4444),
+        const SizedBox(width: 14),
+        Expanded(
+          child: _metricCard(
+            title: "Out of Stock",
+            value: "$_outOfStockCount",
+            icon: Icons.remove_shopping_cart_rounded,
+            gradientColors: [const Color(0xFFEF4444), const Color(0xFFDC2626)],
+            badgeText: "Critical",
+            badgeColor: const Color(0xFFEF4444),
+          ),
         ),
       ],
     );
@@ -357,7 +386,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   Widget _metricCard({
     required String title,
-    required String subtitle,
     required String value,
     required IconData icon,
     required List<Color> gradientColors,
@@ -365,99 +393,83 @@ class _InventoryScreenState extends State<InventoryScreen> {
     required Color badgeColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      height: 104,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: gradientColors,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: gradientColors.first.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Icon(icon, color: Colors.white, size: 22),
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: gradientColors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: badgeColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: badgeColor.withValues(alpha: 0.25)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
-                    ),
-                    const SizedBox(width: 5),
                     Text(
-                      badgeText,
+                      title,
                       style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: badgeColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF64748B),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: badgeColor.withValues(alpha: 0.2)),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: GoogleFonts.poppins(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: badgeColor,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1E293B),
-                  letterSpacing: -0.5,
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -476,16 +488,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final paginatedList = filtered.isEmpty ? <IngredientModel>[] : filtered.sublist(start, end > totalItems ? totalItems : end);
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -504,7 +516,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   Text(
                     "Stock Inventory List",
                     style: GoogleFonts.poppins(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF0F172A),
                     ),
@@ -512,7 +524,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   Text(
                     "Manage raw ingredients, stock levels and unit costs",
                     style: GoogleFonts.inter(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: const Color(0xFF64748B),
                     ),
                   ),
@@ -520,16 +532,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
               );
 
               final searchField = SizedBox(
-                width: isNarrow ? double.infinity : 220,
+                width: isNarrow ? double.infinity : 200,
+                height: 38,
                 child: TextField(
                   controller: _searchController,
+                  style: GoogleFonts.inter(fontSize: 12),
                   decoration: InputDecoration(
                     hintText: "Search ingredient...",
                     hintStyle: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade500),
-                    prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 16, color: Color(0xFF64748B)),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.close_rounded, size: 16),
+                            icon: const Icon(Icons.close_rounded, size: 14),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _currentPage = 1);
@@ -537,19 +551,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           )
                         : null,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: Color(0xFFE91E63)),
                     ),
                   ),
@@ -560,21 +574,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
               );
 
               final categoryDropdown = SizedBox(
-                width: isNarrow ? 150 : 160,
+                width: isNarrow ? 140 : 150,
+                height: 38,
                 child: DropdownButtonFormField<String>(
                   initialValue: _categoryFilter,
                   isDense: true,
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.black87),
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
                   ),
                   items: const [
@@ -596,96 +612,88 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
               );
 
-              final filterButton = PopupMenuButton<String>(
-                initialValue: _statusFilter,
-                onSelected: (val) => setState(() {
-                  _statusFilter = val;
-                  _currentPage = 1;
-                }),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'All', child: Text('All Status')),
-                  PopupMenuItem(value: 'Good', child: Text('Good Stock')),
-                  PopupMenuItem(value: 'Low Stock', child: Text('Low Stock')),
-                  PopupMenuItem(value: 'Out of Stock', child: Text('Out of Stock')),
-                ],
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _statusFilter != 'All' ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: _statusFilter != 'All' ? const Color(0xFF10B981) : Colors.grey.shade200,
+              final filterButton = SizedBox(
+                height: 38,
+                child: PopupMenuButton<String>(
+                  initialValue: _statusFilter,
+                  onSelected: (val) => setState(() {
+                    _statusFilter = val;
+                    _currentPage = 1;
+                  }),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'All', child: Text('All Status', style: TextStyle(fontSize: 12))),
+                    PopupMenuItem(value: 'Good', child: Text('Good Stock', style: TextStyle(fontSize: 12))),
+                    PopupMenuItem(value: 'Low Stock', child: Text('Low Stock', style: TextStyle(fontSize: 12))),
+                    PopupMenuItem(value: 'Out of Stock', child: Text('Out of Stock', style: TextStyle(fontSize: 12))),
+                  ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _statusFilter != 'All' ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _statusFilter != 'All' ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.filter_list_rounded,
-                        size: 16,
-                        color: _statusFilter != 'All' ? const Color(0xFF10B981) : const Color(0xFF64748B),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _statusFilter == 'All' ? 'Filter' : _statusFilter,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _statusFilter != 'All' ? const Color(0xFF047857) : const Color(0xFF334155),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.filter_list_rounded,
+                          size: 15,
+                          color: _statusFilter != 'All' ? const Color(0xFF10B981) : const Color(0xFF64748B),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 5),
+                        Text(
+                          _statusFilter == 'All' ? 'Filter' : _statusFilter,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _statusFilter != 'All' ? const Color(0xFF047857) : const Color(0xFF334155),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
 
               final actionButtons = Wrap(
-                spacing: 10,
-                runSpacing: 10,
+                spacing: 8,
+                runSpacing: 8,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   if (_selectedIds.isNotEmpty)
-                    ElevatedButton.icon(
-                      onPressed: _confirmDeleteSelected,
-                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                      label: Text("Delete (${_selectedIds.length})"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF4444),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                    ),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFE91E63), Color(0xFF9C27B0)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFE91E63).withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
+                    SizedBox(
+                      height: 38,
+                      child: ElevatedButton.icon(
+                        onPressed: _confirmDeleteSelected,
+                        icon: const Icon(Icons.delete_outline_rounded, size: 15),
+                        label: Text("Delete (${_selectedIds.length})", style: GoogleFonts.poppins(fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
                         ),
-                      ],
+                      ),
                     ),
+                  SizedBox(
+                    height: 38,
                     child: ElevatedButton.icon(
                       onPressed: () => _showIngredientDialog(),
-                      icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                      icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
                       label: Text(
                         "Add Ingredient",
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
+                        backgroundColor: const Color(0xFFE91E63),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
                       ),
                     ),
                   ),
@@ -703,9 +711,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         actionButtons,
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     searchField,
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(child: categoryDropdown),
@@ -724,8 +732,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
+                      spacing: 8,
+                      runSpacing: 8,
                       alignment: WrapAlignment.end,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
@@ -740,10 +748,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
               );
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           if (filtered.isEmpty)
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
+              padding: EdgeInsets.symmetric(vertical: 32),
               child: Center(child: Text("No raw ingredients found matching filters.")),
             )
           else ...[
@@ -754,15 +762,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minWidth: constraints.maxWidth),
                     child: DataTable(
-                      columnSpacing: 28,
-                      columns: const [
-                        DataColumn(label: Text('Ingredient Name', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Category', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Unit Cost', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Last Updated', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
+                      columnSpacing: 20,
+                      headingRowHeight: 38,
+                      dataRowMinHeight: 46,
+                      dataRowMaxHeight: 50,
+                      headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+                      dividerThickness: 0.8,
+                      columns: [
+                        DataColumn(label: Text('Ingredient Name', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11.5, color: const Color(0xFF475569)))),
+                        DataColumn(label: Text('Category', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11.5, color: const Color(0xFF475569)))),
+                        DataColumn(label: Text('Quantity', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11.5, color: const Color(0xFF475569)))),
+                        DataColumn(label: Text('Unit Cost', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11.5, color: const Color(0xFF475569)))),
+                        DataColumn(label: Text('Last Updated', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11.5, color: const Color(0xFF475569)))),
+                        DataColumn(label: Text('Status', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11.5, color: const Color(0xFF475569)))),
+                        DataColumn(label: Text('Action', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11.5, color: const Color(0xFF475569)))),
                       ],
                       rows: paginatedList.map((ingredient) {
                         final isSelected = _selectedIds.contains(ingredient.id);
@@ -785,28 +798,28 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(ingredient.name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text(ingredient.name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                   Text(ingredient.code, style: const TextStyle(fontSize: 10, color: Colors.grey)),
                                 ],
                               ),
                             ),
                             DataCell(
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   ingredient.category,
-                                  style: TextStyle(color: Colors.grey[800], fontSize: 11, fontWeight: FontWeight.w500),
+                                  style: TextStyle(color: Colors.grey[800], fontSize: 10.5, fontWeight: FontWeight.w500),
                                 ),
                               ),
                             ),
                             DataCell(
                               Text(
                                 '${_formatStockQuantity(ingredient.currentQuantity)} ${ingredient.unit.name.toLowerCase()}',
-                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13),
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12.5),
                               ),
                             ),
                             DataCell(
@@ -829,50 +842,50 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                   Tooltip(
                                     message: "Stock In (+)",
                                     child: InkWell(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(6),
                                       onTap: () => _recordStockMovement(ingredient, true),
                                       child: Container(
-                                        padding: const EdgeInsets.all(6),
+                                        padding: const EdgeInsets.all(5),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFECFDF5),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(6),
                                           border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
                                         ),
-                                        child: const Icon(Icons.add_rounded, color: Color(0xFF047857), size: 16),
+                                        child: const Icon(Icons.add_rounded, color: Color(0xFF047857), size: 14),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: 4),
                                   Tooltip(
                                     message: "Stock Out (-)",
                                     child: InkWell(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(6),
                                       onTap: () => _recordStockMovement(ingredient, false),
                                       child: Container(
-                                        padding: const EdgeInsets.all(6),
+                                        padding: const EdgeInsets.all(5),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFFFFBEB),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(6),
                                           border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
                                         ),
-                                        child: const Icon(Icons.remove_rounded, color: Color(0xFFB45309), size: 16),
+                                        child: const Icon(Icons.remove_rounded, color: Color(0xFFB45309), size: 14),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: 4),
                                   Tooltip(
                                     message: "Edit Details",
                                     child: InkWell(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(6),
                                       onTap: () => _showIngredientDialog(ingredient: ingredient),
                                       child: Container(
-                                        padding: const EdgeInsets.all(6),
+                                        padding: const EdgeInsets.all(5),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(6),
                                           border: Border.all(color: Colors.grey.shade300),
                                         ),
-                                        child: const Icon(Icons.edit_rounded, color: Color(0xFF475569), size: 16),
+                                        child: const Icon(Icons.edit_rounded, color: Color(0xFF475569), size: 14),
                                       ),
                                     ),
                                   ),

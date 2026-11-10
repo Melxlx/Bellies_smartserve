@@ -42,60 +42,53 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF4F6F9),
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 135 : 105),
+        preferredSize: Size.fromHeight(isMobile ? 110 : 66),
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurface : Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
             ],
             border: Border(
               bottom: BorderSide(
-                color: isDark ? Colors.white12 : Colors.grey.shade200,
+                color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
                 width: 1,
               ),
             ),
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Row(
                     children: [
                       const SmartBackButton(),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       
-                      // High-Tech Icon Badge
+                      // Compact Icon Badge
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFFE91E63), Color(0xFF9C27B0)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFE91E63).withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
                           Icons.inventory_2_rounded,
                           color: Colors.white,
-                          size: 22,
+                          size: 18,
                         ),
                       ),
-                      const SizedBox(width: 14),
+                      const SizedBox(width: 12),
 
                       // Title & Subtitle Column
                       Expanded(
@@ -111,7 +104,7 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                                 Text(
                                   "Inventory Management",
                                   style: GoogleFonts.poppins(
-                                    fontSize: isMobile ? 18 : 22,
+                                    fontSize: isMobile ? 16 : 18,
                                     fontWeight: FontWeight.bold,
                                     color: isDark ? Colors.white : AppColors.textPrimary,
                                     letterSpacing: -0.3,
@@ -119,10 +112,10 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                                 ),
                                 // Realtime Live Dot Badge
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF10B981).withAlpha(25),
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: const Color(0xFF10B981).withAlpha(60),
                                     ),
@@ -131,18 +124,18 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Container(
-                                        width: 6,
-                                        height: 6,
+                                        width: 5,
+                                        height: 5,
                                         decoration: const BoxDecoration(
                                           color: Color(0xFF10B981),
                                           shape: BoxShape.circle,
                                         ),
                                       ),
-                                      const SizedBox(width: 5),
+                                      const SizedBox(width: 4),
                                       Text(
                                         "LIVE SYNC",
                                         style: GoogleFonts.poppins(
-                                          fontSize: 9,
+                                          fontSize: 8.5,
                                           fontWeight: FontWeight.bold,
                                           color: const Color(0xFF10B981),
                                           letterSpacing: 0.5,
@@ -153,10 +146,10 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                                 ),
                                 // System Status Badge
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE91E63).withAlpha(20),
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: const Color(0xFFE91E63).withAlpha(60),
                                     ),
@@ -164,12 +157,12 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.bolt_rounded, size: 11, color: Color(0xFFE91E63)),
-                                      const SizedBox(width: 3),
+                                      const Icon(Icons.bolt_rounded, size: 10, color: Color(0xFFE91E63)),
+                                      const SizedBox(width: 2),
                                       Text(
                                         "Auto-Deduct Active",
                                         style: GoogleFonts.poppins(
-                                          fontSize: 9,
+                                          fontSize: 8.5,
                                           fontWeight: FontWeight.bold,
                                           color: const Color(0xFFE91E63),
                                         ),
@@ -179,11 +172,11 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 1),
                             Text(
                               "Track stock levels, raw ingredients & realtime movement logs",
                               style: GoogleFonts.inter(
-                                fontSize: isMobile ? 11 : 12,
+                                fontSize: isMobile ? 10.5 : 11,
                                 color: isDark ? Colors.grey.shade400 : AppColors.textSecondary,
                               ),
                               maxLines: 1,
@@ -202,7 +195,7 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
 
                   // Mobile Segmented Control (Below Title)
                   if (isMobile) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     _buildSegmentedControl(isDark: isDark, isMobile: true),
                   ],
                 ],
@@ -223,14 +216,14 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
 
   Widget _buildSegmentedControl({required bool isDark, required bool isMobile}) {
     return Container(
-      height: 44,
-      width: isMobile ? double.infinity : 380,
-      padding: const EdgeInsets.all(4),
+      height: 38,
+      width: isMobile ? double.infinity : 320,
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: isDark ? Colors.black38 : const Color(0xFFF0F2F5),
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? Colors.black38 : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.white10 : Colors.grey.shade300,
+          color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
           width: 0.8,
         ),
       ),
