@@ -30,8 +30,8 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-build/
-/build/
+build/*
+!build/web
 /android/build/
 /android/.gradle/
 /coverage/
