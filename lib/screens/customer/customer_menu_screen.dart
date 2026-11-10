@@ -748,6 +748,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     final isAuthenticated = user != null && !user.isAnonymous;
 
     return SliverAppBar(
+      automaticallyImplyLeading: false,
       floating: true,
       pinned: true,
       backgroundColor: Colors.white,
@@ -3254,47 +3255,6 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     );
   }
 
-  void _showReturnPolicyDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.verified_outlined, color: Color(0xFFE91E63)),
-            const SizedBox(width: 10),
-            Text("Return & Refund Policy", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
-        content: SizedBox(
-          width: 480,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text("100% Customer Satisfaction Guarantee", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                SizedBox(height: 12),
-                Text(
-                  "At Bellie's SmartServe, we prioritize meal quality and customer satisfaction. If your order is incomplete, incorrect, or damaged:\n\n"
-                  "1. Please notify us within 1 hour of receiving your order.\n"
-                  "2. Send a photo or details to our customer support.\n"
-                  "3. We will dispatch a free replacement meal or process a full refund via GCash.\n",
-                  style: TextStyle(fontSize: 13, height: 1.5, color: Colors.black87),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Got it", style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showTermsDialog() {
     showDialog<void>(
       context: context,
@@ -3733,7 +3693,6 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 _footerColumn("HELP & SUPPORT", [
                   {'title': "FAQs", 'icon': Icons.help_outline_rounded, 'onTap': () => _showFaqsDialog()},
                   {'title': "Delivery Info", 'icon': Icons.local_shipping_outlined, 'onTap': () => _showDeliveryInfoDialog()},
-                  {'title': "Return Policy", 'icon': Icons.assignment_return_outlined, 'onTap': () => _showReturnPolicyDialog()},
                   {'title': "Terms & Conditions", 'icon': Icons.gavel_outlined, 'onTap': () => _showTermsDialog()},
                   {'title': "Privacy Policy", 'icon': Icons.privacy_tip_outlined, 'onTap': () => _showPrivacyPolicyDialog()},
                 ]),
