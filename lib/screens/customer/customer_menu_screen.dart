@@ -3348,6 +3348,20 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     );
   }
 
+  Widget _privacySectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13.5, color: const Color(0xFFE91E63)),
+    );
+  }
+
+  Widget _privacySectionBody(String text) {
+    return Text(
+      text,
+      style: GoogleFonts.poppins(fontSize: 12, height: 1.6, color: Colors.black87),
+    );
+  }
+
   void _showPrivacyPolicyDialog() {
     showDialog<void>(
       context: context,
@@ -3361,19 +3375,73 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
           ],
         ),
         content: SizedBox(
-          width: 480,
+          width: 560,
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text("Data Protection & Privacy", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                SizedBox(height: 10),
-                Text(
-                  "Bellie's SmartServe respects and protects your privacy.\n\n"
-                  "• Your name, phone number, and address are strictly used to process and deliver your orders.\n"
-                  "• We never sell or share your personal data with third parties.\n"
-                  "• All transactions and customer data remain secure and protected.",
-                  style: TextStyle(fontSize: 13, height: 1.6, color: Colors.black87),
+              children: [
+                Text("Effective Date: January 1, 2026", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+                const SizedBox(height: 12),
+                Text("Welcome to Bellie's SmartServe. We value your privacy and are committed to protecting your personal data in compliance with the Data Privacy Act of 2012 (RA 10173). This Privacy Policy explains how we collect, use, protect, and handle your information when you use our online food ordering system.", style: GoogleFonts.poppins(fontSize: 12.5, height: 1.6, color: Colors.black87)),
+                const SizedBox(height: 16),
+                
+                _privacySectionTitle("1. Information We Collect"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "We collect information necessary to fulfill your orders and improve your dining experience:\n"
+                  "• Personal Details: Name, contact number, delivery address, and email address when you create an account or place an order.\n"
+                  "• Order History & Preferences: Details of products ordered, payment method preferences, and special dietary requests.\n"
+                  "• Technical Data: Device IP address, browser type, operating system, and session data for system security and performance optimization."
+                ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("2. How We Use Your Information"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "Your personal data is strictly processed for legitimate business purposes:\n"
+                  "• Fulfilling, tracking, and delivering your food orders accurately.\n"
+                  "• Processing payment verifications and issuing transaction receipts.\n"
+                  "• Sending order status notifications (e.g. Preparing, Out for Delivery, Delivered).\n"
+                  "• Customer support assistance and handling inquiries or feedback.\n"
+                  "• Informing you about special promotional offers, discounts, or new menu items (you may opt-out anytime)."
+                ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("3. Data Protection & Security"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "We implement industry-standard technical and organizational security measures:\n"
+                  "• Encrypted database connections and secure cloud infrastructure powered by Supabase.\n"
+                  "• Strict access controls restricting customer data to authorized kitchen, cashier, and delivery staff only.\n"
+                  "• We NEVER sell, trade, or rent your personal information to third-party marketing companies."
+                ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("4. Payment Security"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "All digital transactions (such as GCash or QR payments) are processed securely. Bellie's SmartServe only stores transaction reference numbers and payment verification statuses. We do not store sensitive payment gateway passwords or credentials on our servers."
+                ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("5. Your Rights as a Data Subject"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "Under the Data Privacy Act, you have the following rights:\n"
+                  "• Right to Access: You can view and update your profile details anytime via your Account Profile.\n"
+                  "• Right to Correction: Request correction of inaccurate or outdated information.\n"
+                  "• Right to Erasure: Request deletion of your account and personal data from our systems.\n"
+                  "• Right to Object: Opt-out of marketing communications or non-essential data processing."
+                ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("6. Contact Us"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact our Data Protection Officer at:\n"
+                  "• Email: privacy@belliessmartserve.com\n"
+                  "• Phone: +63 912 345 6789\n"
+                  "• Store Location: Pagsanjan, Laguna"
                 ),
               ],
             ),
@@ -3382,7 +3450,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Close", style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.bold)),
+            child: Text("I Understand & Accept", style: GoogleFonts.poppins(color: const Color(0xFFE91E63), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
