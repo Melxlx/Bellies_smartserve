@@ -169,7 +169,32 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
                       ),
 
                       if (!isMobile) ...[
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 20),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withAlpha(8) : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.verified_user_outlined, size: 16, color: Color(0xFF10B981)),
+                              const SizedBox(width: 8),
+                              Text(
+                                "System Status:",
+                                style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.black87),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                "Recipe Auto-Deduct Active",
+                                style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF10B981)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 20),
                         _buildSegmentedControl(isDark: isDark, isMobile: false),
                       ],
                     ],
@@ -198,8 +223,8 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
 
   Widget _buildSegmentedControl({required bool isDark, required bool isMobile}) {
     return Container(
-      height: 44,
-      width: isMobile ? double.infinity : 380,
+      height: 46,
+      width: isMobile ? double.infinity : 480,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: isDark ? Colors.black38 : const Color(0xFFF0F2F5),
@@ -213,14 +238,14 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
         children: [
           _buildSegmentTab(
             index: 0,
-            label: "Stock Control",
+            label: isMobile ? "Stock Control" : "Stock Control & Ingredients",
             icon: Icons.inventory_2_outlined,
             activeIcon: Icons.inventory_2_rounded,
             isDark: isDark,
           ),
           _buildSegmentTab(
             index: 1,
-            label: "Movement Logs",
+            label: isMobile ? "Movement Logs" : "Movement & Audit Logs",
             icon: Icons.history_toggle_off_outlined,
             activeIcon: Icons.history_rounded,
             isDark: isDark,
