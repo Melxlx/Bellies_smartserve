@@ -83,18 +83,19 @@ class RiderDashboardRepository {
     try {
       final orderData = await _supabase
           .from('orders')
-          .select('queue_no')
+          .select('queue_no, created_by')
           .eq('id', orderId)
           .maybeSingle();
       final queueNo = (orderData?['queue_no'] ?? '').toString().padLeft(3, '0');
+      final customerUserId = orderData?['created_by']?.toString();
 
       String title = 'Delivery Status Updated';
       String message = 'Order #$queueNo status changed to $deliveryStatus.';
       if (deliveryStatus == 'outForDelivery') {
-        title = 'Order Out for Delivery';
-        message = 'Rider picked up Order #$queueNo and is en route!';
+        title = 'Order Out for Delivery 🛵';
+        message = 'Rider picked up Order #$queueNo and is en route to you!';
       } else if (deliveryStatus == 'delivered') {
-        title = 'Order Delivered';
+        title = 'Order Delivered 🎉';
         message = 'Order #$queueNo has been successfully delivered!';
       }
 
@@ -104,6 +105,7 @@ class RiderDashboardRepository {
         category: 'DELIVERY',
         route: AppRoutes.tracking,
         targetRole: 'CUSTOMER,CASHIER,OWNER,RIDER',
+        userId: customerUserId,
       );
     } catch (e) {
       debugPrint("Error creating delivery notification: $e");

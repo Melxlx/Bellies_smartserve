@@ -537,7 +537,16 @@ class OrderRepository {
   }
 
   Future<void> updateOrderStatus(String orderId, String status) async {
-    await _supabase.from('orders').update({'status': status}).eq('id', orderId);
+    final res = await _supabase
+        .from('orders')
+        .update({'status': status})
+        .eq('id', orderId)
+        .select('id, queue_no, created_by')
+        .maybeSingle();
+
+    final queueNo = res != null ? (res['queue_no'] ?? '').toString().padLeft(3, '0') : '';
+    final customerUserId = res?['created_by']?.toString();
+
     if (status.toLowerCase() == 'received' ||
         status.toLowerCase() == 'preparing' ||
         status.toLowerCase() == 'ready' ||
@@ -547,6 +556,35 @@ class OrderRepository {
         await RecipeRepository().deductIngredientsForOrder(orderId);
       } catch (e) {
         debugPrint("Error auto-deducting ingredients on status update ($status): $e");
+      }
+    }
+
+    if (customerUserId != null && customerUserId.isNotEmpty) {
+      try {
+        String title = 'Order Status Updated';
+        String message = 'Order #$queueNo status is now ${status.toUpperCase()}.';
+        final statusLower = status.toLowerCase();
+        if (statusLower == 'preparing') {
+          title = 'Kitchen is Preparing your Order! 🍳';
+          message = 'Order #$queueNo is now being prepared in the kitchen.';
+        } else if (statusLower == 'ready') {
+          title = 'Order Ready! 🍽️';
+          message = 'Order #$queueNo is ready!';
+        } else if (statusLower == 'completed' || statusLower == 'served') {
+          title = 'Order Completed! ✅';
+          message = 'Order #$queueNo has been completed. Thank you!';
+        }
+
+        await NotificationRepository().addNotification(
+          title: title,
+          message: message,
+          category: 'MY_ORDERS',
+          route: AppRoutes.tracking,
+          targetRole: 'CUSTOMER',
+          userId: customerUserId,
+        );
+      } catch (e) {
+        debugPrint("Error sending customer status notification: $e");
       }
     }
   }

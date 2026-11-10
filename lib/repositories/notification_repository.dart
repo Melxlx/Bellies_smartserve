@@ -67,21 +67,37 @@ class NotificationRepository {
     List<SystemNotificationModel> filterForRole(List<SystemNotificationModel> list) {
       final filtered = list.where((n) => !_dismissedNotificationIds.contains(n.id)).toList();
       final currentUserId = _supabase.auth.currentUser?.id;
-
+  
       // Customer notifications filtering:
       if (forRole == UserRole.customer) {
         // 1. Unauthenticated / Guest Customer -> NO notifications displayed
         if (currentUserId == null || currentUserId.isEmpty) {
           return [];
         }
-        // 2. Logged-in Customer -> Only show notifications directed to this user ID, or general customer alerts
+        // 2. Logged-in Customer -> Show ONLY notifications matching this customer's user ID (or general PROMOS/BROADCAST)
         return filtered.where((n) {
           if (!n.isForRole(UserRole.customer)) return false;
+
+          // Strictly block internal staff categories from customer view
+          final cat = n.category.toUpperCase();
+          if (cat == 'INVENTORY' ||
+              cat == 'LOW_STOCK' ||
+              cat == 'PREPARATION_TIME' ||
+              cat == 'SYSTEM' ||
+              cat == 'ATTENDANCE' ||
+              cat == 'PAYROLL' ||
+              cat == 'FINANCE' ||
+              cat == 'ONLINE_ORDERS') {
+            return false;
+          }
+          
           // If the notification has a specific userId, it MUST match the logged-in user
           if (n.userId != null && n.userId!.isNotEmpty) {
             return n.userId == currentUserId;
           }
-          return true;
+
+          // If no userId is specified, only general broadcast categories (PROMOS, BROADCAST) are visible
+          return cat == 'PROMOS' || cat == 'BROADCAST';
         }).toList();
       }
 

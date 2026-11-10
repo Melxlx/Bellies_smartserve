@@ -1,15 +1,20 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/order_model.dart';
+import '../../models/system_notification_model.dart';
+import '../../models/user_model.dart';
 import '../../repositories/tracking_repository.dart';
+import '../../repositories/notification_repository.dart';
 import '../../services/free_map_service.dart';
 import '../../services/delivery_service_area.dart';
 import '../../services/order_tracking_service.dart';
 import '../../widgets/order_rating_widget.dart';
 import '../../widgets/state_widgets.dart';
+import '../../widgets/notifications_modal_sheet.dart';
 
 class CustomerTrackingScreen extends StatefulWidget {
   const CustomerTrackingScreen({super.key});
@@ -88,12 +93,32 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final isAuthenticated = user != null && !user.isAnonymous;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9E3),
       appBar: AppBar(
         title: const Text("Track My Order"),
         backgroundColor: Colors.white,
         actions: [
+          if (isAuthenticated)
+            StreamBuilder<List<SystemNotificationModel>>(
+              stream: NotificationRepository().streamNotifications(forRole: UserRole.customer),
+              builder: (context, snapshot) {
+                final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
+                return IconButton(
+                  tooltip: "Notifications",
+                  icon: unread > 0
+                      ? Badge(
+                          label: Text('$unread'),
+                          child: const Icon(Icons.notifications_outlined, color: Colors.black87),
+                        )
+                      : const Icon(Icons.notifications_outlined, color: Colors.black87),
+                  onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.customer),
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadCustomerOrdersAndAutoTrack,

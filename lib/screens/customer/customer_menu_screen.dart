@@ -14,12 +14,16 @@ import '../../models/product_model.dart';
 import '../../models/category_model.dart';
 import '../../models/order_model.dart';
 import '../../models/customer_checkout_draft.dart';
+import '../../models/system_notification_model.dart';
+import '../../models/user_model.dart';
 import '../../repositories/product_repository.dart';
 import '../../repositories/category_repository.dart';
 import '../../repositories/tracking_repository.dart';
+import '../../repositories/notification_repository.dart';
 import '../../services/order_tracking_service.dart';
 import '../../widgets/state_widgets.dart';
 import '../../widgets/product_image.dart';
+import '../../widgets/notifications_modal_sheet.dart';
 
 
 class CustomerMenuScreen extends StatefulWidget {
@@ -767,6 +771,23 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
           tooltip: "Search Menu",
           onPressed: _showSearchDialog,
         ),
+        if (isAuthenticated)
+          StreamBuilder<List<SystemNotificationModel>>(
+            stream: NotificationRepository().streamNotifications(forRole: UserRole.customer),
+            builder: (context, snapshot) {
+              final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
+              return IconButton(
+                tooltip: "Notifications",
+                icon: unread > 0
+                    ? Badge(
+                        label: Text('$unread'),
+                        child: const Icon(Icons.notifications_outlined, color: Colors.black87),
+                      )
+                    : const Icon(Icons.notifications_outlined, color: Colors.black87),
+                onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.customer),
+              );
+            },
+          ),
         Stack(
           alignment: Alignment.center,
           children: [
@@ -818,6 +839,8 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 final messenger = ScaffoldMessenger.of(context);
                 if (value == 'profile') {
                   _showCustomerProfileDialog();
+                } else if (value == 'notifications') {
+                  NotificationsModalSheet.show(context, forRole: UserRole.customer);
                 } else if (value == 'tracking') {
                   Navigator.pushNamed(context, AppRoutes.tracking);
                 } else if (value == 'logout') {
@@ -915,6 +938,16 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         const Icon(Icons.person_outline_rounded, color: Color(0xFFE91E63), size: 20),
                         const SizedBox(width: 12),
                         Text("My Profile", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'notifications',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notifications_outlined, color: Color(0xFFE91E63), size: 20),
+                        const SizedBox(width: 12),
+                        Text("Notifications", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ),
@@ -2659,15 +2692,27 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                       ),
                       Row(
                         children: [
-                          _buildScrollButtons(controller),
-                          const SizedBox(width: 12),
+                          if (!ResponsiveLayout.isMobile(context)) ...[
+                            _buildScrollButtons(controller),
+                            const SizedBox(width: 8),
+                          ],
                           TextButton(
                             onPressed: () {
                               setState(() {
                                 _selectedCategoryId = cat.id;
                               });
                             },
-                            child: const Text("See More >", style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.bold)),
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFFE91E63),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            ),
+                            child: Text(
+                              "See All",
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                         ],
                       ),

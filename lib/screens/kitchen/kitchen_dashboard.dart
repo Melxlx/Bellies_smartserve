@@ -8,13 +8,11 @@ import '../../models/order_model.dart';
 import '../../models/recipe_model.dart';
 import '../../models/ingredient_model.dart';
 import '../../models/inventory_movement_model.dart';
-import '../../models/system_notification_model.dart';
 import '../../models/user_model.dart';
 import '../../repositories/order_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../repositories/ingredient_repository.dart';
 import '../../repositories/notification_repository.dart';
-import '../../widgets/notifications_modal_sheet.dart';
 import '../../widgets/state_widgets.dart';
 
 class KitchenDashboard extends StatefulWidget {
@@ -321,22 +319,6 @@ class _KitchenDashboardState extends State<KitchenDashboard>
                   icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
                   onPressed: _showWastageDialog,
                 ),
-                StreamBuilder<List<SystemNotificationModel>>(
-                  stream: NotificationRepository().streamNotifications(forRole: UserRole.kitchen),
-                  builder: (context, snapshot) {
-                    final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
-                    return IconButton(
-                      tooltip: "Notifications",
-                      icon: unread > 0
-                          ? Badge(
-                              label: Text('$unread'),
-                              child: const Icon(Icons.notifications_outlined, color: Colors.black87),
-                            )
-                          : const Icon(Icons.notifications_outlined, color: Colors.black87),
-                      onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.kitchen),
-                    );
-                  },
-                ),
                 _buildQueueBadge(allOrders.length, compact: true),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert, color: Colors.black87),
@@ -381,22 +363,6 @@ class _KitchenDashboardState extends State<KitchenDashboard>
                   ),
                 ),
                 const SizedBox(width: 8),
-                StreamBuilder<List<SystemNotificationModel>>(
-                  stream: NotificationRepository().streamNotifications(forRole: UserRole.kitchen),
-                  builder: (context, snapshot) {
-                    final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
-                    return IconButton(
-                      tooltip: "Notifications",
-                      icon: unread > 0
-                          ? Badge(
-                              label: Text('$unread'),
-                              child: const Icon(Icons.notifications_outlined, color: Colors.black87),
-                            )
-                          : const Icon(Icons.notifications_outlined, color: Colors.black87),
-                      onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.kitchen),
-                    );
-                  },
-                ),
                 _buildQueueBadge(allOrders.length),
                 IconButton(
                   tooltip: "My Profile",
