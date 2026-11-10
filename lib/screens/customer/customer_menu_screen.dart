@@ -1818,17 +1818,9 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    "POPULAR CATEGORIES",
-                    style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.5),
-                  ),
-                ),
-                _buildScrollButtons(_categoriesScrollController),
-              ],
+            child: Text(
+              "POPULAR CATEGORIES",
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.5),
             ),
           ),
           SizedBox(
@@ -2690,31 +2682,23 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         cat.name.toUpperCase(),
                         style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                       ),
-                      Row(
-                        children: [
-                          if (!ResponsiveLayout.isMobile(context)) ...[
-                            _buildScrollButtons(controller),
-                            const SizedBox(width: 8),
-                          ],
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _selectedCategoryId = cat.id;
-                              });
-                            },
-                            style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFFE91E63),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            ),
-                            child: Text(
-                              "See All",
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedCategoryId = cat.id;
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFFE91E63),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        ),
+                        child: Text(
+                          "See All",
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
