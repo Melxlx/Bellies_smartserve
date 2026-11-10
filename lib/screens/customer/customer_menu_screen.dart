@@ -3442,170 +3442,97 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   }
 
   void _showPrivacyPolicyDialog() {
-    final scrollController = ScrollController();
-
     showDialog<void>(
       context: context,
-      builder: (ctx) {
-        bool hasScrolledToBottom = false;
-
-        return StatefulBuilder(
-          builder: (dialogCtx, setDialogState) {
-            void checkScroll() {
-              if (scrollController.hasClients) {
-                final maxScroll = scrollController.position.maxScrollExtent;
-                final currentScroll = scrollController.offset;
-                if (maxScroll <= 0 || (currentScroll >= maxScroll - 20)) {
-                  if (!hasScrolledToBottom) {
-                    setDialogState(() {
-                      hasScrolledToBottom = true;
-                    });
-                  }
-                }
-              }
-            }
-
-            scrollController.addListener(checkScroll);
-
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              checkScroll();
-            });
-
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Row(
-                children: [
-                  const Icon(Icons.security_outlined, color: Color(0xFFE91E63)),
-                  const SizedBox(width: 10),
-                  Text("Privacy Policy", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
-                ],
-              ),
-              content: SizedBox(
-                width: 560,
-                height: MediaQuery.of(context).size.height * 0.65,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        controller: scrollController,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Effective Date: January 1, 2026", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic)),
-                            const SizedBox(height: 12),
-                            Text("Welcome to Bellie's SmartServe. We value your privacy and are committed to protecting your personal data in compliance with the Data Privacy Act of 2012 (RA 10173). This Privacy Policy explains how we collect, use, protect, and handle your information when you use our online food ordering system.", style: GoogleFonts.poppins(fontSize: 12.5, height: 1.6, color: Colors.black87)),
-                            const SizedBox(height: 16),
-                            
-                            _privacySectionTitle("1. Information We Collect"),
-                            const SizedBox(height: 4),
-                            _privacySectionBody(
-                              "We collect information necessary to fulfill your orders and improve your dining experience:\n"
-                              "• Personal Details: Name, contact number, delivery address, and email address when you create an account or place an order.\n"
-                              "• Order History & Preferences: Details of products ordered, payment method preferences, and special dietary requests.\n"
-                              "• Technical Data: Device IP address, browser type, operating system, and session data for system security and performance optimization."
-                            ),
-                            const SizedBox(height: 14),
-
-                            _privacySectionTitle("2. How We Use Your Information"),
-                            const SizedBox(height: 4),
-                            _privacySectionBody(
-                              "Your personal data is strictly processed for legitimate business purposes:\n"
-                              "• Fulfilling, tracking, and delivering your food orders accurately.\n"
-                              "• Processing payment verifications and issuing transaction receipts.\n"
-                              "• Sending order status notifications (e.g. Preparing, Out for Delivery, Delivered).\n"
-                              "• Customer support assistance and handling inquiries or feedback.\n"
-                              "• Informing you about special promotional offers, discounts, or new menu items (you may opt-out anytime)."
-                            ),
-                            const SizedBox(height: 14),
-
-                            _privacySectionTitle("3. Data Protection & Security"),
-                            const SizedBox(height: 4),
-                            _privacySectionBody(
-                              "We implement industry-standard technical and organizational security measures:\n"
-                              "• Encrypted database connections and secure cloud infrastructure powered by Supabase.\n"
-                              "• Strict access controls restricting customer data to authorized kitchen, cashier, and delivery staff only.\n"
-                              "• We NEVER sell, trade, or rent your personal information to third-party marketing companies."
-                            ),
-                            const SizedBox(height: 14),
-
-                            _privacySectionTitle("4. Payment Security"),
-                            const SizedBox(height: 4),
-                            _privacySectionBody(
-                              "All digital transactions (such as GCash or QR payments) are processed securely. Bellie's SmartServe only stores transaction reference numbers and payment verification statuses. We do not store sensitive payment gateway passwords or credentials on our servers."
-                            ),
-                            const SizedBox(height: 14),
-
-                            _privacySectionTitle("5. Your Rights as a Data Subject"),
-                            const SizedBox(height: 4),
-                            _privacySectionBody(
-                              "Under the Data Privacy Act, you have the following rights:\n"
-                              "• Right to Access: You can view and update your profile details anytime via your Account Profile.\n"
-                              "• Right to Correction: Request correction of inaccurate or outdated information.\n"
-                              "• Right to Erasure: Request deletion of your account and personal data from our systems.\n"
-                              "• Right to Object: Opt-out of marketing communications or non-essential data processing."
-                            ),
-                            const SizedBox(height: 14),
-
-                            _privacySectionTitle("6. Contact Us"),
-                            const SizedBox(height: 4),
-                            _privacySectionBody(
-                              "If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact our Data Protection Officer at:\n"
-                              "• Email: jubileealfonnn@gmail.com\n"
-                              "• Phone: +63 928 732 2030\n"
-                              "• Store Location: Pagsawitan,Sta Cruz Laguna"
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (!hasScrolledToBottom)
-                      Container(
-                        margin: const EdgeInsets.only(top: 8),
-                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE91E63).withAlpha(15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.south_rounded, size: 14, color: Color(0xFFE91E63)),
-                            const SizedBox(width: 6),
-                            Text(
-                              "Please scroll to the bottom to accept the Privacy Policy",
-                              style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFFE91E63), fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.security_outlined, color: Color(0xFFE91E63)),
+            const SizedBox(width: 10),
+            Text("Privacy Policy", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: SizedBox(
+          width: 560,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Effective Date: January 1, 2026", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+                const SizedBox(height: 12),
+                Text("Welcome to Bellie's SmartServe. We value your privacy and are committed to protecting your personal data in compliance with the Data Privacy Act of 2012 (RA 10173). This Privacy Policy explains how we collect, use, protect, and handle your information when you use our online food ordering system.", style: GoogleFonts.poppins(fontSize: 12.5, height: 1.6, color: Colors.black87)),
+                const SizedBox(height: 16),
+                
+                _privacySectionTitle("1. Information We Collect"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "We collect information necessary to fulfill your orders and improve your dining experience:\n"
+                  "• Personal Details: Name, contact number, delivery address, and email address when you create an account or place an order.\n"
+                  "• Order History & Preferences: Details of products ordered, payment method preferences, and special dietary requests.\n"
+                  "• Technical Data: Device IP address, browser type, operating system, and session data for system security and performance optimization."
                 ),
-              ),
-              actions: [
-                ElevatedButton(
-                  onPressed: hasScrolledToBottom ? () => Navigator.pop(dialogCtx) : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE91E63),
-                    disabledBackgroundColor: Colors.grey[300],
-                    foregroundColor: Colors.white,
-                    disabledForegroundColor: Colors.grey[600],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    elevation: hasScrolledToBottom ? 2 : 0,
-                  ),
-                  child: Text(
-                    "I Understand & Accept",
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("2. How We Use Your Information"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "Your personal data is strictly processed for legitimate business purposes:\n"
+                  "• Fulfilling, tracking, and delivering your food orders accurately.\n"
+                  "• Processing payment verifications and issuing transaction receipts.\n"
+                  "• Sending order status notifications (e.g. Preparing, Out for Delivery, Delivered).\n"
+                  "• Customer support assistance and handling inquiries or feedback.\n"
+                  "• Informing you about special promotional offers, discounts, or new menu items (you may opt-out anytime)."
+                ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("3. Data Protection & Security"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "We implement industry-standard technical and organizational security measures:\n"
+                  "• Encrypted database connections and secure cloud infrastructure powered by Supabase.\n"
+                  "• Strict access controls restricting customer data to authorized kitchen, cashier, and delivery staff only.\n"
+                  "• We NEVER sell, trade, or rent your personal information to third-party marketing companies."
+                ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("4. Payment Security"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "All digital transactions (such as GCash or QR payments) are processed securely. Bellie's SmartServe only stores transaction reference numbers and payment verification statuses. We do not store sensitive payment gateway passwords or credentials on our servers."
+                ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("5. Your Rights as a Data Subject"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "Under the Data Privacy Act, you have the following rights:\n"
+                  "• Right to Access: You can view and update your profile details anytime via your Account Profile.\n"
+                  "• Right to Correction: Request correction of inaccurate or outdated information.\n"
+                  "• Right to Erasure: Request deletion of your account and personal data from our systems.\n"
+                  "• Right to Object: Opt-out of marketing communications or non-essential data processing."
+                ),
+                const SizedBox(height: 14),
+
+                _privacySectionTitle("6. Contact Us"),
+                const SizedBox(height: 4),
+                _privacySectionBody(
+                  "If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact our Data Protection Officer at:\n"
+                  "• Email: jubileealfonnn@gmail.com\n"
+                  "• Phone: +63 928 732 2030\n"
+                  "• Store Location: Pagsawitan,Sta Cruz Laguna"
                 ),
               ],
-            );
-          },
-        );
-      },
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("I Understand & Accept", style: GoogleFonts.poppins(color: const Color(0xFFE91E63), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 
