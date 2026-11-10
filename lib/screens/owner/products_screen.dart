@@ -267,11 +267,11 @@ class ProductsScreenState extends State<ProductsScreen> {
   Widget _buildGrid(int crossAxisCount) {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 240,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.65,
+        childAspectRatio: 0.85,
       ),
       itemCount: _paginatedProducts.length,
       itemBuilder: (context, index) => _buildCard(_paginatedProducts[index]),
@@ -293,64 +293,80 @@ class ProductsScreenState extends State<ProductsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 105,
-            width: double.infinity,
-            color: const Color(0xFFFAFAFA),
-            child: Center(
-              child: SizedBox(
-                height: 85,
-                width: 85,
-                child: ProductImage(
-                  path: product.imagePath ?? '',
-                  productName: product.name,
-                  fit: BoxFit.contain,
+          Expanded(
+            flex: 6,
+            child: Container(
+              width: double.infinity,
+              color: const Color(0xFFFAFAFA),
+              child: Center(
+                child: FractionallySizedBox(
+                  widthFactor: 0.82,
+                  heightFactor: 0.82,
+                  child: ProductImage(
+                    path: product.imagePath ?? '',
+                    productName: product.name,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(product.category?.name ?? "No Category", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                const SizedBox(height: 8),
-                Text("₱${product.sellingPrice.toStringAsFixed(2)}", style: const TextStyle(color: Color(0xFFC2416C), fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _statusChip(product.status),
-                    if (_isOwner)
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onSelected: (value) {
-                          if (value == 'recipe') _openRecipeDialog(product);
-                          if (value == 'edit') showProductForm(product: product);
-                          if (value == 'archive') _archiveProduct(product);
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'recipe',
-                            child: Row(children: [Icon(Icons.kitchen_outlined, size: 18, color: Color(0xFFC2416C)), SizedBox(width: 8), Text('Recipe')]),
-                          ),
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(children: [Icon(Icons.edit_outlined, size: 18, color: Colors.blue), SizedBox(width: 8), Text('Edit')]),
-                          ),
-                          const PopupMenuItem(
-                            value: 'archive',
-                            child: Row(children: [Icon(Icons.archive_outlined, size: 18, color: Colors.red), SizedBox(width: 8), Text('Archive')]),
-                          ),
+          Expanded(
+            flex: 5,
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 2),
+                      Text(product.category?.name ?? "No Category", style: const TextStyle(color: Colors.grey, fontSize: 11.5)),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("₱${product.sellingPrice.toStringAsFixed(2)}", style: const TextStyle(color: Color(0xFFC2416C), fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(height: 4),
+                          _statusChip(product.status),
                         ],
                       ),
-                  ],
-                ),
-              ],
+                      if (_isOwner)
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onSelected: (value) {
+                            if (value == 'recipe') _openRecipeDialog(product);
+                            if (value == 'edit') showProductForm(product: product);
+                            if (value == 'archive') _archiveProduct(product);
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'recipe',
+                              child: Row(children: [Icon(Icons.kitchen_outlined, size: 18, color: Color(0xFFC2416C)), SizedBox(width: 8), Text('Recipe')]),
+                            ),
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(children: [Icon(Icons.edit_outlined, size: 18, color: Colors.blue), SizedBox(width: 8), Text('Edit')]),
+                            ),
+                            const PopupMenuItem(
+                              value: 'archive',
+                              child: Row(children: [Icon(Icons.archive_outlined, size: 18, color: Colors.red), SizedBox(width: 8), Text('Archive')]),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
