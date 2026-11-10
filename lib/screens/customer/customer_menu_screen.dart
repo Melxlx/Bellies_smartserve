@@ -2701,7 +2701,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
-                  height: 235,
+                  height: 215,
                   child: ListView.builder(
                     controller: controller,
                     scrollDirection: Axis.horizontal,
@@ -2710,8 +2710,8 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                     itemBuilder: (context, pIndex) {
                       final product = catProducts[pIndex];
                       return Container(
-                        width: 175,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: 170,
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
                         child: _buildProductCard(product),
                       );
                     },
@@ -2734,16 +2734,16 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[100]!),
+        border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(6), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 110,
+            height: 115,
             width: double.infinity,
             padding: const EdgeInsets.all(6.0),
             decoration: const BoxDecoration(
@@ -2754,8 +2754,8 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
               children: [
                 Center(
                   child: SizedBox(
-                    height: 90,
-                    width: 90,
+                    height: 95,
+                    width: 95,
                     child: ProductImage(
                       path: product.imagePath ?? '',
                       productName: product.name,
@@ -2793,62 +2793,69 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  product.description ?? "Freshly prepared meal",
-                  style: TextStyle(color: Colors.grey[500], fontSize: 9.5),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "₱${product.sellingPrice.toStringAsFixed(0)}",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: Colors.black87, fontSize: 14.5),
-                    ),
-                    InkWell(
-                      onTap: (isOutOfStock || _addingProductIds.contains(product.id)) ? null : () => _addToCart(product),
-                      child: Container(
-                        height: 28,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        decoration: BoxDecoration(
-                          color: (isOutOfStock || _addingProductIds.contains(product.id)) ? Colors.grey[300] : const Color(0xFFFFD700),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_addingProductIds.contains(product.id))
-                              const SizedBox(
-                                width: 12,
-                                height: 12,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black87),
-                              )
-                            else ...[
-                              Text("Add", style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 10.5)),
-                              const SizedBox(width: 2),
-                              const Icon(Icons.add_rounded, color: Colors.black87, size: 13),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        product.description ?? "Freshly prepared meal",
+                        style: TextStyle(color: Colors.grey[500], fontSize: 9.5),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "₱${product.sellingPrice.toStringAsFixed(0)}",
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: Colors.black87, fontSize: 14.5),
+                      ),
+                      InkWell(
+                        onTap: (isOutOfStock || _addingProductIds.contains(product.id)) ? null : () => _addToCart(product),
+                        child: Container(
+                          height: 28,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: (isOutOfStock || _addingProductIds.contains(product.id)) ? Colors.grey[300] : const Color(0xFFFFD700),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_addingProductIds.contains(product.id))
+                                const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black87),
+                                )
+                              else ...[
+                                Text("Add", style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 10.5)),
+                                const SizedBox(width: 2),
+                                const Icon(Icons.add_rounded, color: Colors.black87, size: 13),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
