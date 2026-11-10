@@ -42,7 +42,7 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF4F6F9),
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 110 : 66),
+        preferredSize: Size.fromHeight(isMobile ? 100 : 56),
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurface : Colors.white,
@@ -61,8 +61,9 @@ class _InventoryHubScreenState extends State<InventoryHubScreen> with SingleTick
             ),
           ),
           child: SafeArea(
+            bottom: false,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

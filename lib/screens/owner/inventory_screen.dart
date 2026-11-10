@@ -298,12 +298,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
     if (_error != null) return ErrorState(error: _error!, onRetry: _loadData);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildTopMetricCards(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildOverviewSection(),
         ],
       ),
