@@ -30,11 +30,10 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/app
-/build/windows
-/build/linux
-/build/macos
-/build/ios
+build/
+/build/
+/android/build/
+/android/.gradle/
 /coverage/
 
 # Symbolication related
