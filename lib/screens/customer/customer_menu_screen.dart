@@ -2632,11 +2632,11 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: ResponsiveLayout.isMobile(context) ? 2 : (ResponsiveLayout.isTablet(context) ? 3 : 4),
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 260,
           crossAxisSpacing: 16,
           mainAxisSpacing: 20,
-          childAspectRatio: ResponsiveLayout.isMobile(context) ? 0.78 : 0.82,
+          childAspectRatio: 0.82,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) => _buildProductCard(filtered[index]),
@@ -2701,7 +2701,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
-                  height: 215,
+                  height: 240,
                   child: ListView.builder(
                     controller: controller,
                     scrollDirection: Axis.horizontal,
@@ -2710,8 +2710,8 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                     itemBuilder: (context, pIndex) {
                       final product = catProducts[pIndex];
                       return Container(
-                        width: 170,
-                        margin: const EdgeInsets.symmetric(horizontal: 5),
+                        width: 185,
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
                         child: _buildProductCard(product),
                       );
                     },
@@ -2734,7 +2734,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: const Color(0xFFF0F0F0)),
         boxShadow: [
           BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, 4)),
         ],
@@ -2742,58 +2742,62 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 115,
-            width: double.infinity,
-            padding: const EdgeInsets.all(6.0),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFAFAFA),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Stack(
-              children: [
-                Center(
-                  child: SizedBox(
-                    height: 95,
-                    width: 95,
-                    child: ProductImage(
-                      path: product.imagePath ?? '',
-                      productName: product.name,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                if (isBestSeller)
-                  Positioned(
-                    top: 2,
-                    left: 2,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(6)),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 9),
-                          const SizedBox(width: 3),
-                          Text("BEST SELLER", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 7.5)),
-                        ],
+          Expanded(
+            flex: 6,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(6.0),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFAFAFA),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: FractionallySizedBox(
+                      widthFactor: 0.85,
+                      heightFactor: 0.85,
+                      child: ProductImage(
+                        path: product.imagePath ?? '',
+                        productName: product.name,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
-                if (isOutOfStock)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black38,
-                        borderRadius: BorderRadius.circular(14),
+                  if (isBestSeller)
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                        decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(6)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 9),
+                            const SizedBox(width: 3),
+                            Text("BEST SELLER", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 7.5)),
+                          ],
+                        ),
                       ),
-                      alignment: Alignment.center,
-                      child: const Text("SOLD OUT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
                     ),
-                  ),
-              ],
+                  if (isOutOfStock)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black38,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text("SOLD OUT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
           Expanded(
+            flex: 4,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
               child: Column(
@@ -2802,6 +2806,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         product.name,
@@ -2827,6 +2832,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                       ),
                       InkWell(
                         onTap: (isOutOfStock || _addingProductIds.contains(product.id)) ? null : () => _addToCart(product),
+                        borderRadius: BorderRadius.circular(8),
                         child: Container(
                           height: 28,
                           padding: const EdgeInsets.symmetric(horizontal: 10),
