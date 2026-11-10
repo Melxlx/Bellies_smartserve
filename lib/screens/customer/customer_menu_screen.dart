@@ -1771,46 +1771,6 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     );
   }
 
-  Widget _buildScrollButtons(ScrollController controller) {
-    return Row(
-      children: [
-        InkWell(
-          onTap: () {
-            final offset = controller.offset - 300;
-            controller.animateTo(
-              offset.clamp(0.0, controller.position.maxScrollExtent),
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.chevron_left_rounded, size: 20),
-          ),
-        ),
-        const SizedBox(width: 8),
-        InkWell(
-          onTap: () {
-            final offset = controller.offset + 300;
-            controller.animateTo(
-              offset.clamp(0.0, controller.position.maxScrollExtent),
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.chevron_right_rounded, size: 20),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildPopularCategories() {
     return SliverToBoxAdapter(
       child: Column(
@@ -1876,7 +1836,12 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 }
 
                 return GestureDetector(
-                  onTap: () => setState(() => _selectedCategoryId = isAll ? null : cat?.id),
+                  onTap: () {
+                    setState(() => _selectedCategoryId = isAll ? null : cat?.id);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _scrollToSection(_menuKey);
+                    });
+                  },
                   child: Container(
                     width: 110,
                     margin: const EdgeInsets.only(right: 12),
@@ -1971,23 +1936,50 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   Widget _buildMenuSectionTitle(String title, {bool showFilter = true}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.5),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    if (_selectedCategoryId != null) ...[
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedCategoryId = null;
+                          });
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _scrollToSection(_menuKey);
+                          });
+                        },
+                        icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFFE91E63)),
+                        tooltip: "Back to All Categories",
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (showFilter)
+                Row(
+                  children: [
+                    _buildSortDropdown(),
+                    const SizedBox(width: 12),
+                    _iconFilter(Icons.tune_rounded),
+                  ],
+                )
+            ],
           ),
-          if (showFilter)
-            Row(
-              children: [
-                _buildSortDropdown(),
-                const SizedBox(width: 12),
-                _iconFilter(Icons.tune_rounded),
-              ],
-            )
         ],
       ),
     );
@@ -2687,6 +2679,9 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                           onPressed: () {
                             setState(() {
                               _selectedCategoryId = cat.id;
+                            });
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _scrollToSection(_menuKey);
                             });
                           },
                           style: TextButton.styleFrom(
