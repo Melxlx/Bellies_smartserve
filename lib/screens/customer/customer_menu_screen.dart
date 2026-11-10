@@ -2682,24 +2682,25 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         cat.name.toUpperCase(),
                         style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedCategoryId = cat.id;
-                          });
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFFE91E63),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        ),
-                        child: Text(
-                          "See All",
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                      if (catProducts.length > 4)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedCategoryId = cat.id;
+                            });
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFFE91E63),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          ),
+                          child: Text(
+                            "See All",
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
