@@ -1147,8 +1147,8 @@ You have the right to access, update, or request the deletion of your account in
                         }
 
                         final String? redirectTo = kIsWeb
-                            ? Uri.base.replace(queryParameters: const {}, fragment: AppRoutes.resetPassword).toString()
-                            : null;
+                            ? '${Uri.base.origin}/#/reset-password'
+                            : 'bellies://reset-password';
 
                         await Supabase.instance.client.auth.resetPasswordForEmail(
                           email,

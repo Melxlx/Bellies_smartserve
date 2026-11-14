@@ -327,8 +327,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                         }
 
                         final String? redirectTo = kIsWeb
-                            ? Uri.base.replace(queryParameters: const {}, fragment: AppRoutes.resetPassword).toString()
-                            : null;
+                            ? '${Uri.base.origin}/#/reset-password'
+                            : 'bellies://reset-password';
 
                         await Supabase.instance.client.auth.resetPasswordForEmail(
                           email,
