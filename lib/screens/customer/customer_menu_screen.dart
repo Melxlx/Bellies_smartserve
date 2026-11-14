@@ -624,6 +624,13 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   Widget build(BuildContext context) {
     final bool isDesktop = !ResponsiveLayout.isMobile(context);
 
+    if (!isDesktop) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFDFDFD),
+        body: _buildMobileAppView(),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFDFDFD),
       body: Row(
@@ -666,6 +673,267 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
           : (_cart.isNotEmpty
               ? FloatingActionButtonLocation.startFloat
               : FloatingActionButtonLocation.endFloat),
+    );
+  }
+
+  Widget _buildMobileAppView() {
+    final user = Supabase.instance.client.auth.currentUser;
+    final isAuthenticated = user != null && !user.isAnonymous;
+    final userName = isAuthenticated
+        ? (user.userMetadata?['first_name'] ?? user.userMetadata?['name'] ?? user.email?.split('@').first ?? 'Foodie')
+        : 'Foodie';
+
+    return CustomScrollView(
+      controller: _mainScrollController,
+      slivers: [
+        // Mobile Header Bar
+        SliverToBoxAdapter(
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                children: [
+                  Image.asset('assets/images/Bellieslogo.png', height: 36),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Hello, $userName! 👋",
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          "What are you craving today?",
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isAuthenticated)
+                    StreamBuilder<List<SystemNotificationModel>>(
+                      stream: NotificationRepository().streamNotifications(forRole: UserRole.customer),
+                      builder: (context, snapshot) {
+                        final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
+                        return IconButton(
+                          icon: unread > 0
+                              ? Badge(
+                                  label: Text('$unread'),
+                                  child: const Icon(Icons.notifications_outlined, color: Colors.black87),
+                                )
+                              : const Icon(Icons.notifications_outlined, color: Colors.black87),
+                          onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.customer),
+                        );
+                      },
+                    ),
+                  const SizedBox(width: 4),
+                  if (isAuthenticated)
+                    GestureDetector(
+                      onTap: () => _showCustomerProfileDialog(),
+                      child: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: const Color(0xFFE91E63),
+                        backgroundImage: user.userMetadata?['avatar_url'] != null
+                            ? NetworkImage(user.userMetadata!['avatar_url'])
+                            : null,
+                        child: user.userMetadata?['avatar_url'] == null
+                            ? const Icon(Icons.person, color: Colors.white, size: 18)
+                            : null,
+                      ),
+                    )
+                  else
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFE91E63),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      ),
+                      child: Text("Login", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Search Pill Row
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: InkWell(
+              onTap: _showSearchDialog,
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _searchQuery.isNotEmpty ? _searchQuery : "Search Silog, Korean Noodles, Drinks...",
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          color: _searchQuery.isNotEmpty ? Colors.black87 : Colors.grey.shade500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_searchQuery.isNotEmpty)
+                      GestureDetector(
+                        onTap: () => setState(() => _searchQuery = ''),
+                        child: const Icon(Icons.close_rounded, size: 16, color: Colors.grey),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Compact Mobile Hero Carousel Banner
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Container(
+              height: 130,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE91E63), Color(0xFF9C27B0)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE91E63).withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -15,
+                    bottom: -15,
+                    child: Opacity(
+                      opacity: 0.25,
+                      child: Image.asset('assets/images/Bellieslogo.png', height: 140),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD700),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            "HOT & FRESH",
+                            style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black87),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Bellie's Kitchen Specials 🍲",
+                          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        Text(
+                          "Traditional Silog & Korean Noodles served hot!",
+                          style: GoogleFonts.inter(fontSize: 11, color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Compact Mobile Feature Badges Bar
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _mobileFeatureChip(Icons.local_shipping_outlined, "Fast Delivery"),
+                _mobileFeatureChip(Icons.savings_outlined, "Best Combos"),
+                _mobileFeatureChip(Icons.favorite_border_rounded, "Freshly Made"),
+              ],
+            ),
+          ),
+        ),
+
+        // Horizontal Category Bar
+        _buildPopularCategories(),
+
+        // Section Title
+        SliverToBoxAdapter(
+          key: _menuKey,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Text(
+              _selectedCategoryId != null
+                  ? _categories.firstWhere((c) => c.id == _selectedCategoryId, orElse: () => CategoryModel(id: '', name: 'Menu', displayOrder: 0, createdAt: DateTime.now())).name.toUpperCase()
+                  : "OUR SPECIALTIES",
+              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+            ),
+          ),
+        ),
+
+        // Product Grid
+        _isLoading
+            ? const SliverFillRemaining(child: LoadingState())
+            : (_selectedCategoryId == null && _searchQuery.trim().isEmpty && _maxPrice == null && !_onlyAvailable
+                ? _buildCategorizedLanesSliver()
+                : _buildProductGridSliver()),
+      ],
+    );
+  }
+
+  Widget _mobileFeatureChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFFE91E63)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: GoogleFonts.poppins(fontSize: 10.5, fontWeight: FontWeight.w600, color: const Color(0xFF334155)),
+          ),
+        ],
+      ),
     );
   }
 
