@@ -147,8 +147,7 @@ class AuthService {
     return await _supabase.auth.signInWithOAuth(
       provider,
       redirectTo: redirectTo,
-      // Gamitin ang inAppWebView (popup sa loob) imbes na externalApplication para hindi maputol ang session storage ng browser sa Vercel
-      authScreenLaunchMode: kIsWeb ? LaunchMode.inAppWebView : LaunchMode.platformDefault, 
+      authScreenLaunchMode: kIsWeb ? LaunchMode.inAppWebView : LaunchMode.externalApplication, 
     );
   }
 
