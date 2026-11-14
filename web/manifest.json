@@ -1,11 +1,11 @@
 {
-    "name": "bellies_smartserve",
-    "short_name": "bellies_smartserve",
+    "name": "Bellie's Kitchen - SmartServe",
+    "short_name": "Bellie's",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A mobile POS and business management",
+    "background_color": "#FFF9E3",
+    "theme_color": "#E91E63",
+    "description": "Bellie's Kitchen Mobile POS & Online Ordering System",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
