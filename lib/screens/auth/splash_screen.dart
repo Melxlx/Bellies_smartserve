@@ -196,6 +196,12 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _waitForRecoverySession() async {
+    final queryParameters = Uri.base.queryParameters;
+    final isPasswordRecovery =
+        queryParameters['type'] == 'recovery' ||
+        Uri.base.fragment.contains('type=recovery');
+    if (!isPasswordRecovery) return;
+
     for (var attempt = 0; attempt < 20; attempt++) {
       if (Supabase.instance.client.auth.currentSession != null) return;
       await Future<void>.delayed(const Duration(milliseconds: 250));

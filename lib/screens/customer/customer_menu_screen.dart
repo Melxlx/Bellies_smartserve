@@ -25,10 +25,18 @@ import '../../services/order_tracking_service.dart';
 import '../../widgets/state_widgets.dart';
 import '../../widgets/product_image.dart';
 import '../../widgets/notifications_modal_sheet.dart';
+import '../../core/theme/app_colors.dart';
+import '../../widgets/premium_pink_header.dart';
+import '../../widgets/foodpanda_address_sheet.dart';
 
 
 class CustomerMenuScreen extends StatefulWidget {
-  const CustomerMenuScreen({super.key});
+  final VoidCallback? onAccountTabRequested;
+
+  const CustomerMenuScreen({
+    super.key,
+    this.onAccountTabRequested,
+  });
 
   @override
   State<CustomerMenuScreen> createState() => _CustomerMenuScreenState();
@@ -342,7 +350,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       if (!mounted) return;
 
       if (ResponsiveLayout.isMobile(context)) {
-        _showBasket();
+        showBasket();
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -366,7 +374,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     }
   }
 
-  void _showBasket() {
+  void showBasket() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -623,12 +631,16 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobileApp = !kIsWeb && ResponsiveLayout.isMobile(context);
+    final user = Supabase.instance.client.auth.currentUser;
+    final isAuthenticated = user != null && !user.isAnonymous;
 
-    if (isMobileApp) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFFDFDFD),
-        body: _buildMobileAppView(),
+    // Show Mobile Dashboard (Picture 1) ONLY for logged in customers on mobile native app
+    final bool isMobileCustomerDashboard = !kIsWeb && ResponsiveLayout.isMobile(context) && isAuthenticated;
+
+    if (isMobileCustomerDashboard) {
+      return Container(
+        color: const Color(0xFFFDFDFD),
+        child: _buildMobileAppView(),
       );
     }
 
@@ -682,131 +694,47 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   Widget _buildMobileAppView() {
     final user = Supabase.instance.client.auth.currentUser;
     final isAuthenticated = user != null && !user.isAnonymous;
-    final userName = isAuthenticated
-        ? (user.userMetadata?['first_name'] ?? user.userMetadata?['name'] ?? user.email?.split('@').first ?? 'Foodie')
-        : 'Foodie';
+    final userAddress = user?.userMetadata?['address']?.toString() ?? 'Isabela';
 
     return CustomScrollView(
       controller: _mainScrollController,
       slivers: [
-        // Mobile Header Bar
+        // Foodpanda-Style Pink Header
         SliverToBoxAdapter(
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
-                children: [
-                  Image.asset('assets/images/Bellieslogo.png', height: 36),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Hello, $userName! 👋",
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0F172A),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          "What are you craving today?",
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: const Color(0xFF64748B),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isAuthenticated)
-                    StreamBuilder<List<SystemNotificationModel>>(
-                      stream: NotificationRepository().streamNotifications(forRole: UserRole.customer),
-                      builder: (context, snapshot) {
-                        final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
-                        return IconButton(
-                          icon: unread > 0
-                              ? Badge(
-                                  label: Text('$unread'),
-                                  child: const Icon(Icons.notifications_outlined, color: Colors.black87),
-                                )
-                              : const Icon(Icons.notifications_outlined, color: Colors.black87),
-                          onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.customer),
-                        );
-                      },
-                    ),
-                  const SizedBox(width: 4),
-                  if (isAuthenticated)
-                    GestureDetector(
-                      onTap: () => _showCustomerProfileDialog(),
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: const Color(0xFFE91E63),
-                        backgroundImage: user.userMetadata?['avatar_url'] != null
-                            ? NetworkImage(user.userMetadata!['avatar_url'])
-                            : null,
-                        child: user.userMetadata?['avatar_url'] == null
-                            ? const Icon(Icons.person, color: Colors.white, size: 18)
-                            : null,
-                      ),
-                    )
-                  else
-                    TextButton(
-                      onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFFE91E63),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      ),
-                      child: Text("Login", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        // Search Pill Row
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: InkWell(
-              onTap: _showSearchDialog,
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _searchQuery.isNotEmpty ? _searchQuery : "Search Silog, Korean Noodles, Drinks...",
-                        style: GoogleFonts.inter(
-                          fontSize: 12.5,
-                          color: _searchQuery.isNotEmpty ? Colors.black87 : Colors.grey.shade500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (_searchQuery.isNotEmpty)
-                      GestureDetector(
-                        onTap: () => setState(() => _searchQuery = ''),
-                        child: const Icon(Icons.close_rounded, size: 16, color: Colors.grey),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+          child: PremiumPinkHeader(
+            currentLocation: userAddress.isNotEmpty ? userAddress.split(',').first : "Isabela",
+            onLocationTap: () {
+              FoodpandaAddressSheet.show(
+                context,
+                currentAddress: userAddress,
+                onAddressUpdated: (newAddress) => setState(() {}),
+              );
+            },
+            searchQuery: _searchQuery,
+            onSearchTap: _showSearchDialog,
+            onAvatarTap: isAuthenticated
+                ? (widget.onAccountTabRequested ?? () => showCustomerProfileDialog())
+                : () => Navigator.pushNamed(context, AppRoutes.login),
+            avatarUrl: user?.userMetadata?['avatar_url'],
+            notificationWidget: isAuthenticated
+                ? StreamBuilder<List<SystemNotificationModel>>(
+                    stream: NotificationRepository().streamNotifications(forRole: UserRole.customer),
+                    builder: (context, snapshot) {
+                      final unread = snapshot.data?.where((n) => !n.isRead).length ?? 0;
+                      return IconButton(
+                        icon: unread > 0
+                            ? Badge(
+                                label: Text('$unread'),
+                                backgroundColor: Colors.white,
+                                textStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                child: const Icon(Icons.notifications_outlined, color: Colors.white),
+                              )
+                            : const Icon(Icons.notifications_outlined, color: Colors.white),
+                        onPressed: () => NotificationsModalSheet.show(context, forRole: UserRole.customer),
+                      );
+                    },
+                  )
+                : null,
           ),
         ),
 
@@ -817,16 +745,16 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
             child: Container(
               height: 130,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 gradient: const LinearGradient(
-                  colors: [Color(0xFFE91E63), Color(0xFF9C27B0)],
+                  colors: [AppColors.primary, AppColors.softPink],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFE91E63).withValues(alpha: 0.25),
-                    blurRadius: 10,
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
@@ -850,7 +778,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFD700),
+                            color: AppColors.gold,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -903,7 +831,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
               _selectedCategoryId != null
                   ? _categories.firstWhere((c) => c.id == _selectedCategoryId, orElse: () => CategoryModel(id: '', name: 'Menu', displayOrder: 0, createdAt: DateTime.now())).name.toUpperCase()
                   : "OUR SPECIALTIES",
-              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: AppColors.textPrimary),
             ),
           ),
         ),
@@ -1070,7 +998,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
               ),
               onPressed: () {
                 if (ResponsiveLayout.isMobile(context)) {
-                  _showBasket();
+                  showBasket();
                 } else {
                   setState(() => _isCartVisible = !_isCartVisible);
                 }
@@ -1110,7 +1038,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
               onSelected: (value) async {
                 final messenger = ScaffoldMessenger.of(context);
                 if (value == 'profile') {
-                  _showCustomerProfileDialog();
+                  showCustomerProfileDialog();
                 } else if (value == 'notifications') {
                   NotificationsModalSheet.show(context, forRole: UserRole.customer);
                 } else if (value == 'tracking') {
@@ -1300,7 +1228,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     );
   }
 
-  void _showCustomerProfileDialog() async {
+  void showCustomerProfileDialog() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
@@ -4454,7 +4382,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
             ),
             const Spacer(),
             ElevatedButton(
-              onPressed: _showBasket,
+              onPressed: showBasket,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFFE91E63),

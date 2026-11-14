@@ -69,57 +69,125 @@ class OrderRepository {
     if (user == null || user.isAnonymous) {
       throw const AuthException('Please sign in or register to complete your checkout.');
     }
-    final response = await _supabase.rpc(
-      'create_customer_delivery_order',
-      params: {
-        'p_order': {
-          'tracking_number': order.trackingNumber,
-          'payment_method': order.paymentMethod?.name ?? 'gcash',
-          'payment_status': normalizeOrderPaymentStatus(
-            order.paymentStatus,
-            paymentMethod: order.paymentMethod,
-          ),
-          'subtotal': order.subtotal,
-          'delivery_fee': order.deliveryFee,
-          'delivery_distance_km': order.deliveryDistanceKm ?? order.customerDetails?.deliveryDistanceKm ?? 0.0,
-          'total_amount': order.totalAmount,
-          'reference_number': order.referenceNumber,
-          'customer_details': order.customerDetails!.toJson(),
-          'created_by': _supabase.auth.currentUser?.id,
+
+    final String? validUserId = (user.id.isNotEmpty) ? user.id : null;
+
+    try {
+      final response = await _supabase.rpc(
+        'create_customer_delivery_order',
+        params: {
+          'p_order': {
+            'tracking_number': order.trackingNumber,
+            'payment_method': order.paymentMethod?.name ?? 'gcash',
+            'payment_status': normalizeOrderPaymentStatus(
+              order.paymentStatus,
+              paymentMethod: order.paymentMethod,
+            ),
+            'subtotal': order.subtotal,
+            'delivery_fee': order.deliveryFee,
+            'delivery_distance_km': order.deliveryDistanceKm ?? order.customerDetails?.deliveryDistanceKm ?? 0.0,
+            'total_amount': order.totalAmount,
+            'reference_number': order.referenceNumber,
+            'customer_details': order.customerDetails!.toJson(),
+            'created_by': validUserId,
+          },
+          'p_items': order.items.map((item) => {
+            'product_id': item.product.id.isNotEmpty ? item.product.id : null,
+            'product_name_snapshot': item.product.name,
+            'quantity': item.quantity,
+            'unit_price': item.product.sellingPrice,
+            'unit_cost': item.product.estimatedCost,
+            'item_instructions': item.instructions,
+            'line_total': item.total,
+          }).toList(),
         },
-        'p_items': order.items.map((item) => {
-          'product_id': item.product.id,
-          'product_name_snapshot': item.product.name,
-          'quantity': item.quantity,
-          'unit_price': item.product.sellingPrice,
-          'unit_cost': item.product.estimatedCost,
-          'item_instructions': item.instructions,
-          'line_total': item.total,
-        }).toList(),
-      },
-    );
-    final row = Map<String, dynamic>.from(response as Map);
-    final savedOrder = order.copyWith(
-      id: row['id'] as String,
-      queueNumber: (row['queue_no'] ?? row['queue_number'])
+      );
+      final row = Map<String, dynamic>.from(response as Map);
+      final savedOrder = order.copyWith(
+        id: row['id'] as String,
+        queueNumber: (row['queue_no'] ?? row['queue_number'])
+            .toString()
+            .padLeft(3, '0'),
+        status: row['status'] as String?,
+        paymentStatus: row['payment_status'] as String?,
+      );
+
+      // Deduct ingredients for customer order
+      await RecipeRepository().deductIngredientsForOrder(savedOrder.id);
+
+      NotificationRepository().addNotification(
+        title: 'New Order Received',
+        message: 'Order #${savedOrder.queueNumber}: A confirmed order is ready for preparation.',
+        category: 'ONLINE_ORDERS',
+        route: AppRoutes.kitchenQueue,
+        targetRole: 'CASHIER,KITCHEN,OWNER',
+      );
+
+      return savedOrder;
+    } catch (rpcError) {
+      debugPrint("RPC create_customer_delivery_order failed ($rpcError). Executing direct table fallback...");
+
+      // Fallback Direct Table Insert
+      final int nextQueueNo = await _getNextDailyQueueNumber();
+      final orderResponse = await _supabase.from('orders').insert({
+        'service_type': 'DELIVERY',
+        'queue_no': nextQueueNo,
+        'status': 'received',
+        'payment_method': order.paymentMethod?.name ?? 'gcash',
+        'payment_status': normalizeOrderPaymentStatus(
+          order.paymentStatus,
+          paymentMethod: order.paymentMethod,
+        ),
+        'subtotal': order.subtotal,
+        'delivery_fee': order.deliveryFee,
+        'delivery_distance_km': order.deliveryDistanceKm ?? 0.0,
+        'total_amount': order.totalAmount,
+        'tracking_number': order.trackingNumber,
+        'customer_details': order.customerDetails?.toJson(),
+        'reference_number': order.referenceNumber,
+        'created_by': validUserId,
+      }).select().single();
+
+      final String orderId = orderResponse['id'] as String;
+      final String queueNumber = (orderResponse['queue_no'] ?? orderResponse['queue_number'])
           .toString()
-          .padLeft(3, '0'),
-      status: row['status'] as String?,
-      paymentStatus: row['payment_status'] as String?,
-    );
+          .padLeft(3, '0');
 
-    // Deduct ingredients for customer order
-    await RecipeRepository().deductIngredientsForOrder(savedOrder.id);
+      final List<Map<String, dynamic>> itemsPayload = order.items.map((item) => {
+        'order_id': orderId,
+        if (item.product.id.isNotEmpty) 'product_id': item.product.id,
+        'product_name_snapshot': item.product.name,
+        'quantity': item.quantity,
+        'unit_price': item.product.sellingPrice,
+        'unit_cost': item.product.estimatedCost,
+        'item_instructions': item.instructions,
+        'line_total': item.total,
+      }).toList();
 
-    NotificationRepository().addNotification(
-      title: 'New Order Received',
-      message: 'Order #${savedOrder.queueNumber}: A confirmed order is ready for preparation.',
-      category: 'ONLINE_ORDERS',
-      route: AppRoutes.kitchenQueue,
-      targetRole: 'CASHIER,KITCHEN,OWNER',
-    );
+      await _supabase.from('order_items').insert(itemsPayload);
 
-    return savedOrder;
+      final savedOrder = order.copyWith(
+        id: orderId,
+        queueNumber: queueNumber,
+        status: 'received',
+      );
+
+      try {
+        await RecipeRepository().deductIngredientsForOrder(savedOrder.id);
+      } catch (_) {}
+
+      try {
+        NotificationRepository().addNotification(
+          title: 'New Order Received',
+          message: 'Order #${savedOrder.queueNumber}: A confirmed order is ready for preparation.',
+          category: 'ONLINE_ORDERS',
+          route: AppRoutes.kitchenQueue,
+          targetRole: 'CASHIER,KITCHEN,OWNER',
+        );
+      } catch (_) {}
+
+      return savedOrder;
+    }
   }
 
   Future<OrderModel> createOrder(OrderModel order) async {
