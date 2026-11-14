@@ -63,14 +63,19 @@ class _SplashScreenState extends State<SplashScreen> {
 
       final queryParameters = Uri.base.queryParameters;
       final isPasswordRecovery =
-          queryParameters.containsKey('code') ||
-          queryParameters['type'] == 'recovery';
+          queryParameters['type'] == 'recovery' ||
+          Uri.base.fragment.contains('type=recovery');
+
       if (isPasswordRecovery) {
         final recoveryCode = queryParameters['code'];
         if (recoveryCode != null && recoveryCode.isNotEmpty) {
-          await Supabase.instance.client.auth.exchangeCodeForSession(
-            recoveryCode,
-          );
+          try {
+            await Supabase.instance.client.auth.exchangeCodeForSession(
+              recoveryCode,
+            );
+          } catch (e) {
+            debugPrint("Error exchanging recovery code: $e");
+          }
         }
         await _waitForRecoverySession();
         if (!mounted) return;
@@ -163,10 +168,28 @@ class _SplashScreenState extends State<SplashScreen> {
           break;
       }
     } catch (e) {
+      debugPrint("SplashScreen error during initialization: $e");
       if (mounted) {
         if (e is AssertionError && e.toString().contains('Supabase.instance')) {
           return;
         }
+
+        // If an OAuth code verifier error occurs (e.g., bad_code_verifier / expired code on mobile browser),
+        // gracefully fall back to Customer Menu instead of crashing the splash screen!
+        final errStr = e.toString();
+        if (errStr.contains('bad_code_verifier') ||
+            errStr.contains('code_challenge') ||
+            errStr.contains('code_verifier') ||
+            errStr.contains('AuthApiException')) {
+          try {
+            await Supabase.instance.client.auth.signOut();
+          } catch (_) {}
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, AppRoutes.customerMenu);
+            return;
+          }
+        }
+
         setState(() => _error = e.toString());
       }
     }
