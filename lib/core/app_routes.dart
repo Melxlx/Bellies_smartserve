@@ -21,6 +21,7 @@ import '../screens/owner/system_info_screen.dart';
 import '../screens/owner/customer_reviews_screen.dart';
 import '../screens/rider/rider_dashboard_screen.dart';
 import '../screens/customer/customer_menu_screen.dart';
+import '../screens/customer/customer_main_layout.dart';
 import '../screens/customer/customer_checkout_screen.dart';
 import '../models/customer_checkout_draft.dart';
 import '../models/order_model.dart';
@@ -136,7 +137,7 @@ class AppRoutes {
         );
 
       case customerMenu:
-        return MaterialPageRoute(builder: (_) => const CustomerMenuScreen(), settings: routeSettings);
+        return MaterialPageRoute(builder: (_) => const CustomerMainLayout(), settings: routeSettings);
 
       case customerCheckout:
         final args = routeSettings.arguments;
