@@ -1,7 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/app_routes.dart';
-import '../../core/responsive_layout.dart';
 import '../../widgets/customer_bottom_nav_bar.dart';
 import '../delivery/customer_tracking_screen.dart';
 import 'customer_menu_screen.dart';
@@ -38,10 +38,8 @@ class _CustomerMainLayoutState extends State<CustomerMainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = ResponsiveLayout.isDesktop(context);
-
-    // On Desktop, render CustomerMenuScreen directly with top navigation
-    if (isDesktop) {
+    // On Web, render CustomerMenuScreen directly with web navigation & NO bottom nav bar
+    if (kIsWeb) {
       return const CustomerMenuScreen();
     }
 

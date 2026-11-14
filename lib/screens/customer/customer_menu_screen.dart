@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -622,14 +623,16 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDesktop = !ResponsiveLayout.isMobile(context);
+    final bool isMobileApp = !kIsWeb && ResponsiveLayout.isMobile(context);
 
-    if (!isDesktop) {
+    if (isMobileApp) {
       return Scaffold(
         backgroundColor: const Color(0xFFFDFDFD),
         body: _buildMobileAppView(),
       );
     }
+
+    final bool isDesktop = !ResponsiveLayout.isMobile(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFDFDFD),

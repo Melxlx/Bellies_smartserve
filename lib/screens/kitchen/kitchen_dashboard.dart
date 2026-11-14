@@ -8,7 +8,6 @@ import '../../models/order_model.dart';
 import '../../models/recipe_model.dart';
 import '../../models/ingredient_model.dart';
 import '../../models/inventory_movement_model.dart';
-import '../../models/user_model.dart';
 import '../../repositories/order_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../repositories/ingredient_repository.dart';

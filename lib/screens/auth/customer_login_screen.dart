@@ -1146,7 +1146,7 @@ You have the right to access, update, or request the deletion of your account in
                           return;
                         }
 
-                        final String? redirectTo = kIsWeb
+                        final String redirectTo = kIsWeb
                             ? '${Uri.base.origin}/#/reset-password'
                             : 'bellies://reset-password';
 

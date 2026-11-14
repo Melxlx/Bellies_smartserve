@@ -326,7 +326,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                           return;
                         }
 
-                        final String? redirectTo = kIsWeb
+                        final String redirectTo = kIsWeb
                             ? '${Uri.base.origin}/#/reset-password'
                             : 'bellies://reset-password';
 
