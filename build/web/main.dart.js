@@ -9302,7 +9302,8 @@ axL:function axL(a,b){this.a=a
 this.b=b},
 axM:function axM(){},
 axN:function axN(a){this.a=a},
-axO:function axO(a){this.a=a},
+axO:function axO(a,b){this.a=a
+this.b=b},
 axJ:function axJ(a,b,c,d){var _=this
 _.a=a
 _.b=b
@@ -58845,7 +58846,7 @@ if(q===B.cA){if(s==null||s.length===0)return A.a([],t.EU)
 q=A.ag(p).i("aA<1>")
 q=A.Y(new A.aA(p,new A.axN(s),q),q.i("G.E"))
 return q}r=A.ag(p).i("aA<1>")
-q=A.Y(new A.aA(p,new A.axO(q),r),r.i("G.E"))
+q=A.Y(new A.aA(p,new A.axO(q,s),r),r.i("G.E"))
 return q},
 $S:668}
 A.axM.prototype={
@@ -58855,13 +58856,19 @@ A.axN.prototype={
 $1(a){var s,r
 if(!a.Y2(B.cA))return!1
 s=a.d.toUpperCase()
-if(s==="INVENTORY"||s==="LOW_STOCK"||s==="PREPARATION_TIME"||s==="SYSTEM"||s==="ATTENDANCE"||s==="PAYROLL"||s==="FINANCE"||s==="ONLINE_ORDERS")return!1
+if(s==="INVENTORY"||s==="LOW_STOCK"||s==="OUT_OF_STOCK"||s==="PREPARATION_TIME"||s==="SYSTEM"||s==="ATTENDANCE"||s==="PAYROLL"||s==="FINANCE"||s==="ONLINE_ORDERS"||s==="ORDERS"||s==="KITCHEN"||s==="RIDER"||s==="PAYMENTS")return!1
 r=a.r
 if(r!=null&&r.length!==0)return r===this.a
 return s==="PROMOS"||s==="BROADCAST"},
 $S:45}
 A.axO.prototype={
-$1(a){return a.Y2(this.a)},
+$1(a){var s,r,q
+if(!a.Y2(this.a))return!1
+s=a.r
+r=!1
+if(s!=null)if(s.length!==0){r=this.b
+r=r!=null&&r.length!==0}if(r){q=a.d.toUpperCase()
+if(q==="MY_ORDERS"||q==="CUSTOMER_ALERTS")return s===this.b}return!0},
 $S:45}
 A.axJ.prototype={
 $0(){var s=0,r=A.p(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h

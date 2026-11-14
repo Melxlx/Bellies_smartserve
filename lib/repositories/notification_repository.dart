@@ -78,16 +78,21 @@ class NotificationRepository {
         return filtered.where((n) {
           if (!n.isForRole(UserRole.customer)) return false;
 
-          // Strictly block internal staff categories from customer view
+          // Strictly block ALL internal staff categories from customer view
           final cat = n.category.toUpperCase();
           if (cat == 'INVENTORY' ||
               cat == 'LOW_STOCK' ||
+              cat == 'OUT_OF_STOCK' ||
               cat == 'PREPARATION_TIME' ||
               cat == 'SYSTEM' ||
               cat == 'ATTENDANCE' ||
               cat == 'PAYROLL' ||
               cat == 'FINANCE' ||
-              cat == 'ONLINE_ORDERS') {
+              cat == 'ONLINE_ORDERS' ||
+              cat == 'ORDERS' ||
+              cat == 'KITCHEN' ||
+              cat == 'RIDER' ||
+              cat == 'PAYMENTS') {
             return false;
           }
           
@@ -102,7 +107,18 @@ class NotificationRepository {
       }
 
       if (forRole == null) return filtered;
-      return filtered.where((n) => n.isForRole(forRole)).toList();
+      return filtered.where((n) {
+        if (!n.isForRole(forRole)) return false;
+
+        // If notification has a specific userId for customer personal alerts, non-owner staff shouldn't see it
+        if (n.userId != null && n.userId!.isNotEmpty && currentUserId != null && currentUserId.isNotEmpty) {
+          final cat = n.category.toUpperCase();
+          if (cat == 'MY_ORDERS' || cat == 'CUSTOMER_ALERTS') {
+            return n.userId == currentUserId;
+          }
+        }
+        return true;
+      }).toList();
     }
 
     controller = StreamController<List<SystemNotificationModel>>.broadcast(
