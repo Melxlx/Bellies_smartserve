@@ -1422,13 +1422,6 @@ You have the right to access, update, or request the deletion of your account in
         const SizedBox(height: 12),
         _buildOAuthButtons(),
         const SizedBox(height: 16),
-        Center(
-          child: TextButton.icon(
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.staffLogin),
-            icon: Icon(Icons.badge_outlined, color: const Color(0xFF86868B), size: 16),
-            label: Text("STAFF PORTAL", style: GoogleFonts.poppins(color: const Color(0xFF86868B), fontWeight: FontWeight.w600, fontSize: 11, letterSpacing: 1)),
-          ),
-        ),
       ],
     );
   }
