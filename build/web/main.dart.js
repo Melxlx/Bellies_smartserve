@@ -77046,7 +77046,7 @@ if(B.b.m(s,"gyoza"))return"assets/images/gyoza.png"
 o=B.b.m(s,"mix ball")
 if(o||o)return"assets/images/mixball.png"
 if(B.b.m(s,"cheese"))return"assets/images/cheese.png"
-if(B.b.m(s,"takeout")||B.b.m(s,"take out")||B.b.m(s,"box")||B.b.m(s,"packaging")||B.b.m(s,"adds-on")||B.b.m(s,"add-on")||B.b.m(s,"addon"))return"assets/images/adds-on.png"}r=B.b.I(this.c)
+if(B.b.m(s,"takeout")||B.b.m(s,"take out")||B.b.m(s,"box")||B.b.m(s,"packaging")||B.b.m(s,"adds-on")||B.b.m(s,"add-on")||B.b.m(s,"addon"))return"assets/images/takeoutBox.png"}r=B.b.I(this.c)
 if(r.length!==0){if(B.b.b_(r,"http")||B.b.b_(r,"assets/"))return r
 return"assets/images/"+r}return""},
 F(a){var s=this,r=null,q=s.aMc()
