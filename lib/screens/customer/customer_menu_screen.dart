@@ -2025,6 +2025,9 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                   } else if (name.contains('add')) {
                     imgPath = 'assets/images/addson.png';
                     catIcon = Icons.add_circle_outline_rounded;
+                  } else if (name.contains('merienda') || name.contains('hapon')) {
+                    imgPath = 'assets/images/merienda.png';
+                    catIcon = Icons.cake_rounded;
                   } else if (name.contains('pancit') || name.contains('bihon') || name.contains('canton')) {
                     imgPath = 'assets/images/bilao_pancit.png';
                     catIcon = Icons.dinner_dining_rounded;
