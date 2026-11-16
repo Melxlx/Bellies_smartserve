@@ -58,6 +58,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   bool _isLoading = true;
   bool _isCartVisible = false; // Add this to control cart visibility
   String _activeNavTab = 'home';
+  String? _customAddressOverride;
 
   final ScrollController _mainScrollController = ScrollController();
   final ScrollController _categoriesScrollController = ScrollController();
@@ -577,12 +578,26 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 onPressed: _cart.isEmpty
                     ? null
                     : () {
+                        final user = Supabase.instance.client.auth.currentUser;
+                        if (user == null || user.isAnonymous) {
+                          if (ResponsiveLayout.isMobile(context)) {
+                            Navigator.pop(context);
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please sign in or register to proceed with checkout."),
+                              backgroundColor: Color(0xFFE91E63),
+                            ),
+                          );
+                          Navigator.pushNamed(context, AppRoutes.login);
+                          return;
+                        }
                         if (ResponsiveLayout.isMobile(context)) {
                           Navigator.pop(context);
                         }
                         Navigator.pushNamed(
                           context,
-                          AppRoutes.customerCheckout,
+                          AppRoutes.orderReview,
                           arguments: CustomerCheckoutArguments(
                             cart: _cart,
                             draft: _checkoutDraft,
@@ -694,7 +709,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   Widget _buildMobileAppView() {
     final user = Supabase.instance.client.auth.currentUser;
     final isAuthenticated = user != null && !user.isAnonymous;
-    final userAddress = user?.userMetadata?['address']?.toString() ?? 'Isabela';
+    final userAddress = _customAddressOverride ?? user?.userMetadata?['address']?.toString() ?? '';
 
     return CustomScrollView(
       controller: _mainScrollController,
@@ -702,12 +717,16 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
         // Foodpanda-Style Pink Header
         SliverToBoxAdapter(
           child: PremiumPinkHeader(
-            currentLocation: userAddress.isNotEmpty ? userAddress.split(',').first : "Isabela",
+            currentLocation: userAddress.isNotEmpty ? userAddress.split(',').first : "Select Location",
             onLocationTap: () {
               FoodpandaAddressSheet.show(
                 context,
                 currentAddress: userAddress,
-                onAddressUpdated: (newAddress) => setState(() {}),
+                onAddressUpdated: (newAddress) {
+                  setState(() {
+                    _customAddressOverride = newAddress;
+                  });
+                },
               );
             },
             searchQuery: _searchQuery,

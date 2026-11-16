@@ -157,7 +157,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final savedOrder = await _orderRepo.createOrder(finalOrderWithPayment);
 
       if (mounted) {
-        Navigator.pushReplacementNamed(
+        Navigator.pop(context, true);
+        Navigator.pushNamed(
           context,
           AppRoutes.receipt,
           arguments: ReceiptArguments(order: savedOrder),

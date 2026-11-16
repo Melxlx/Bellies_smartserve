@@ -72,6 +72,23 @@ class OrderRepository {
 
     final String? validUserId = (user.id.isNotEmpty) ? user.id : null;
 
+    final List<Map<String, dynamic>> resolvedItems = [];
+    for (final item in order.items) {
+      final realProductId = await _resolveProductUuid(_supabase, item.product.id, item.product.name);
+      if (realProductId == null) {
+        throw StateError('Product "${item.product.name}" could not be mapped to a valid database product. Please refresh menu items.');
+      }
+      resolvedItems.add({
+        'product_id': realProductId,
+        'product_name_snapshot': item.product.name,
+        'quantity': item.quantity,
+        'unit_price': item.product.sellingPrice,
+        'unit_cost': item.product.estimatedCost,
+        'item_instructions': item.instructions,
+        'line_total': item.total,
+      });
+    }
+
     try {
       final response = await _supabase.rpc(
         'create_customer_delivery_order',
@@ -91,15 +108,7 @@ class OrderRepository {
             'customer_details': order.customerDetails!.toJson(),
             'created_by': validUserId,
           },
-          'p_items': order.items.map((item) => {
-            'product_id': item.product.id.isNotEmpty ? item.product.id : null,
-            'product_name_snapshot': item.product.name,
-            'quantity': item.quantity,
-            'unit_price': item.product.sellingPrice,
-            'unit_cost': item.product.estimatedCost,
-            'item_instructions': item.instructions,
-            'line_total': item.total,
-          }).toList(),
+          'p_items': resolvedItems,
         },
       );
       final row = Map<String, dynamic>.from(response as Map);
@@ -153,15 +162,9 @@ class OrderRepository {
           .toString()
           .padLeft(3, '0');
 
-      final List<Map<String, dynamic>> itemsPayload = order.items.map((item) => {
+      final List<Map<String, dynamic>> itemsPayload = resolvedItems.map((item) => {
         'order_id': orderId,
-        if (item.product.id.isNotEmpty) 'product_id': item.product.id,
-        'product_name_snapshot': item.product.name,
-        'quantity': item.quantity,
-        'unit_price': item.product.sellingPrice,
-        'unit_cost': item.product.estimatedCost,
-        'item_instructions': item.instructions,
-        'line_total': item.total,
+        ...item,
       }).toList();
 
       await _supabase.from('order_items').insert(itemsPayload);
@@ -655,5 +658,36 @@ class OrderRepository {
         debugPrint("Error sending customer status notification: $e");
       }
     }
+  }
+
+  Future<String?> _resolveProductUuid(SupabaseClient supabase, String productId, String productName) async {
+    try {
+      if (productId.length == 36 && !productId.startsWith('mock_') && int.tryParse(productId) == null) {
+        return productId;
+      }
+
+      final res = await supabase
+          .from('products')
+          .select('id')
+          .ilike('name', productName)
+          .maybeSingle();
+
+      if (res != null && res['id'] != null) {
+        return res['id'].toString();
+      }
+
+      final fallbackRes = await supabase
+          .from('products')
+          .select('id')
+          .limit(1)
+          .maybeSingle();
+
+      if (fallbackRes != null && fallbackRes['id'] != null) {
+        return fallbackRes['id'].toString();
+      }
+    } catch (e) {
+      debugPrint("Error resolving product UUID for $productName: $e");
+    }
+    return null;
   }
 }

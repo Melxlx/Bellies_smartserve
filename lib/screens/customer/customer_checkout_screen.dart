@@ -7,14 +7,17 @@ import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/app_routes.dart';
+import '../../core/theme/app_colors.dart';
 import '../../models/customer_checkout_draft.dart';
 import '../../models/order_model.dart';
 import '../../repositories/order_repository.dart';
 import '../../services/order_tracking_service.dart';
 import '../../services/delivery_fee_calculator.dart';
 import '../../services/receipt_ocr_service.dart';
+import '../../services/delivery_service_area.dart';
 import '../../widgets/state_widgets.dart';
 import '../../widgets/app_modals.dart';
 import 'delivery_address_screen.dart';
@@ -57,6 +60,9 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
   String _profileName = '';
   String _profileContact = '';
   final bool _useMyAccountDetails = true;
+  bool _highlightDeliveryError = false;
+  bool _highlightPaymentError = false;
+  final ScrollController _scrollController = ScrollController();
 
   double get _subtotal => widget.cart.fold(0, (sum, item) => sum + item.total);
   double get _deliveryFee => _draft.details?.calculatedDeliveryFee ?? 30.0;
@@ -82,20 +88,40 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       }
       final user = client.auth.currentUser;
       if (user != null && !user.isAnonymous) {
-        final profileData = await client
+        var profileData = await client
             .from('profiles')
             .select()
             .eq('id', user.id)
             .maybeSingle();
 
+        if (profileData == null) {
+          try {
+            await client.from('profiles').upsert({
+              'id': user.id,
+              'email': user.email ?? '',
+              'full_name': user.userMetadata?['full_name'] ?? user.userMetadata?['name'] ?? 'User',
+              'role': 'CUSTOMER',
+              'account_status': 'ACTIVE',
+            });
+            profileData = await client
+                .from('profiles')
+                .select()
+                .eq('id', user.id)
+                .maybeSingle();
+          } catch (healErr) {
+            debugPrint("Auto-heal profile failed: $healErr");
+          }
+        }
+
         if (profileData != null && mounted) {
-          final isTrusted = profileData['is_trusted_customer'] as bool? ?? false;
-          final fullName = profileData['full_name']?.toString() ??
+          final data = Map<String, dynamic>.from(profileData as Map);
+          final isTrusted = data['is_trusted_customer'] as bool? ?? false;
+          final fullName = data['full_name']?.toString() ??
               user.userMetadata?['full_name']?.toString() ??
               user.userMetadata?['name']?.toString() ??
               '';
-          final contact = profileData['contact_number']?.toString() ?? '';
-          final address = profileData['address']?.toString() ?? '';
+          final contact = data['contact_number']?.toString() ?? '';
+          final address = data['address']?.toString() ?? '';
 
           setState(() {
             _isTrustedCustomer = isTrusted;
@@ -104,14 +130,19 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
             if (_isTrustedCustomer) {
               _selectedPaymentMethod = 'COD';
             }
-            if (_draft.details == null && (fullName.isNotEmpty || contact.isNotEmpty || address.isNotEmpty)) {
+            if (_draft.details == null && address.isNotEmpty) {
+              final lat = (data['latitude'] as num?)?.toDouble() ?? DeliveryServiceArea.storeLocation.latitude;
+              final lng = (data['longitude'] as num?)?.toDouble() ?? DeliveryServiceArea.storeLocation.longitude;
               _draft.details = CustomerDetails(
-                name: fullName,
+                name: fullName.isNotEmpty ? fullName : (user.email?.split('@').first ?? 'Customer'),
                 contact: contact,
                 address: address,
-                landmark: '',
+                landmark: data['landmark']?.toString() ?? '',
                 notes: '',
                 houseUnit: '',
+                latitude: lat,
+                longitude: lng,
+                locationConfirmed: true,
               );
             } else if (_draft.details != null && _useMyAccountDetails && fullName.isNotEmpty) {
               _draft.details = CustomerDetails(
@@ -141,6 +172,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _refController.dispose();
     super.dispose();
   }
@@ -194,6 +226,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       setState(() {
         _draft.details = effectiveDetails;
         _error = null;
+        _highlightDeliveryError = false;
       });
       _recalculateFee(effectiveDetails);
     }
@@ -236,8 +269,31 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
   Future<void> _placeOrder() async {
     if (_isSaving) return;
     if (!_draft.hasConfirmedAddress) {
+      setState(() {
+        _highlightDeliveryError = true;
+        _highlightPaymentError = false;
+      });
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      }
       await _showCheckoutError(
         'Confirm the delivery location and recipient details first.',
+      );
+      return;
+    }
+
+    final address = _draft.details?.address ?? '';
+    final lat = _draft.details?.latitude ?? DeliveryServiceArea.storeLocation.latitude;
+    final lng = _draft.details?.longitude ?? DeliveryServiceArea.storeLocation.longitude;
+    if (!DeliveryServiceArea.isWithinServiceArea(LatLng(lat, lng), address)) {
+      setState(() {
+        _highlightDeliveryError = true;
+      });
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      }
+      await _showCheckoutError(
+        'Sorry! Bellie’s SmartServe delivers exclusively within Sta. Cruz, Pagsanjan, and Pila, Laguna. Your delivery address ($address) is outside our delivery range.',
       );
       return;
     }
@@ -253,18 +309,23 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     final bool isCod = _selectedPaymentMethod == 'COD';
     if (!isCod) {
       final inputRef = _refController.text.trim();
-      if (inputRef.isEmpty) {
-        await _showCheckoutError('Please enter your 13-digit GCash Reference Number.');
-        return;
-      }
-      if (!ReceiptOcrService.isValidGcashRefNumber(inputRef)) {
-        await _showCheckoutError('Invalid GCash Reference Number. Please enter a valid 10 to 13-digit reference number from your payment receipt.');
-        return;
-      }
-      if (!_agreedToOnlineTerms) {
-        await _showCheckoutError(
-          'Please agree to the Online Payment Terms & Conditions before proceeding with online payment.',
-        );
+      if (inputRef.isEmpty || !ReceiptOcrService.isValidGcashRefNumber(inputRef) || !_agreedToOnlineTerms) {
+        setState(() {
+          _highlightDeliveryError = false;
+          _highlightPaymentError = true;
+        });
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(350, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+        }
+        if (inputRef.isEmpty) {
+          await _showCheckoutError('Please enter your 13-digit GCash Reference Number.');
+        } else if (!ReceiptOcrService.isValidGcashRefNumber(inputRef)) {
+          await _showCheckoutError('Invalid GCash Reference Number. Please enter a valid 10 to 13-digit reference number from your payment receipt.');
+        } else {
+          await _showCheckoutError(
+            'Please agree to the Online Payment Terms & Conditions before proceeding with online payment.',
+          );
+        }
         return;
       }
     }
@@ -312,6 +373,15 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
               OrderRepository().createCustomerDeliveryOrder)(order);
 
       OrderTrackingService().setTrackingNumber(savedOrder.trackingNumber);
+
+      widget.cart.clear();
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null && !user.isAnonymous) {
+          await prefs.remove('cart_user_${user.id}');
+        }
+      } catch (_) {}
 
       _draft.clear();
       if (!mounted) return;
@@ -362,6 +432,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 680),
             child: SingleChildScrollView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(20),
               child: Form(
                 key: _formKey,
@@ -530,12 +601,19 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
   }
 
   Widget _buildGcashSection() {
+    final isError = _highlightPaymentError;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F7FF),
+        color: isError ? const Color(0xFFFFF0F2) : const Color(0xFFF0F7FF),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.shade200),
+        border: Border.all(
+          color: isError ? const Color(0xFFFF2D55) : Colors.blue.shade200,
+          width: isError ? 2.5 : 1,
+        ),
+        boxShadow: isError ? [
+          BoxShadow(color: const Color(0xFFFF2D55).withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 3)),
+        ] : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -867,78 +945,127 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
   Widget _deliverySummary() {
     final details = _draft.details;
     final confirmed = _draft.hasConfirmedAddress;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  confirmed ? Icons.location_on : Icons.location_on_outlined,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    confirmed
-                        ? 'Confirmed Delivery Address'
-                        : 'Delivery Information',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+    final isError = _highlightDeliveryError;
+    return Container(
+      decoration: BoxDecoration(
+        color: isError ? const Color(0xFFFFF0F2) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isError
+              ? const Color(0xFFFF2D55)
+              : (confirmed ? AppColors.lightPink : Colors.grey.shade300),
+          width: isError ? 2.5 : 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isError ? const Color(0xFFFF2D55).withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.04),
+            blurRadius: isError ? 12 : 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                confirmed ? Icons.location_on : (isError ? Icons.error_rounded : Icons.location_on_outlined),
+                color: isError ? const Color(0xFFFF2D55) : AppColors.primary,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  confirmed
+                      ? 'Confirmed Delivery Address'
+                      : 'Delivery Information',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isError ? const Color(0xFFD32F2F) : AppColors.textPrimary,
                   ),
                 ),
-                if (details != null)
-                  TextButton(
-                    onPressed: _isSaving ? null : _editAddress,
-                    child: const Text('Edit'),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (details != null) ...[
-              Text('${details.name} · ${details.contact}'),
-              const SizedBox(height: 6),
-              Text(details.fullAddress),
-              if (details.landmark.isNotEmpty)
-                Text('Landmark: ${details.landmark}'),
-              if (details.deliveryInstructions.isNotEmpty)
-                Text('Instructions: ${details.deliveryInstructions}'),
-              if (_deliveryDistanceKm > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
+              ),
+              if (details != null)
+                TextButton(
+                  onPressed: _isSaving ? null : _editAddress,
                   child: Text(
-                    'Road Distance: ${_deliveryDistanceKm.toStringAsFixed(1)} km · Delivery Fee: ₱${_deliveryFee.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      color: Colors.green.shade800,
+                    'Edit',
+                    style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      color: isError ? const Color(0xFFFF2D55) : AppColors.primary,
                     ),
                   ),
                 ),
             ],
-            if (!confirmed) ...[
-              const SizedBox(height: 8),
-              const Text(
-                'Choose a delivery point and confirm the recipient and address before placing your order.',
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _isSaving ? null : _editAddress,
-                icon: const Icon(Icons.add_location_alt_outlined),
-                label: Text(
-                  details == null
-                      ? 'Choose Delivery Address'
-                      : 'Confirm Delivery Address',
+          ),
+          const SizedBox(height: 12),
+          if (details != null) ...[
+            Text('${details.name} · ${details.contact}', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+            const SizedBox(height: 4),
+            Text(details.fullAddress, style: GoogleFonts.inter(fontSize: 12, color: Colors.black87)),
+            if (details.landmark.isNotEmpty)
+              Text('Landmark: ${details.landmark}', style: GoogleFonts.inter(fontSize: 11.5, color: Colors.black54)),
+            if (details.deliveryInstructions.isNotEmpty)
+              Text('Instructions: ${details.deliveryInstructions}', style: GoogleFonts.inter(fontSize: 11.5, color: Colors.black54)),
+            if (_deliveryDistanceKm > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'Road Distance: ${_deliveryDistanceKm.toStringAsFixed(1)} km · Delivery Fee: ₱${_deliveryFee.toStringAsFixed(2)}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.green.shade800,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
+              ),
+          ],
+          if (!confirmed) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Choose a delivery point and confirm the recipient and address before placing your order.',
+              style: GoogleFonts.inter(fontSize: 12, color: isError ? const Color(0xFFD32F2F) : Colors.black87),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: isError ? const Color(0xFFFF2D55) : AppColors.primary,
+                side: BorderSide(
+                  color: isError ? const Color(0xFFFF2D55) : AppColors.primary,
+                  width: isError ? 2 : 1.2,
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: _isSaving ? null : _editAddress,
+              icon: Icon(Icons.add_location_alt_outlined, color: isError ? const Color(0xFFFF2D55) : AppColors.primary),
+              label: Text(
+                details == null
+                    ? 'Choose Delivery Address'
+                    : 'Confirm Delivery Address',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ),
+            if (isError) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF2D55), size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      "Action Required: Tap 'Confirm Delivery Address' above to verify your location.",
+                      style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFFFF2D55)),
+                    ),
+                  ),
+                ],
               ),
             ],
           ],
-        ),
+        ],
       ),
     );
   }

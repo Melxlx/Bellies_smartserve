@@ -23,6 +23,7 @@ import '../screens/rider/rider_dashboard_screen.dart';
 import '../screens/customer/customer_menu_screen.dart';
 import '../screens/customer/customer_main_layout.dart';
 import '../screens/customer/customer_checkout_screen.dart';
+import '../screens/customer/order_review_screen.dart';
 import '../models/customer_checkout_draft.dart';
 import '../models/order_model.dart';
 import '../models/user_model.dart';
@@ -55,6 +56,7 @@ class AppRoutes {
   static const String customerAccount = '/customer/account';
   static const String customerOrders = '/customer/orders';
   static const String customerCheckout = '/checkout';
+  static const String orderReview = '/order-review';
   static const String deliveryAddress = '/checkout/delivery-address';
   static const String tracking = '/tracking';
 
@@ -149,6 +151,16 @@ class AppRoutes {
         } else if (args is List<OrderItem>) {
           return _customerRoute(
             CustomerCheckoutScreen(cart: args, draft: null),
+            routeSettings,
+          );
+        }
+        return MaterialPageRoute(builder: (_) => const CustomerMenuScreen(), settings: routeSettings);
+
+      case orderReview:
+        final args = routeSettings.arguments;
+        if (args is CustomerCheckoutArguments) {
+          return _customerRoute(
+            OrderReviewScreen(cart: args.cart, draft: args.draft),
             routeSettings,
           );
         }

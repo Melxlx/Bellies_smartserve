@@ -58,17 +58,61 @@ class _FoodpandaAddressSheetState extends State<FoodpandaAddressSheet> {
     final newAddress = _addressController.text.trim();
     if (newAddress.isEmpty) return;
 
+    // Validate delivery range (Sta. Cruz, Pagsanjan, Pila only)
+    final inRange = DeliveryServiceArea.isWithinServiceArea(DeliveryServiceArea.storeLocation, newAddress);
+    if (!inRange) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Colors.red, size: 28),
+              const SizedBox(width: 10),
+              Text("Outside Delivery Area", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          content: Text(
+            "Sorry! Bellie’s SmartServe delivers exclusively within Sta. Cruz, Pagsanjan, and Pila, Laguna. Your selected location ($newAddress) is outside our delivery coverage.",
+            style: GoogleFonts.inter(fontSize: 13, height: 1.4),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
     final user = Supabase.instance.client.auth.currentUser;
 
     if (user != null) {
       try {
-        await Supabase.instance.client
-            .from('profiles')
-            .update({'address': newAddress})
-            .eq('id', user.id);
+        await Supabase.instance.client.from('profiles').upsert({
+          'id': user.id,
+          'email': user.email ?? '',
+          'full_name': user.userMetadata?['full_name'] ?? user.userMetadata?['name'] ?? 'User',
+          'address': newAddress,
+          'latitude': DeliveryServiceArea.storeLocation.latitude,
+          'longitude': DeliveryServiceArea.storeLocation.longitude,
+          'role': 'CUSTOMER',
+          'account_status': 'ACTIVE',
+        });
       } catch (e) {
-        debugPrint("Error updating profile address: $e");
+        debugPrint("Error upserting profile address: $e");
+      }
+
+      try {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(data: {'address': newAddress}),
+        );
+      } catch (e) {
+        debugPrint("Error updating auth user metadata: $e");
       }
     }
 
@@ -140,7 +184,7 @@ class _FoodpandaAddressSheetState extends State<FoodpandaAddressSheet> {
           ),
           const SizedBox(height: 12),
 
-          // Mini Map Card (Tapping opens full-screen interactive Foodpanda location picker map)
+          // Mini Map Card (Tapping anywhere on the map card opens full-screen interactive Foodpanda location picker map)
           GestureDetector(
             onTap: () async {
               final newAddress = await FoodpandaMapPickerDialog.show(
@@ -153,6 +197,7 @@ class _FoodpandaAddressSheetState extends State<FoodpandaAddressSheet> {
                 await _saveAddress();
               }
             },
+            behavior: HitTestBehavior.opaque,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(
@@ -163,33 +208,36 @@ class _FoodpandaAddressSheetState extends State<FoodpandaAddressSheet> {
                 ),
                 child: Stack(
                   children: [
-                    FlutterMap(
-                      options: MapOptions(
-                        initialCenter: storeLocation,
-                        initialZoom: 13.5,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-                          userAgentPackageName: 'com.example.bellies_smartserve',
+                    IgnorePointer(
+                      child: FlutterMap(
+                        options: MapOptions(
+                          initialCenter: storeLocation,
+                          initialZoom: 13.5,
+                          interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                         ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: storeLocation,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.primary,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                        children: [
+                          TileLayer(
+                            urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                            userAgentPackageName: 'com.example.bellies_smartserve',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: storeLocation,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                                  ),
+                                  child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 22),
                                 ),
-                                child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 22),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     Positioned(
                       bottom: 8,

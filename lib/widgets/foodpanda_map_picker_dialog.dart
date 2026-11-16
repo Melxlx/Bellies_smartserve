@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -53,20 +54,23 @@ class _FoodpandaMapPickerDialogState extends State<FoodpandaMapPickerDialog> {
   late LatLng _currentCenter;
   late final TextEditingController _addressController;
   bool _isLocatingGps = false;
+  Timer? _geocodeTimer;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
     _currentCenter = widget.initialPosition;
-    _addressController = TextEditingController(
-      text: widget.initialAddress.isNotEmpty ? widget.initialAddress : "Isabela",
-    );
+    final initialText = (widget.initialAddress.isNotEmpty && widget.initialAddress != 'Isabela')
+        ? widget.initialAddress
+        : "Pinned Location, Laguna";
+    _addressController = TextEditingController(text: initialText);
     _acquireGpsLocation();
   }
 
   @override
   void dispose() {
+    _geocodeTimer?.cancel();
     _mapController.dispose();
     _addressController.dispose();
     super.dispose();
@@ -74,9 +78,13 @@ class _FoodpandaMapPickerDialogState extends State<FoodpandaMapPickerDialog> {
 
   Future<void> _reverseGeocodeCenter(LatLng pos) async {
     final address = await _freeMapService.reverseGeocode(pos);
-    if (address != null && address.isNotEmpty && mounted) {
+    if (mounted) {
       setState(() {
-        _addressController.text = address;
+        if (address != null && address.trim().isNotEmpty && address != 'Isabela') {
+          _addressController.text = address;
+        } else {
+          _addressController.text = "Pinned Location, Laguna";
+        }
       });
     }
   }
@@ -97,6 +105,7 @@ class _FoodpandaMapPickerDialogState extends State<FoodpandaMapPickerDialog> {
       debugPrint("GPS location error: $e");
       if (mounted) {
         setState(() => _isLocatingGps = false);
+        await _reverseGeocodeCenter(_currentCenter);
       }
     }
   }
@@ -112,12 +121,21 @@ class _FoodpandaMapPickerDialogState extends State<FoodpandaMapPickerDialog> {
             options: MapOptions(
               initialCenter: _currentCenter,
               initialZoom: 15.5,
+              onTap: (tapPosition, point) {
+                _mapController.move(point, _mapController.camera.zoom);
+                setState(() {
+                  _currentCenter = point;
+                });
+                _geocodeTimer?.cancel();
+                _reverseGeocodeCenter(point);
+              },
               onPositionChanged: (pos, hasGesture) {
+                _currentCenter = pos.center;
                 if (hasGesture) {
-                  setState(() {
-                    _currentCenter = pos.center;
+                  _geocodeTimer?.cancel();
+                  _geocodeTimer = Timer(const Duration(milliseconds: 350), () {
+                    _reverseGeocodeCenter(pos.center);
                   });
-                  _reverseGeocodeCenter(pos.center);
                 }
               },
             ),
@@ -170,23 +188,29 @@ class _FoodpandaMapPickerDialogState extends State<FoodpandaMapPickerDialog> {
             ),
           ),
 
-          // Bottom Right Real-Time GPS Target Button
+          // Bottom Right Real-Time GPS Target Button (Elevated above bottom sheet)
           Positioned(
             right: 16,
-            bottom: 230,
-            child: CircleAvatar(
-              radius: 22,
-              backgroundColor: Colors.white,
-              child: IconButton(
-                icon: _isLocatingGps
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
-                      )
-                    : const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 22),
-                onPressed: _isLocatingGps ? null : _acquireGpsLocation,
-                tooltip: "Pin My Exact GPS Location",
+            bottom: 275,
+            child: Material(
+              elevation: 6,
+              shape: const CircleBorder(),
+              color: Colors.white,
+              shadowColor: Colors.black38,
+              child: CircleAvatar(
+                radius: 22,
+                backgroundColor: Colors.white,
+                child: IconButton(
+                  icon: _isLocatingGps
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                        )
+                      : const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 22),
+                  onPressed: _isLocatingGps ? null : _acquireGpsLocation,
+                  tooltip: "Pin My Exact GPS Location",
+                ),
               ),
             ),
           ),

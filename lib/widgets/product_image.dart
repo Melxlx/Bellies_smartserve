@@ -96,6 +96,9 @@ class ProductImage extends StatelessWidget {
       if (name.contains('mix ball') || name.contains('mix ball')) return 'assets/images/mixball.png';
       if (name.contains('bilao')) return 'assets/images/bilao_pancit.png';
       if (name.contains('cheese')) return 'assets/images/cheese.png';
+      if (name.contains('takeout') || name.contains('take out') || name.contains('box') || name.contains('packaging') || name.contains('adds-on') || name.contains('add-on') || name.contains('addon')) {
+        return 'assets/images/adds-on.png';
+      }
     }
 
     final trimmed = path.trim();

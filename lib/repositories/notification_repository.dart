@@ -98,11 +98,11 @@ class NotificationRepository {
           
           // If the notification has a specific userId, it MUST match the logged-in user
           if (n.userId != null && n.userId!.isNotEmpty) {
-            return n.userId == currentUserId;
+            if (n.userId != currentUserId) return false;
           }
 
-          // If no userId is specified, only general broadcast categories (PROMOS, BROADCAST) are visible
-          return cat == 'PROMOS' || cat == 'BROADCAST';
+          // Allow general broadcasts and customer personal alerts
+          return cat == 'PROMOS' || cat == 'BROADCAST' || cat == 'CUSTOMER_ALERTS' || cat == 'MY_ORDERS' || cat == 'ORDERS';
         }).toList();
       }
 

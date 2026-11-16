@@ -389,7 +389,7 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
         // Map & Floating ETA Card Stack
         _buildEmbeddedMapWithFloatingEta(order),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 52),
 
         // Vertical Progress Timeline
         Padding(
