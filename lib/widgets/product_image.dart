@@ -20,7 +20,7 @@ class ProductImage extends StatelessWidget {
     if (productName != null && productName!.isNotEmpty) {
       final name = productName!.toLowerCase();
 
-      if (name.contains('takeout') || name.contains('take out') || name.contains('box') || name.contains('packaging') || name.contains('adds-on') || name.contains('add-on') || name.contains('addon')) {
+      if (name.contains('takeout') || name.contains('take out') || name.contains('box') || name.contains('packaging')) {
         return 'assets/images/takeoutBox.png';
       }
 
