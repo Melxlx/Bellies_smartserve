@@ -20,6 +20,10 @@ class ProductImage extends StatelessWidget {
     if (productName != null && productName!.isNotEmpty) {
       final name = productName!.toLowerCase();
 
+      if (name.contains('takeout') || name.contains('take out') || name.contains('box') || name.contains('packaging') || name.contains('adds-on') || name.contains('add-on') || name.contains('addon')) {
+        return 'assets/images/takeoutBox.png';
+      }
+
       if (name.contains('bilao')) return 'assets/images/bilao_pancit.png';
       if (name.contains('tapsilog')) return 'assets/images/Tapsilog.png';
       if (name.contains('tocilog')) return 'assets/images/Tocilog.png';

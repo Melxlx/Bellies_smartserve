@@ -97,7 +97,9 @@ class _SplashScreenState extends State<SplashScreen> {
             requestedRoute.startsWith('/customer') ||
             requestedRoute.startsWith('/checkout') ||
             requestedRoute.startsWith('/tracking') ||
-            requestedRoute.startsWith('/reset-password')
+            requestedRoute.startsWith('/reset-password') ||
+            requestedRoute.startsWith('/staff') ||
+            requestedRoute.startsWith('/login')
         )) {
           Navigator.pushReplacementNamed(context, requestedRoute);
         } else {
