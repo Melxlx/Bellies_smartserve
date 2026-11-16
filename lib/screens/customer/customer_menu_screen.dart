@@ -2022,7 +2022,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                   if (name.contains('drink')) {
                     imgPath = 'assets/images/drinks.png';
                     catIcon = Icons.local_drink_rounded;
-                  } else if (name.contains('add') || name.contains('on')) {
+                  } else if (name.contains('add')) {
                     imgPath = 'assets/images/addson.png';
                     catIcon = Icons.add_circle_outline_rounded;
                   } else if (name.contains('pancit') || name.contains('bihon') || name.contains('canton')) {
