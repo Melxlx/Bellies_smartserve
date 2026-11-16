@@ -52,6 +52,26 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen>
   bool _isSignUpConfirmPasswordVisible = false;
   bool _agreedToTerms = false; // Requirement 7: The checkbox must not be checked by default
   bool _rememberMe = false;
+  int _logoTapCount = 0;
+  DateTime? _lastLogoTapTime;
+
+  void _handleLogoTap() {
+    final now = DateTime.now();
+    if (_lastLogoTapTime == null || now.difference(_lastLogoTapTime!) > const Duration(seconds: 2)) {
+      _logoTapCount = 1;
+    } else {
+      _logoTapCount++;
+    }
+    _lastLogoTapTime = now;
+
+    if (_logoTapCount >= 3) {
+      _logoTapCount = 0;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Staff Portal unlocked!"), duration: Duration(seconds: 1)),
+      );
+      Navigator.pushNamed(context, AppRoutes.staffLogin);
+    }
+  }
 
   @override
   void initState() {
@@ -1285,15 +1305,18 @@ You have the right to access, update, or request the deletion of your account in
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15), 
-                            borderRadius: BorderRadius.circular(20), 
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)]
+                        GestureDetector(
+                          onTap: _handleLogoTap,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15), 
+                              borderRadius: BorderRadius.circular(20), 
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)]
+                            ),
+                            child: Image.asset('assets/images/Bellieslogo.png', height: 60, color: Colors.white),
                           ),
-                          child: Image.asset('assets/images/Bellieslogo.png', height: 60, color: Colors.white),
                         ),
                         const SizedBox(height: 120),
                         Text(
@@ -1336,11 +1359,14 @@ You have the right to access, update, or request the deletion of your account in
           decoration: const BoxDecoration(image: DecorationImage(image: AssetImage('assets/images/loginpage.png'), fit: BoxFit.cover)),
           child: Container(
             color: Colors.black.withAlpha(100),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Image.asset('assets/images/Bellieslogo.png', height: 60, color: Colors.white),
-              const SizedBox(height: 8),
-              Text("BELLIE'S KITCHEN", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18)),
-            ]),
+            child: GestureDetector(
+              onTap: _handleLogoTap,
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Image.asset('assets/images/Bellieslogo.png', height: 60, color: Colors.white),
+                const SizedBox(height: 8),
+                Text("BELLIE'S KITCHEN", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18)),
+              ]),
+            ),
           ),
         ),
         Padding(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32), child: _buildFormContent()),
