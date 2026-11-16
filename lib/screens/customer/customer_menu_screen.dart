@@ -2018,14 +2018,15 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                 IconData catIcon = Icons.restaurant_menu_rounded;
 
                 if (!isAll && cat != null) {
-                  final name = cat.name.toLowerCase();
-                  if (name.contains('drink')) {
+                  final rawName = cat.name.toLowerCase();
+                  final name = rawName.replaceAll(RegExp(r'[^a-z0-9]'), '');
+                  if (rawName.contains('drink')) {
                     imgPath = 'assets/images/drinks.png';
                     catIcon = Icons.local_drink_rounded;
-                  } else if (name.contains('add')) {
+                  } else if ((name.contains('add') || name.contains('extra') || name.contains('pack') || name.contains('option')) && !name.contains('merienda')) {
                     imgPath = 'assets/images/addson.png';
                     catIcon = Icons.add_circle_outline_rounded;
-                  } else if (name.contains('merienda') || name.contains('hapon')) {
+                  } else if (rawName.contains('merienda') || rawName.contains('hapon')) {
                     imgPath = 'assets/images/merienda.png';
                     catIcon = Icons.cake_rounded;
                   } else if (name.contains('pancit') || name.contains('bihon') || name.contains('canton')) {
@@ -2086,7 +2087,11 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         ),
                         SizedBox(
                           height: 52,
-                          child: ProductImage(path: imgPath, productName: cat?.name),
+                          child: Image.asset(
+                            imgPath,
+                            fit: BoxFit.contain,
+                            errorBuilder: (ctx, err, stack) => const Icon(Icons.restaurant, color: Color(0xFFE91E63)),
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
