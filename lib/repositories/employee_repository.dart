@@ -327,12 +327,6 @@ class EmployeeRepository {
     }
 
     // 9. Physical delete from profiles table
-    try {
-      await _supabase.from('profiles').delete().eq('id', id);
-    } catch (e) {
-      debugPrint("profiles physical delete error: $e");
-      // Fallback: If physical delete is blocked by RLS/FK constraint, set status to DELETED
-      await _supabase.from('profiles').update({'account_status': 'DELETED'}).eq('id', id);
-    }
+    await _supabase.from('profiles').delete().eq('id', id);
   }
 }
