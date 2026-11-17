@@ -110,12 +110,16 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
           final roleName = profile.role.name.toUpperCase();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Logged in as $roleName. Redirecting to Staff Portal..."),
+              content: Text("Logged in as $roleName. Redirecting to your dashboard..."),
               backgroundColor: const Color(0xFF1E293B),
               duration: const Duration(seconds: 3),
             ),
           );
-          Navigator.pushReplacementNamed(context, AppRoutes.staffLogin);
+          if (profile.role == UserRole.rider) {
+            Navigator.pushReplacementNamed(context, AppRoutes.riderDashboard);
+          } else {
+            Navigator.pushReplacementNamed(context, AppRoutes.staffLogin);
+          }
         }
       } catch (e) {
         debugPrint("Staff redirect check error: $e");
