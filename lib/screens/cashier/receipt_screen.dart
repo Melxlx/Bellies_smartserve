@@ -129,7 +129,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       customer = widget.order.serviceType == ServiceType.delivery ? "Online Customer" : "Walk-in Customer";
     }
     if (cashier.trim().isEmpty) {
-      cashier = widget.customerOrder ? "Bellie's Kitchen System" : "Cashier / Staff";
+      cashier = widget.customerOrder ? "Online Order (SmartServe App)" : "Cashier / Staff";
     }
 
     if (mounted) {

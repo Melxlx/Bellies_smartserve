@@ -65377,7 +65377,7 @@ break
 case 2:s=1
 break
 case 5:if(B.b.I(a5.a).length===0)a5.a=o.a.c.y===B.eZ?"Online Customer":"Walk-in Customer"
-if(B.b.I(a5.b).length===0)a5.b=o.a.d?"Bellie's Kitchen System":"Cashier / Staff"
+if(B.b.I(a5.b).length===0)a5.b=o.a.d?"Online Order (SmartServe App)":"Cashier / Staff"
 if(o.c!=null)o.t(new A.bdp(a5,o))
 return A.n(null,r)
 case 1:return A.m(p.at(-1),r)}})
