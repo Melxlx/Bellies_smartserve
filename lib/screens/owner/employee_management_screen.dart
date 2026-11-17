@@ -1944,7 +1944,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
 
   void _nextStep() {
     if (_isStepTransitioning || _isSaving || _isUploading) return;
-    if (_validateCurrentStep()) {
+    if (_formKey.currentState!.validate() && _validateCurrentStep()) {
       setState(() {
         _isStepTransitioning = true;
         _currentStep++;
@@ -1952,6 +1952,8 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) setState(() => _isStepTransitioning = false);
       });
+    } else {
+      _showStepError("Please fix the highlighted errors before proceeding.");
     }
   }
 
@@ -2195,6 +2197,7 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
         padding: const EdgeInsets.all(28),
         child: Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
