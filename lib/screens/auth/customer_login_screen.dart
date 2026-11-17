@@ -1832,8 +1832,7 @@ You have the right to access, update, or request the deletion of your account in
                 controller: _emailController,
                 enabled: !_isLoading && !_isOAuthLoading,
                 autovalidateMode: AutovalidateMode.disabled,
-                maxLength: 60,
-                decoration: _inputDecoration("Enter your email", Icons.email_outlined).copyWith(counterText: ""),
+                decoration: _inputDecoration("Enter your email", Icons.email_outlined),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return "Email address is required";
                   if (!RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val.trim())) {
@@ -1849,11 +1848,10 @@ You have the right to access, update, or request the deletion of your account in
                 enabled: !_isLoading && !_isOAuthLoading,
                 autovalidateMode: AutovalidateMode.disabled,
                 obscureText: !_isPasswordVisible,
-                maxLength: 30,
                 decoration: _inputDecoration("Enter your password", Icons.lock_outline, suffix: IconButton(
                   icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
                   onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                )).copyWith(counterText: ""),
+                )),
               validator: (val) {
                 if (val == null || val.trim().isEmpty) return "Password is required";
                 if (val.trim().length < 6) return "Password must be at least 6 characters";
