@@ -21,6 +21,8 @@ import '../../services/delivery_service_area.dart';
 import '../../widgets/state_widgets.dart';
 import '../../widgets/app_modals.dart';
 import 'delivery_address_screen.dart';
+import '../../models/payment_qr_model.dart';
+import '../../repositories/payment_qr_repository.dart';
 
 typedef DeliveryAddressSelector = Future<CustomerDetails?> Function(
   BuildContext context,
@@ -62,6 +64,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
   final bool _useMyAccountDetails = true;
   bool _highlightDeliveryError = false;
   bool _highlightPaymentError = false;
+  PaymentQrModel? _activeQr;
   final ScrollController _scrollController = ScrollController();
 
   double get _subtotal => widget.cart.fold(0, (sum, item) => sum + item.total);
@@ -76,6 +79,16 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     _refController = TextEditingController(text: _draft.gcashReference);
     _refController.addListener(_saveReference);
     _prefillFromProfile();
+    _loadActiveQr();
+  }
+
+  Future<void> _loadActiveQr() async {
+    try {
+      final qr = await PaymentQrRepository().getActiveQr();
+      if (mounted && qr != null) {
+        setState(() => _activeQr = qr);
+      }
+    } catch (_) {}
   }
 
   Future<void> _prefillFromProfile() async {
@@ -600,8 +613,53 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     );
   }
 
+  Widget _buildQrImage(String qrUrl) {
+    if (qrUrl.startsWith('data:image')) {
+      try {
+        final commaIdx = qrUrl.indexOf(',');
+        if (commaIdx != -1) {
+          final base64Str = qrUrl.substring(commaIdx + 1);
+          final bytes = base64Decode(base64Str);
+          return Image.memory(bytes, height: 180, width: 180, fit: BoxFit.contain);
+        }
+      } catch (_) {}
+    }
+
+    if (qrUrl.startsWith('http://') || qrUrl.startsWith('https://')) {
+      return Image.network(
+        qrUrl,
+        height: 180,
+        width: 180,
+        fit: BoxFit.contain,
+        errorBuilder: (ctx, err, stack) => Image.asset(
+          'assets/images/instapay_qr.png',
+          height: 180,
+          width: 180,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
+
+    return Image.asset(
+      qrUrl.isNotEmpty ? qrUrl : 'assets/images/instapay_qr.png',
+      height: 180,
+      width: 180,
+      fit: BoxFit.contain,
+      errorBuilder: (ctx, err, stack) => QrImageView(
+        data: '09171234567',
+        version: QrVersions.auto,
+        size: 180.0,
+      ),
+    );
+  }
+
   Widget _buildGcashSection() {
     final isError = _highlightPaymentError;
+    final providerName = _activeQr?.providerName ?? 'GCash / InstaPay';
+    final accountNumber = _activeQr?.accountNumber ?? '0928 732 2030';
+    final accountName = _activeQr?.accountName ?? 'Bellies Duenas';
+    final qrUrl = _activeQr?.qrImageUrl ?? 'assets/images/instapay_qr.png';
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -623,7 +681,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
               const Icon(Icons.qr_code_2_rounded, color: Colors.blue, size: 24),
               const SizedBox(width: 8),
               Text(
-                "Pay via GCash / InstaPay QR",
+                "Pay via $providerName",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -648,21 +706,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      'assets/images/instapay_qr.png',
-                      height: 180,
-                      width: 180,
-                      fit: BoxFit.contain,
-                      errorBuilder: (ctx, err, stack) => QrImageView(
-                        data: '09287322030',
-                        version: QrVersions.auto,
-                        size: 180.0,
-                        eyeStyle: const QrEyeStyle(
-                          eyeShape: QrEyeShape.square,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ),
+                    child: _buildQrImage(qrUrl),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -692,35 +736,37 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "GCash / InstaPay Number",
+                      "$providerName Number",
                       style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600]),
                     ),
                     Text(
-                      "0928 732 2030",
+                      accountNumber,
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        fontSize: 15,
+                        color: Colors.blue.shade900,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      "Account Name: Bellies Duenas",
-                      style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[700]),
+                      "Account Name: $accountName",
+                      style: GoogleFonts.inter(fontSize: 12, color: Colors.black87),
                     ),
                   ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.copy_rounded, color: Colors.blue),
-                  tooltip: "Copy Number",
+                  icon: const Icon(Icons.copy_rounded, color: Colors.blue, size: 20),
                   onPressed: () {
-                    Clipboard.setData(const ClipboardData(text: "09287322030"));
+                    Clipboard.setData(ClipboardData(text: accountNumber));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text("Account Number copied to clipboard!"),
+                        content: Text("Account number copied to clipboard!"),
+                        backgroundColor: Colors.green,
                         duration: Duration(seconds: 2),
                       ),
                     );
                   },
+                  tooltip: 'Copy Number',
                 ),
               ],
             ),
