@@ -39,7 +39,10 @@ class PaymentQrRepository {
   Future<PaymentQrModel?> getActiveQr() async {
     try {
       final qrs = await getPaymentQrs();
-      return qrs.firstWhere((q) => q.isActive, orElse: () => qrs.isNotEmpty ? qrs.first : PaymentQrModel(id: '', providerName: 'GCash', accountName: 'Default', accountNumber: '09171234567', qrImageUrl: '', isActive: true));
+      return qrs.firstWhere(
+        (q) => q.isActive,
+        orElse: () => qrs.isNotEmpty ? qrs.first : PaymentQrModel(id: '', providerName: 'GCash', accountName: 'Default', accountNumber: '09171234567', qrImageUrl: '', isActive: true),
+      );
     } catch (_) {
       return null;
     }
@@ -47,6 +50,9 @@ class PaymentQrRepository {
 
   Future<void> saveQr(PaymentQrModel qr) async {
     try {
+      if (qr.isActive) {
+        await _supabase.from('payment_qrs').update({'is_active': false});
+      }
       if (qr.id.isEmpty) {
         await _supabase.from('payment_qrs').insert(qr.toJson());
       } else {
@@ -56,6 +62,21 @@ class PaymentQrRepository {
       debugPrint("Database saveQr failed ($e). Saving to local cache...");
       final prefs = await SharedPreferences.getInstance();
       final qrs = await getPaymentQrs();
+
+      if (qr.isActive) {
+        for (var i = 0; i < qrs.length; i++) {
+          final q = qrs[i];
+          qrs[i] = PaymentQrModel(
+            id: q.id,
+            providerName: q.providerName,
+            accountName: q.accountName,
+            accountNumber: q.accountNumber,
+            qrImageUrl: q.qrImageUrl,
+            isActive: false,
+          );
+        }
+      }
+
       if (qr.id.isEmpty) {
         final newQr = PaymentQrModel(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -81,23 +102,26 @@ class PaymentQrRepository {
 
   Future<void> toggleActive(String id, bool isActive) async {
     try {
+      if (isActive) {
+        await _supabase.from('payment_qrs').update({'is_active': false}).neq('id', id);
+      }
       await _supabase.from('payment_qrs').update({'is_active': isActive}).eq('id', id);
     } catch (e) {
+      debugPrint("Database toggleActive failed ($e). Updating local cache...");
       final prefs = await SharedPreferences.getInstance();
       final qrs = await getPaymentQrs();
-      final index = qrs.indexWhere((q) => q.id == id);
-      if (index >= 0) {
-        final updated = PaymentQrModel(
-          id: qrs[index].id,
-          providerName: qrs[index].providerName,
-          accountName: qrs[index].accountName,
-          accountNumber: qrs[index].accountNumber,
-          qrImageUrl: qrs[index].qrImageUrl,
-          isActive: isActive,
-        );
-        qrs[index] = updated;
-        await prefs.setString('cached_payment_qrs', jsonEncode(qrs.map((q) => q.toJson()).toList()));
+      
+      for (var i = 0; i < qrs.length; i++) {
+        final q = qrs[i];
+        if (isActive && q.id == id) {
+          qrs[i] = PaymentQrModel(id: q.id, providerName: q.providerName, accountName: q.accountName, accountNumber: q.accountNumber, qrImageUrl: q.qrImageUrl, isActive: true);
+        } else if (isActive) {
+          qrs[i] = PaymentQrModel(id: q.id, providerName: q.providerName, accountName: q.accountName, accountNumber: q.accountNumber, qrImageUrl: q.qrImageUrl, isActive: false);
+        } else if (q.id == id) {
+          qrs[i] = PaymentQrModel(id: q.id, providerName: q.providerName, accountName: q.accountName, accountNumber: q.accountNumber, qrImageUrl: q.qrImageUrl, isActive: false);
+        }
       }
+      await prefs.setString('cached_payment_qrs', jsonEncode(qrs.map((q) => q.toJson()).toList()));
     }
   }
 
