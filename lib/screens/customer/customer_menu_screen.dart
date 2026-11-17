@@ -408,32 +408,34 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       final totalItems = _cart.fold(0, (sum, item) => sum + item.quantity);
       final totalPrice = _cart.fold(0.0, (sum, item) => sum + (item.product.sellingPrice * item.quantity));
 
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  "${product.name} added! ($totalItems ${totalItems == 1 ? 'item' : 'items'} • ₱${totalPrice.toStringAsFixed(2)})",
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white),
+      if (ResponsiveLayout.isMobile(context)) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "${product.name} added! ($totalItems ${totalItems == 1 ? 'item' : 'items'} • ₱${totalPrice.toStringAsFixed(2)})",
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            action: SnackBarAction(
+              label: "VIEW CART",
+              textColor: Colors.amberAccent,
+              onPressed: showBasket,
+            ),
+            duration: const Duration(milliseconds: 2000),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            backgroundColor: const Color(0xFFE91E63),
           ),
-          action: SnackBarAction(
-            label: "VIEW CART",
-            textColor: Colors.amberAccent,
-            onPressed: showBasket,
-          ),
-          duration: const Duration(milliseconds: 2000),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          backgroundColor: const Color(0xFFE91E63),
-        ),
-      );
+        );
+      }
     } catch (error) {
       if (mounted) {
         await showErrorDialog(
