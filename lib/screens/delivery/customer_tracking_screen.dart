@@ -1046,7 +1046,7 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
       return Column(
         children: [
           PremiumActionButton(
-            label: "ORDER THIS AGAIN 🍜",
+            label: "ORDER THIS AGAIN",
             icon: Icons.replay_rounded,
             onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.customerMenu),
           ),

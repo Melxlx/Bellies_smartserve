@@ -68948,7 +68948,7 @@ r.push(A.D(A.a([A.f("Total Amount",p,p,p,p,A.B().$3$color$fontSize$fontWeight(B.
 return A.bpV(A.L(r,B.u,B.e,B.d),B.ec)},
 auP(a){var s=this,r="BACK TO MENU",q=a.at,p=a.Q
 if(q===B.eJ&&a.db!=null)return A.L(A.a([A.Ll(B.a28,!1,!1,"CONTACT RIDER \ud83d\udef5",new A.aXq()),B.bm,A.Ll(null,!1,!0,r,new A.aXr(s))],t.p),B.h,B.e,B.d)
-if(p.toLowerCase()==="completed"||q===B.cX)return A.L(A.a([A.Ll(B.a2d,!1,!1,"ORDER THIS AGAIN \ud83c\udf5c",new A.aXs(s)),B.bm,A.Ll(null,!1,!0,r,new A.aXt(s))],t.p),B.h,B.e,B.d)
+if(p.toLowerCase()==="completed"||q===B.cX)return A.L(A.a([A.Ll(B.a2d,!1,!1,"ORDER THIS AGAIN",new A.aXs(s)),B.bm,A.Ll(null,!1,!0,r,new A.aXt(s))],t.p),B.h,B.e,B.d)
 return A.Ll(B.nS,!1,!1,r,new A.aXu(s))}}
 A.aXF.prototype={
 $0(){return this.a.Q=!0},
