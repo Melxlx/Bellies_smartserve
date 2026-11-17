@@ -114,63 +114,6 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
     }
   }
 
-  String get _nextStatusLabel {
-    switch (_order.deliveryStatus) {
-      case DeliveryStatus.preparing:
-        return "MARK AS READY FOR DELIVERY";
-      case DeliveryStatus.readyForDelivery:
-        return "MARK AS OUT FOR DELIVERY";
-      case DeliveryStatus.outForDelivery:
-        return "MARK AS DELIVERED";
-      default:
-        return "UPDATE STATUS";
-    }
-  }
-
-  Future<void> _updateStatus() async {
-    DeliveryStatus? nextStatus;
-    String newStatus = _order.status;
-
-    switch (_order.deliveryStatus) {
-      case DeliveryStatus.preparing:
-        nextStatus = DeliveryStatus.readyForDelivery;
-        break;
-      case DeliveryStatus.readyForDelivery:
-        nextStatus = DeliveryStatus.outForDelivery;
-        break;
-      case DeliveryStatus.outForDelivery:
-        nextStatus = DeliveryStatus.delivered;
-        newStatus = 'completed';
-        break;
-      default:
-        return;
-    }
-
-    setState(() => _isUpdating = true);
-
-    try {
-      await Supabase.instance.client
-          .from('orders')
-          .update({
-            'delivery_status': nextStatus.name,
-            'status': newStatus,
-            'completed_at': newStatus == 'completed' ? DateTime.now().toIso8601String() : null,
-          })
-          .eq('id', _order.id);
-
-      setState(() {
-        _order = _order.copyWith(
-          deliveryStatus: nextStatus,
-          status: newStatus,
-        );
-        _isUpdating = false;
-      });
-    } catch (e) {
-      setState(() => _isUpdating = false);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -105,9 +105,6 @@ class _CustomerMainLayoutState extends State<CustomerMainLayout> {
       );
     }
 
-    final user = Supabase.instance.client.auth.currentUser;
-    final isAuthenticated = user != null && !user.isAnonymous;
-
     // On Web: respect initialIndex/currentIndex for authenticated users
     if (kIsWeb) {
       Widget body;

@@ -29,7 +29,6 @@ import '../models/customer_checkout_draft.dart';
 import '../models/order_model.dart';
 import '../models/user_model.dart';
 import '../screens/delivery/delivery_list_screen.dart';
-import '../screens/delivery/customer_tracking_screen.dart';
 import '../screens/attendance/rfid_attendance_screen.dart';
 import '../screens/owner/analytics_screen.dart';
 import '../screens/owner/activity_logs_screen.dart';
@@ -198,9 +197,6 @@ class AppRoutes {
         }
         return MaterialPageRoute(builder: (_) => const CustomerMenuScreen(), settings: routeSettings);
 
-      case tracking:
-        return _customerRoute(const CustomerTrackingScreen(), routeSettings);
-
       // --- STAFF PORTAL ---
       case staffLogin:
         return MaterialPageRoute(builder: (_) => const StaffLoginScreen(), settings: routeSettings);
@@ -357,30 +353,6 @@ class AppRoutes {
 
         return MaterialPageRoute(builder: (_) => const AccessDeniedScreen(), settings: routeSettings);
     }
-  }
-
-  static Route<dynamic> _errorRoute(String message) {
-    return MaterialPageRoute(
-      builder: (context) => Scaffold(
-        appBar: AppBar(title: const Text("Navigation Error")),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: Checkbox.width > 0 ? MainAxisAlignment.center : MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 64),
-              const SizedBox(height: 16),
-              Text(message, textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () =>
-                    Navigator.of(context).pushReplacementNamed(splash),
-                child: const Text("Return to Home"),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   static Route<dynamic> _staffRoute(Widget child, List<UserRole> allowedRoles, RouteSettings settings) {
