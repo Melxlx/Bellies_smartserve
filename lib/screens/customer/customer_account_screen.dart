@@ -342,6 +342,7 @@ class _CustomerAccountScreenState extends State<CustomerAccountScreen> {
               padding: const EdgeInsets.all(20),
               child: Form(
                 key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   children: [
                     // Avatar Card
