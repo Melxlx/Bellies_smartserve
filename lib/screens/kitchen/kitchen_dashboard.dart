@@ -828,9 +828,9 @@ class _KitchenOrderCardState extends State<KitchenOrderCard> {
           color = Colors.blueGrey;
           target = "Ready";
         } else {
-          label = "COMPLETE ORDER";
+          label = "ORDER IS READY";
           color = Colors.green;
-          target = "Completed";
+          target = "Ready";
         }
         break;
     }
