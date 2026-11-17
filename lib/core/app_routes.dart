@@ -298,6 +298,20 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ResetPasswordScreen(), settings: routeSettings);
 
       default:
+        // Smart fuzzy fallback for mistyped or direct URLs
+        if (cleanName.contains('rider')) {
+          return _staffRoute(const RiderDashboardShell(), [UserRole.owner, UserRole.rider], routeSettings);
+        }
+        if (cleanName.contains('kitchen')) {
+          return _staffRoute(const KitchenDashboard(), [UserRole.owner, UserRole.kitchen], routeSettings);
+        }
+        if (cleanName.contains('pos') || cleanName.contains('cashier')) {
+          return _staffRoute(const CashierDashboard(), [UserRole.owner, UserRole.cashier], routeSettings);
+        }
+        if (cleanName.contains('dashboard') || cleanName.contains('owner') || cleanName.contains('admin')) {
+          return _staffRoute(const OwnerDashboard(), [UserRole.owner], routeSettings);
+        }
+
         // Fallback for direct URL entry or unknown routes
         if (routeSettings.name == '/staff' || routeSettings.name == '/staff/') {
           return MaterialPageRoute(builder: (_) => const StaffLoginScreen(), settings: routeSettings);
@@ -310,10 +324,10 @@ class AppRoutes {
             );
         }
         if (routeSettings.name?.startsWith('/menu') == true) {
-            return MaterialPageRoute(builder: (_) => const CustomerMenuScreen(), settings: routeSettings);
+            return MaterialPageRoute(builder: (_) => const CustomerMainLayout(), settings: routeSettings);
         }
 
-        return MaterialPageRoute(builder: (_) => const SplashScreen(), settings: routeSettings);
+        return MaterialPageRoute(builder: (_) => const AccessDeniedScreen(), settings: routeSettings);
     }
   }
 
