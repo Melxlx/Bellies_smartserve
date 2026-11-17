@@ -1027,10 +1027,24 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
     if (dStatus == DeliveryStatus.outForDelivery && order.riderId != null) {
       return Column(
         children: [
-          PremiumActionButton(
-            label: "CONTACT RIDER 🛵",
-            icon: Icons.phone_rounded,
-            onPressed: () => launchUrl(Uri.parse('tel:09171234567')),
+          FutureBuilder<Map<String, dynamic>?>(
+            future: Supabase.instance.client
+                .from('profiles')
+                .select('contact_number, full_name')
+                .eq('id', order.riderId!)
+                .maybeSingle(),
+            builder: (context, snapshot) {
+              final riderContact = snapshot.data?['contact_number']?.toString() ?? '';
+              
+              return PremiumActionButton(
+                label: "CONTACT RIDER",
+                icon: Icons.phone_rounded,
+                onPressed: () {
+                  final phone = riderContact.isNotEmpty ? riderContact : '09171234567';
+                  launchUrl(Uri.parse('tel:$phone'));
+                },
+              );
+            },
           ),
           const SizedBox(height: 10),
           PremiumActionButton(
