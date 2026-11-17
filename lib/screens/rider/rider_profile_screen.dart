@@ -149,7 +149,15 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please correct the highlighted fields before saving."),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
     setState(() => _isSaving = true);
 
     try {

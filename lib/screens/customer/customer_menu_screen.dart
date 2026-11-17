@@ -22,6 +22,7 @@ import '../../repositories/category_repository.dart';
 import '../../repositories/tracking_repository.dart';
 import '../../repositories/notification_repository.dart';
 import '../../services/order_tracking_service.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/state_widgets.dart';
 import '../../widgets/product_image.dart';
 import '../../widgets/notifications_modal_sheet.dart';
@@ -32,10 +33,12 @@ import '../../widgets/foodpanda_address_sheet.dart';
 
 class CustomerMenuScreen extends StatefulWidget {
   final VoidCallback? onAccountTabRequested;
+  final ValueChanged<int>? onCartCountChanged;
 
   const CustomerMenuScreen({
     super.key,
     this.onAccountTabRequested,
+    this.onCartCountChanged,
   });
 
   @override
@@ -45,6 +48,7 @@ class CustomerMenuScreen extends StatefulWidget {
 class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   final _productRepo = ProductRepository();
   final _categoryRepo = CategoryRepository();
+  final _authService = AuthService();
 
   final List<OrderItem> _cart = [];
   final _checkoutDraft = CustomerCheckoutDraft();
@@ -96,10 +100,34 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   RealtimeChannel? _productsRealtimeChannel;
   StreamSubscription<AuthState>? _authSubscription;
 
+  void _checkStaffRoleRedirect() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null && !user.isAnonymous) {
+      try {
+        final profile = await _authService.ensureProfileExists(user: user, isCustomerPortal: true);
+        if (profile.role != UserRole.customer && profile.role != UserRole.guest) {
+          if (!mounted) return;
+          final roleName = profile.role.name.toUpperCase();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Logged in as $roleName. Redirecting to Staff Portal..."),
+              backgroundColor: const Color(0xFF1E293B),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.staffLogin);
+        }
+      } catch (e) {
+        debugPrint("Staff redirect check error: $e");
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _mainScrollController.addListener(_onMainScroll);
+    _checkStaffRoleRedirect();
     _loadMenu();
     _loadCart();
     _loadTestimonials();
@@ -107,6 +135,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     _subscribeToRealtimeMenu();
     _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (mounted) {
+        _checkStaffRoleRedirect();
         _loadCart();
         _checkActiveUserOrders();
       }
@@ -135,6 +164,11 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
     }
   }
 
+  void _notifyCartChanged() {
+    final totalItems = _cart.fold(0, (sum, item) => sum + item.quantity);
+    widget.onCartCountChanged?.call(totalItems);
+  }
+
   Future<void> _loadCart() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -147,6 +181,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
           setState(() {
             _cart.clear();
           });
+          _notifyCartChanged();
         }
         return;
       }
@@ -165,6 +200,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
           _cart.clear();
         });
       }
+      _notifyCartChanged();
     } catch (e) {
       debugPrint("Error loading cart: $e");
     }
@@ -173,6 +209,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   Future<void> _saveCart() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
+      _notifyCartChanged();
       if (user == null || user.isAnonymous) {
         // Strictly do NOT save a cart when nobody is logged in
         return;
@@ -350,14 +387,32 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       await _saveCart();
       if (!mounted) return;
 
-      if (ResponsiveLayout.isMobile(context)) {
-        showBasket();
-      }
+      final totalItems = _cart.fold(0, (sum, item) => sum + item.quantity);
+      final totalPrice = _cart.fold(0.0, (sum, item) => sum + (item.product.sellingPrice * item.quantity));
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("${product.name} added to basket!"),
-          duration: const Duration(seconds: 1),
+          content: Row(
+            children: [
+              const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "${product.name} added! ($totalItems ${totalItems == 1 ? 'item' : 'items'} • ₱${totalPrice.toStringAsFixed(2)})",
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          action: SnackBarAction(
+            label: "VIEW CART",
+            textColor: Colors.amberAccent,
+            onPressed: showBasket,
+          ),
+          duration: const Duration(milliseconds: 2000),
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           backgroundColor: const Color(0xFFE91E63),
         ),
       );
@@ -592,6 +647,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                           Navigator.pushNamed(context, AppRoutes.login);
                           return;
                         }
+                        ScaffoldMessenger.of(context).clearSnackBars();
                         if (ResponsiveLayout.isMobile(context)) {
                           Navigator.pop(context);
                         }

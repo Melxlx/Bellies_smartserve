@@ -189,25 +189,6 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
             ],
             const SizedBox(height: 24),
             _buildRiderAssignment(),
-            const SizedBox(height: 24),
-            if (_order.deliveryStatus != DeliveryStatus.delivered && _order.status.toLowerCase() != 'completed')
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _isUpdating ? null : _updateStatus,
-                  icon: _isUpdating
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
-                  label: Text(
-                    _isUpdating ? "UPDATING..." : _nextStatusLabel,
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE91E63),
-                  ),
-                ),
-              ),
           ],
         ),
       ),

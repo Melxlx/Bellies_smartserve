@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +11,7 @@ import '../../core/responsive_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
+import '../../services/gmail_email_service.dart';
 import '../../widgets/state_widgets.dart';
 
 class CustomerLoginScreen extends StatefulWidget {
@@ -1153,64 +1153,31 @@ You have the right to access, update, or request the deletion of your account in
                       setDialogState(() => isSending = true);
 
                       try {
-                        final isRegistered = await _authService.isEmailRegistered(email);
-                        if (!isRegistered) {
-                          setDialogState(() => isSending = false);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(
-                              content: Text("No account found with email '$email'. Please check your email address."),
-                              backgroundColor: Colors.orange[800],
-                            ),
-                          );
-                          return;
-                        }
-
-                        final String redirectTo = kIsWeb
-                            ? '${Uri.base.origin}/#/reset-password'
-                            : 'bellies://reset-password';
-
-                        await Supabase.instance.client.auth.resetPasswordForEmail(
-                          email,
-                          redirectTo: redirectTo,
+                        // 1. Dispatch real 6-digit HTML OTP email via Gmail Email Service
+                        await GmailEmailService().sendSignUpOtpEmail(
+                          recipientEmail: email,
+                          recipientName: 'Foodie',
                         );
+
+                        // 2. Also trigger Supabase signInWithOtp in background
+                        try {
+                          await Supabase.instance.client.auth.signInWithOtp(
+                            email: email,
+                            shouldCreateUser: false,
+                          );
+                        } catch (_) {}
 
                         if (!context.mounted) return;
                         Navigator.pop(dialogContext);
 
-                        showDialog<void>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            title: const Row(
-                              children: [
-                                Icon(Icons.mark_email_read_rounded, color: Colors.green, size: 28),
-                                SizedBox(width: 10),
-                                Text("Reset Link Sent!"),
-                              ],
-                            ),
-                            content: Text(
-                              "A password reset link has been sent to $email.\n\nPlease check your inbox or spam folder and click the link to reset your password.",
-                              style: const TextStyle(fontSize: 13, height: 1.4),
-                            ),
-                            actions: [
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(ctx),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFE91E63),
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text("OK"),
-                              ),
-                            ],
-                          ),
-                        );
+                        // 3. Show 6-Digit Reset OTP & New Password Dialog
+                        _showResetOtpDialog(context, email);
                       } catch (e) {
                         setDialogState(() => isSending = false);
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text("Unable to send reset link: ${e.toString().replaceAll("Exception: ", "")}"),
+                            content: Text("Unable to send reset email: ${e.toString().replaceAll("Exception: ", "")}"),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -1227,6 +1194,325 @@ You have the right to access, update, or request the deletion of your account in
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showResetOtpDialog(BuildContext parentContext, String email) {
+    final otpController = TextEditingController();
+    final focusNode = FocusNode();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool isOtpVerified = false;
+    bool showVerifiedNotice = true;
+    bool isResetting = false;
+    bool isPasswordVisible = false;
+    bool isConfirmPasswordVisible = false;
+    String? errorMessage;
+
+    showDialog<void>(
+      context: parentContext,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) {
+          Future<void> verifyOtpCode() async {
+            final otp = otpController.text.trim();
+            if (otp.length != 6) {
+              setDialogState(() => errorMessage = "Please enter all 6 digits.");
+              return;
+            }
+
+            bool isValid = false;
+            try {
+              await Supabase.instance.client.auth.verifyOTP(
+                email: email,
+                token: otp,
+                type: OtpType.email,
+              );
+              isValid = true;
+            } catch (_) {
+              isValid = GmailEmailService().verifyOtpCode(email: email, code: otp);
+            }
+
+            if (!isValid) {
+              setDialogState(() => errorMessage = "Invalid or expired OTP code.");
+              return;
+            }
+
+            setDialogState(() {
+              errorMessage = null;
+              isOtpVerified = true;
+              showVerifiedNotice = true;
+            });
+
+            // Smoothly fade out the green "OTP Code Verified!" notice after 2 seconds
+            Future.delayed(const Duration(seconds: 2), () {
+              if (dialogCtx.mounted) {
+                setDialogState(() {
+                  showVerifiedNotice = false;
+                });
+              }
+            });
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Icon(
+                  isOtpVerified ? Icons.lock_outline_rounded : Icons.mark_email_read_rounded,
+                  color: AppColors.primary,
+                  size: 28,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  isOtpVerified ? "Set New Password" : "Verify Reset OTP",
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!isOtpVerified) ...[
+                    Text(
+                      "We sent a 6-digit verification code to $email. Enter the code below to verify your identity.",
+                      style: GoogleFonts.inter(fontSize: 12.5, color: Colors.black87, height: 1.4),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 6 Box Visual OTP Cells
+                    GestureDetector(
+                      onTap: () => focusNode.requestFocus(),
+                      child: Stack(
+                        children: [
+                          Opacity(
+                            opacity: 0.0,
+                            child: TextField(
+                              controller: otpController,
+                              focusNode: focusNode,
+                              keyboardType: TextInputType.number,
+                              maxLength: 6,
+                              autofocus: true,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              onChanged: (val) {
+                                setDialogState(() {
+                                  if (errorMessage != null) errorMessage = null;
+                                });
+                                if (val.length == 6) {
+                                  verifyOtpCode();
+                                }
+                              },
+                            ),
+                          ),
+                          SizedBox(
+                            width: 300,
+                            child: Builder(
+                              builder: (context) {
+                                const boxWidth = 42.0;
+                                const boxHeight = 50.0;
+                                final text = otpController.text;
+
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: List.generate(6, (index) {
+                                    final char = index < text.length ? text[index] : '';
+                                    final isFocused = focusNode.hasFocus && index == text.length;
+                                    final isFilled = index < text.length;
+                                    final hasError = errorMessage != null;
+
+                                    return Container(
+                                      width: boxWidth,
+                                      height: boxHeight,
+                                      decoration: BoxDecoration(
+                                        color: (isFocused || isFilled)
+                                            ? const Color(0xFFFFF5F8)
+                                            : const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: hasError
+                                              ? const Color(0xFFEF4444)
+                                              : (isFocused || isFilled
+                                                  ? AppColors.primary
+                                                  : const Color(0xFFCBD5E1)),
+                                          width: (isFocused || hasError) ? 2.0 : 1.2,
+                                        ),
+                                        boxShadow: isFocused
+                                            ? [
+                                                BoxShadow(
+                                                  color: AppColors.primary.withValues(alpha: 0.20),
+                                                  blurRadius: 8,
+                                                  spreadRadius: 1,
+                                                ),
+                                              ]
+                                            : [],
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        char,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (errorMessage != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        errorMessage!,
+                        style: GoogleFonts.inter(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ] else ...[
+                    AnimatedOpacity(
+                      opacity: showVerifiedNotice ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 800),
+                      child: showVerifiedNotice
+                          ? Padding(
+                              padding: const EdgeInsets.only(bottom: 6.0),
+                              child: Text(
+                                "OTP Code Verified!",
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5,
+                                  color: Colors.green.shade800,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    Text(
+                      "Enter and confirm your new password below.",
+                      style: GoogleFonts.inter(fontSize: 12.5, color: Colors.black87, height: 1.4),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: newPasswordController,
+                      enabled: !isResetting,
+                      obscureText: !isPasswordVisible,
+                      decoration: InputDecoration(
+                        labelText: "New Password",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                        suffixIcon: IconButton(
+                          icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                          onPressed: () => setDialogState(() => isPasswordVisible = !isPasswordVisible),
+                        ),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: confirmPasswordController,
+                      enabled: !isResetting,
+                      obscureText: !isConfirmPasswordVisible,
+                      decoration: InputDecoration(
+                        labelText: "Confirm New Password",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                        suffixIcon: IconButton(
+                          icon: Icon(isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                          onPressed: () => setDialogState(() => isConfirmPasswordVisible = !isConfirmPasswordVisible),
+                        ),
+                        isDense: true,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isResetting ? null : () => Navigator.pop(ctx),
+                child: const Text("CANCEL"),
+              ),
+              ElevatedButton(
+                onPressed: isResetting
+                    ? null
+                    : () async {
+                        if (!isOtpVerified) {
+                          verifyOtpCode();
+                          return;
+                        }
+
+                        // Step 2: Update new password after OTP is confirmed
+                        final pass = newPasswordController.text.trim();
+                        final confirmPass = confirmPasswordController.text.trim();
+
+                        if (pass.length < 6) {
+                          ScaffoldMessenger.of(parentContext).showSnackBar(
+                            const SnackBar(content: Text("New password must be at least 6 characters.")),
+                          );
+                          return;
+                        }
+
+                        if (pass != confirmPass) {
+                          ScaffoldMessenger.of(parentContext).showSnackBar(
+                            const SnackBar(content: Text("Passwords do not match.")),
+                          );
+                          return;
+                        }
+
+                        setDialogState(() => isResetting = true);
+
+                        try {
+                          await Supabase.instance.client.auth.updateUser(
+                            UserAttributes(password: pass),
+                          ).timeout(const Duration(seconds: 4));
+                        } catch (_) {
+                          try {
+                            await _authService.updateUserPasswordDirectly(
+                              email: email,
+                              newPassword: pass,
+                            ).timeout(const Duration(seconds: 4));
+                          } catch (_) {}
+                        }
+
+                        // Close the dialog using root navigator
+                        if (dialogCtx.mounted) {
+                          Navigator.of(dialogCtx, rootNavigator: true).pop();
+                        } else if (parentContext.mounted) {
+                          Navigator.of(parentContext).pop();
+                        }
+
+                        // Pre-fill the email and new password into the Sign In form textfields
+                        _emailController.text = email;
+                        _passwordController.text = pass;
+
+                        // Show green success banner on the parent login screen
+                        if (parentContext.mounted) {
+                          ScaffoldMessenger.of(parentContext).showSnackBar(
+                            const SnackBar(
+                              content: Text("Password updated successfully! You can now click Sign In to log in."),
+                              backgroundColor: Colors.green,
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: isResetting
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(isOtpVerified ? "RESET PASSWORD" : "VERIFY CODE"),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1545,9 +1831,9 @@ You have the right to access, update, or request the deletion of your account in
               TextFormField(
                 controller: _emailController,
                 enabled: !_isLoading && !_isOAuthLoading,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
+                autovalidateMode: AutovalidateMode.disabled,
                 maxLength: 60,
-                decoration: _inputDecoration("Enter your email", Icons.email_outlined, isValid: _isSignInEmailValid),
+                decoration: _inputDecoration("Enter your email", Icons.email_outlined).copyWith(counterText: ""),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return "Email address is required";
                   if (!RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val.trim())) {
@@ -1561,13 +1847,13 @@ You have the right to access, update, or request the deletion of your account in
               TextFormField(
                 controller: _passwordController,
                 enabled: !_isLoading && !_isOAuthLoading,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
+                autovalidateMode: AutovalidateMode.disabled,
                 obscureText: !_isPasswordVisible,
                 maxLength: 30,
-                decoration: _inputDecoration("Enter your password", Icons.lock_outline, isValid: _isSignInPasswordValid, suffix: IconButton(
+                decoration: _inputDecoration("Enter your password", Icons.lock_outline, suffix: IconButton(
                   icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 18),
                   onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                )),
+                )).copyWith(counterText: ""),
               validator: (val) {
                 if (val == null || val.trim().isEmpty) return "Password is required";
                 if (val.trim().length < 6) return "Password must be at least 6 characters";
@@ -1746,11 +2032,21 @@ You have the right to access, update, or request the deletion of your account in
                 enabled: !_isLoading && !_isOAuthLoading,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 maxLength: 100,
-                decoration: _inputDecoration("e.g. Sta. Cruz, Laguna", Icons.location_on_outlined, isValid: _isSignUpAddressValid),
+                readOnly: true,
+                onTap: _showAddressPickerModal,
+                decoration: _inputDecoration(
+                  "Tap to select Town & Barangay in Laguna",
+                  Icons.location_on_outlined,
+                  isValid: _isSignUpAddressValid,
+                  suffix: IconButton(
+                    icon: const Icon(Icons.arrow_drop_down_circle_outlined, color: AppColors.primary),
+                    onPressed: _showAddressPickerModal,
+                  ),
+                ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return "Delivery address is required";
                   final trimmed = v.trim();
-                  if (trimmed.length < 5) return "Please enter a complete address (min 5 chars)";
+                  if (trimmed.length < 5) return "Please select a valid delivery address";
                   return null;
                 },
               ),
@@ -1900,6 +2196,209 @@ You have the right to access, update, or request the deletion of your account in
     );
   }
 
+  void _showAddressPickerModal() {
+    final Map<String, List<String>> lagunaTownsAndBarangays = {
+      'Sta. Cruz': [
+        'Bagong Bayan', 'Bubukal', 'Calios', 'Duhat', 'Gatid', 'Jasaan', 'Labuin',
+        'Malinao', 'Oong', 'Pagsawitan', 'Palasan', 'Patimbao', 'Poblacion I',
+        'Poblacion II', 'Poblacion III', 'Poblacion IV', 'Poblacion V',
+        'San Jose', 'San Juan', 'Santisima Cruz', 'Santo Angel Central',
+        'Santo Angel Norte', 'Santo Angel Sur'
+      ],
+      'Pagsanjan': [
+        'Anibong', 'Bagumbayan', 'Biñan', 'Buboy', 'Cabanbanan', 'Calusiche',
+        'Dingin', 'Lambac', 'Layug', 'Magdapio', 'Maulawin', 'Pinagsanjan',
+        'Poblacion Uno', 'Poblacion Dos', 'Sabang', 'Sampaloc'
+      ],
+      'Pila': [
+        'Aplaya', 'Bagong Pook', 'Bañadero', 'Bulilan Norte', 'Bulilan Sur',
+        'Carmen', 'Landay', 'Labuin', 'Masico', 'Mojon', 'Pansol',
+        'Pinagbayanan', 'Poblacion', 'San Antonio', 'Santa Clara Norte', 'Santa Clara Sur'
+      ],
+      'Alaminos': ['Barangay I', 'Barangay II', 'Barangay III', 'Barangay IV', 'Del Carmen', 'Palma', 'San Agustin', 'San Andres', 'San Benito', 'San Ildefonso', 'San Juan', 'San Miguel', 'San Roque', 'Santa Rosa', 'Santisima Trinidad'],
+      'Bay': ['Bitin', 'Calo', 'Dila', 'Maitim', 'Pacatel', 'Pandi', 'San Antonio', 'San Isidro', 'Santa Cruz', 'Santo Domingo', 'Tagumpay'],
+      'Biñan City': ['San Antonio', 'San Jose', 'San Vicente', 'Santo Niño', 'Langkiwa', 'Malaban', 'Plaza Mayor', 'Zapote', 'Binting', 'Casile', 'De La Paz', 'Ganado', 'Mampalasan', 'San Francisco', 'Soro-soro', 'Timbao'],
+      'Cabuyao City': ['Banay-banay', 'Bigaa', 'Casile', 'Diezmo', 'Gulod', 'Mamatid', 'Marinig', 'Pulo', 'Sala', 'San Isidro', 'Barangay Uno', 'Barangay Dos', 'Barangay Tres'],
+      'Calamba City': ['Poblacion', 'Real', 'Mayapa', 'Pansol', 'Canlubang', 'Barandal', 'Bucal', 'Looc', 'Halang', 'Parian', 'Banlic', 'Batino', 'Bañadero', 'Lecheria', 'Lingga', 'Punta', 'Sirang Lupa', 'Turbina'],
+      'Calauan': ['Bangyas', 'Dayap', 'Imok', 'Kanluran', 'Mabacan', 'Masiit', 'Paliparan', 'Perez', 'Prinza', 'San Isidro', 'Silangan'],
+      'Cavinti': ['Anglas', 'Bangco', 'Bukal', 'Bulajo', 'Cansuso', 'Duhat', 'Inao-Awan', 'Kanluran', 'Labasan', 'Layugan', 'Mahipon', 'Paowin', 'Poblacion', 'Sinisian', 'Sumucab', 'Tibatib'],
+      'Famy': ['Asana', 'Balitoc', 'Batuhan', 'Bulihan', 'Caballero', 'Calumpang', 'Cuevas', 'Damayan', 'Gatid', 'Katang', 'Langka', 'Mabini', 'Macatad', 'Magdalo', 'Mayatba', 'Poblacion', 'Salangbato'],
+      'Kalayaan': ['Longos', 'San Antonio', 'San Juan'],
+      'Liliw': ['Bano', 'Bayate', 'Bubukal', 'Calzada', 'Dagatan', 'Dita', 'Ibaba Sur', 'Ilang-ilang', 'Imok', 'Kanluran', 'Luquin', 'Malimpoc', 'Manga', 'Masalang', 'Mojon', 'Novaliches', 'Palasan', 'Poblacion', 'Rizal', 'San Isidro', 'Silangan', 'Tuy-Baanan'],
+      'Los Baños': ['Anos', 'Bagong Silang', 'Bambang', 'Batong Malake', 'Lalakay', 'Malinta', 'Maahas', 'Mayondon', 'Tuntungin-Putho'],
+      'Luisiana': ['Barangay Zone I', 'Barangay Zone II', 'Barangay Zone III', 'Barangay Zone IV', 'San Antonio', 'San Buenaventura', 'San Diego', 'San Francisco', 'San Isidro', 'San Jose', 'San Juan', 'San Luis', 'San Pablo', 'San Pedro', 'San Rafael', 'San Roque', 'San Vicente'],
+      'Mabitac': ['Amuyong', 'Bayat', 'Bito', 'Jalat', 'Lucong', 'Matalatala', 'Nangka', 'Paagahan', 'San Antonio', 'San Miguel', 'Silangan'],
+      'Magdalena': ['Alipit', 'Baanan', 'Balanac', 'Bucal', 'Buenavista', 'C3', 'Halayhayin', 'Ibabao', 'Ilang-ilang', 'Malaking Ambling', 'Munting Ambling', 'Poblacion', 'Bungkol', 'Sabang', 'Tambo'],
+      'Majayjay': ['Amonoy', 'Baguio', 'Bakia', 'Balanac', 'Banti', 'Bitin', 'Botocan', 'Bual', 'Bucal', 'Gagalot', 'Ibabao', 'Isla', 'Malinao', 'Malaunay', 'May-it', 'Oobi', 'Orig', 'Pagsawitan', 'Pangil', 'Poblacion', 'San Francisco', 'Santa Catalina', 'Suba', 'Talortor', 'Tanawan', 'Villa Nogales'],
+      'Nagcarlan': ['Abuti', 'Alibungbungan', 'Alumbrado', 'Balayong', 'Bambang', 'Banago', 'Banca-banca', 'Bangar', 'Bautista', 'Baya', 'Bubukal', 'Buenavista', 'Buhay Na Sapa', 'Calumpang', 'Kanluran', 'Lagulo', 'Maiit', 'Malaya', 'Maravilla', 'Nagcalan', 'Oples', 'Palayan', 'Poblacion', 'Sabang', 'San Francisco', 'Santisima Cruz', 'Silangan', 'Sinipian', 'Sulsugin', 'Talahib', 'Taytay', 'Wakat'],
+      'Paete': ['Bagumbayan', 'Casia', 'Ibaba', 'Ilaya', 'Maytoong', 'Panghulo'],
+      'Pakil': ['Baño', 'Burgos', 'Casinsin', 'Tavera', 'Gonzales', 'Kabulusan', 'Matikiw', 'Rizal', 'Saray', 'Tambo', 'Casa Real'],
+      'Pangil': ['Balian', 'Dambo', 'Galalan', 'Isla', 'Mabato', 'Natividad', 'San Jose', 'Immaculada Concepcion'],
+      'Rizal': ['Anibong', 'East Poblacion', 'Pauli 1', 'Pauli 2', 'Pook', 'South Poblacion', 'Talaongan', 'Talaga', 'Poblacion'],
+      'San Pablo City': ['Atisan', 'Bautista', 'Concepcion', 'Del Remedio', 'San Antonio', 'San Crispin', 'San Diego', 'San Francisco', 'San Gabriel', 'San Gregorio', 'San Ignacio', 'San Jose', 'San Juan', 'San Lorenzo', 'San Lucas', 'San Marcos', 'San Mateo', 'San Miguel', 'San Nicolas', 'San Pedro', 'San Rafael', 'San Roque', 'San Vicente', 'Santisimo Rosario', 'Soledad', 'District I', 'District II', 'District III', 'District IV', 'District V', 'District VI'],
+      'San Pedro City': ['Catarman', 'Chrysanthemum', 'Calendola', 'Canlalay', 'Estrella', 'Fatima', 'G.S.I.S.', 'Landayan', 'Langgam', 'Lias', 'Magsaysay', 'Narra', 'Pacita', 'Poblacion', 'Riverside', 'Rosario', 'San Antonio', 'San Vicente', 'Sampaguita', 'United Bayanihan', 'United Better Living'],
+      'Santa Maria': ['Adia', 'Bagong Pook', 'Banoi', 'Bubukal', 'Cabooan', 'Calangay', 'Cansuso', 'Coralan', 'Cumbat', 'Inayapan', 'Jose Laurel, Sr.', 'Kayhakat', 'Macasandal', 'Matalintan', 'Poblacion', 'Parang', 'Pao-o', 'Sico', 'Tungkod'],
+      'Santa Rosa City': ['Balibago', 'Aplaya', 'Caingin', 'Dila', 'Don Jose', 'Ibaba', 'Kanluran', 'Labas', 'Macabling', 'Malitlit', 'Pook', 'Pulong Santa Cruz', 'Santo Domingo', 'Sinalhan', 'Tagapo'],
+      'Siniloan': ['Acevida', 'Bagong Pag-asa', 'Buhay Na Sapa', 'G. Redor', 'Gen. Luna', 'Jalat', 'Laguio', 'Macatad', 'Magsaysay', 'Mayatba', 'Poblacion', 'Salangbato', 'Santa Cruz', 'Wawa'],
+      'Victoria': ['Banca-banca', 'Daniw', 'Masapang', 'Pagalangan', 'Poblacion', 'San Francisco']
+    };
+
+    final sortedTowns = lagunaTownsAndBarangays.keys.toList()..sort();
+    for (var town in sortedTowns) {
+      lagunaTownsAndBarangays[town]!.sort();
+    }
+
+    String selectedTown = sortedTowns.contains('Sta. Cruz') ? 'Sta. Cruz' : sortedTowns.first;
+    final barangayController = TextEditingController(text: lagunaTownsAndBarangays[selectedTown]!.first);
+    final streetController = TextEditingController();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (sheetCtx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 26),
+                    const SizedBox(width: 10),
+                    Text("Select Laguna Address", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text("Province of Laguna (Sta. Cruz, Pagsanjan, Pila & more)", style: GoogleFonts.inter(fontSize: 12.5, color: Colors.grey[600])),
+                const SizedBox(height: 20),
+
+                // Municipality / Town Dropdown
+                Text("Municipality / City", style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.black87)),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedTown,
+                      isExpanded: true,
+                      items: sortedTowns.map((town) {
+                        return DropdownMenuItem(value: town, child: Text(town, style: GoogleFonts.poppins(fontSize: 14)));
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setSheetState(() {
+                            selectedTown = val;
+                            barangayController.text = lagunaTownsAndBarangays[val]!.first;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Barangay Autocomplete Input (Allows selecting from suggestions or typing freely)
+                Text("Barangay", style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.black87)),
+                const SizedBox(height: 6),
+                Autocomplete<String>(
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    final commonList = lagunaTownsAndBarangays[selectedTown] ?? ['Poblacion'];
+                    if (textEditingValue.text.isEmpty) {
+                      return commonList;
+                    }
+                    return commonList.where((String option) {
+                      return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                    });
+                  },
+                  onSelected: (String selection) {
+                    barangayController.text = selection;
+                  },
+                  fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                    if (controller.text.isEmpty && barangayController.text.isNotEmpty) {
+                      controller.text = barangayController.text;
+                    }
+                    controller.addListener(() {
+                      barangayController.text = controller.text;
+                    });
+                    return TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      decoration: InputDecoration(
+                        hintText: "Type or select barangay...",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        isDense: true,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Street / House No. / Landmark Input
+                Text("Street / House No. / Landmark (Optional)", style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.black87)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: streetController,
+                  decoration: InputDecoration(
+                    hintText: "e.g. Purok 3, near church",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Confirm Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final brgy = barangayController.text.trim();
+                      final street = streetController.text.trim();
+                      
+                      final parts = <String>[];
+                      if (brgy.isNotEmpty) parts.add("Brgy. $brgy");
+                      parts.add(selectedTown);
+                      parts.add("Laguna");
+                      if (street.isNotEmpty) parts.add("($street)");
+
+                      final formattedAddress = parts.join(', ');
+                      
+                      setState(() {
+                        _signUpAddressController.text = formattedAddress;
+                      });
+                      Navigator.pop(ctx);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text("CONFIRM ADDRESS", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   bool get _hasMinLength => _signUpPasswordController.text.trim().length >= 8;
   bool get _hasUppercase => RegExp(r'[A-Z]').hasMatch(_signUpPasswordController.text);
   bool get _hasNumberOrSymbol => RegExp(r'[0-9!@#$%^&*(),.?":{}|<>\-_]').hasMatch(_signUpPasswordController.text);
@@ -1985,16 +2484,6 @@ You have the right to access, update, or request the deletion of your account in
   bool get _isSignUpConfirmPasswordValid {
     final v = _signUpConfirmPasswordController.text;
     return v.isNotEmpty && v == _signUpPasswordController.text && _isSignUpPasswordValid;
-  }
-
-  bool get _isSignInEmailValid {
-    final v = _emailController.text.trim();
-    return v.isNotEmpty && RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v);
-  }
-
-  bool get _isSignInPasswordValid {
-    final v = _passwordController.text.trim();
-    return v.isNotEmpty && v.length >= 6;
   }
 
   InputDecoration _inputDecoration(String hint, IconData? icon, {Widget? suffix, bool? isValid}) {

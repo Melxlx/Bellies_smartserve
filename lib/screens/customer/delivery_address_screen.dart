@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/order_model.dart';
 import '../../services/free_search_service.dart';
@@ -71,6 +72,40 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
         _mapCenter = _selectedPoint!;
         _checkServiceArea(_selectedPoint!, _streetController.text);
       }
+    }
+    _prefillProfileDefaults();
+  }
+
+  Future<void> _prefillProfileDefaults() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null && !user.isAnonymous) {
+        final profileData = await Supabase.instance.client
+            .from('profiles')
+            .select()
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (profileData != null && mounted) {
+          final String name = profileData['full_name'] ?? '';
+          final String phone = profileData['contact_number'] ?? '';
+          final String address = profileData['address'] ?? '';
+
+          setState(() {
+            if (_nameController.text.trim().isEmpty && name.isNotEmpty) {
+              _nameController.text = name;
+            }
+            if (_phoneController.text.trim().isEmpty && phone.isNotEmpty) {
+              _phoneController.text = phone;
+            }
+            if (_streetController.text.trim().isEmpty && address.isNotEmpty) {
+              _streetController.text = address;
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error prefilling profile defaults: $e");
     }
   }
 
@@ -145,11 +180,50 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
   }
 
   Future<void> _confirm() async {
-    if (!_formKey.currentState!.validate() || _selectedPoint == null) {
+    if (_selectedPoint == null) {
       await showErrorDialog(
         context,
-        title: 'Incomplete Delivery Address',
-        message: 'Tap the map to set a delivery point and fill in the required fields.',
+        title: 'Map Location Required',
+        message: 'Please tap on the map to pin your exact delivery location.',
+      );
+      return;
+    }
+
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      await showErrorDialog(
+        context,
+        title: 'Recipient Name Required',
+        message: 'Please enter the recipient’s full name.',
+      );
+      return;
+    }
+
+    final phone = _phoneController.text.trim().replaceAll(RegExp(r'[\s()\-]'), '');
+    if (phone.isEmpty) {
+      await showErrorDialog(
+        context,
+        title: 'Phone Number Required',
+        message: 'Please enter a contact phone number.',
+      );
+      return;
+    }
+
+    if (!RegExp(r'^(09|\+?639)\d{9}$').hasMatch(phone)) {
+      await showErrorDialog(
+        context,
+        title: 'Invalid Phone Number',
+        message: 'Please enter a valid Philippine mobile number (e.g. 09171234567, 639171234567, or +639171234567).',
+      );
+      return;
+    }
+
+    final street = _streetController.text.trim();
+    if (street.isEmpty) {
+      await showErrorDialog(
+        context,
+        title: 'Street Address Required',
+        message: 'Please tap the map to auto-fill your street address or enter a complete address.',
       );
       return;
     }

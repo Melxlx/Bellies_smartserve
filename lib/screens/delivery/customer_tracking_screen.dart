@@ -912,7 +912,7 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
 
   Widget _buildOrderSummaryCard(OrderModel order) {
     final formattedDate = DateFormat('EEE, MMM dd, h:mm a').format(order.timestamp);
-    final paymentText = (order.paymentMethod?.toString() ?? 'GCASH').toUpperCase() == 'GCASH' ? 'GCash' : 'Cash on Delivery';
+    final paymentText = (order.paymentMethod == PaymentMethod.gcash || (order.paymentMethod?.name.toUpperCase() ?? 'GCASH') == 'GCASH') ? 'GCash' : 'Cash on Delivery';
 
     return PremiumContentCard(
       padding: const EdgeInsets.all(18),

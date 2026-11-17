@@ -20,12 +20,19 @@ class CustomerMainLayout extends StatefulWidget {
 
 class _CustomerMainLayoutState extends State<CustomerMainLayout> {
   late int _currentIndex;
+  int _cartCount = 0;
   final GlobalKey<State<CustomerMenuScreen>> _menuScreenKey = GlobalKey<State<CustomerMenuScreen>>();
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+  }
+
+  void _onCartCountChanged(int count) {
+    if (mounted && _cartCount != count) {
+      setState(() => _cartCount = count);
+    }
   }
 
   void _onTabTapped(int index) {
@@ -63,6 +70,7 @@ class _CustomerMainLayoutState extends State<CustomerMainLayout> {
           CustomerMenuScreen(
             key: _menuScreenKey,
             onAccountTabRequested: () => setState(() => _currentIndex = 3),
+            onCartCountChanged: _onCartCountChanged,
           ),
           const CustomerTrackingScreen(),
           const SizedBox.shrink(), // Index 2 is Cart (triggers showBasket sheet)
@@ -72,6 +80,7 @@ class _CustomerMainLayoutState extends State<CustomerMainLayout> {
       bottomNavigationBar: CustomerBottomNavBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
+        cartItemCount: _cartCount,
       ),
     );
   }

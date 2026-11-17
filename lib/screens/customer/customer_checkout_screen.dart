@@ -781,30 +781,42 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
             },
           ),
           const SizedBox(height: 12),
-          Material(
-            color: Colors.transparent,
-            child: CheckboxListTile(
-              value: _agreedToOnlineTerms,
-              onChanged: _isSaving ? null : (val) => setState(() => _agreedToOnlineTerms = val ?? false),
-              title: RichText(
-                text: TextSpan(
-                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
-                  children: [
-                    const TextSpan(text: "I agree to the "),
-                    TextSpan(
-                      text: "Online Payment Terms & Conditions",
-                      style: const TextStyle(
-                        color: Colors.blue,
-                        decoration: TextDecoration.underline,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      recognizer: TapGestureRecognizer()..onTap = _showTermsDialog,
-                    ),
-                  ],
+          InkWell(
+            onTap: _isSaving ? null : () => setState(() => _agreedToOnlineTerms = !_agreedToOnlineTerms),
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: Checkbox(
+                    value: _agreedToOnlineTerms,
+                    onChanged: _isSaving ? null : (val) => setState(() => _agreedToOnlineTerms = val ?? false),
+                    activeColor: AppColors.primary,
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ),
-              ),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                      children: [
+                        const TextSpan(text: "I agree to the "),
+                        TextSpan(
+                          text: "Online Payment Terms & Conditions",
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          recognizer: TapGestureRecognizer()..onTap = _showTermsDialog,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
