@@ -96,9 +96,47 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   final GlobalKey _menuKey = GlobalKey();
   final GlobalKey _aboutKey = GlobalKey();
   final GlobalKey _contactKey = GlobalKey();
+  final GlobalKey _cartIconKey = GlobalKey();
 
   RealtimeChannel? _productsRealtimeChannel;
   StreamSubscription<AuthState>? _authSubscription;
+
+  void _runFlyToCartAnimation({
+    required BuildContext buttonContext,
+    required ProductModel product,
+  }) {
+    if (ResponsiveLayout.isMobile(context)) return;
+
+    try {
+      final RenderBox? buttonBox = buttonContext.findRenderObject() as RenderBox?;
+      if (buttonBox == null) return;
+      final Offset startPos = buttonBox.localToGlobal(buttonBox.size.center(Offset.zero));
+
+      final RenderBox? cartBox = _cartIconKey.currentContext?.findRenderObject() as RenderBox?;
+      final Offset endPos = cartBox != null
+          ? cartBox.localToGlobal(cartBox.size.center(Offset.zero))
+          : Offset(MediaQuery.of(context).size.width - 120, 40);
+
+      late OverlayEntry overlayEntry;
+      overlayEntry = OverlayEntry(
+        builder: (context) {
+          return _FlyingParticleWidget(
+            startPos: startPos,
+            endPos: endPos,
+            imagePath: product.imagePath,
+            productName: product.name,
+            onComplete: () {
+              overlayEntry.remove();
+            },
+          );
+        },
+      );
+
+      Overlay.of(context).insert(overlayEntry);
+    } catch (e) {
+      debugPrint("Fly-to-cart animation error: $e");
+    }
+  }
 
   void _checkStaffRoleRedirect() async {
     final user = Supabase.instance.client.auth.currentUser;
@@ -360,12 +398,15 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
 
   final Set<String> _addingProductIds = {};
 
-  Future<void> _addToCart(ProductModel product) async {
+  Future<void> _addToCart(ProductModel product, {BuildContext? buttonContext}) async {
     if (_addingProductIds.contains(product.id)) return;
     _addingProductIds.add(product.id);
     if (mounted) setState(() {});
 
     try {
+      if (!ResponsiveLayout.isMobile(context) && buttonContext != null) {
+        _runFlyToCartAnimation(buttonContext: buttonContext, product: product);
+      }
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null || user.isAnonymous) {
         if (!mounted) return;
@@ -1087,6 +1128,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
           alignment: Alignment.center,
           children: [
             IconButton(
+              key: _cartIconKey,
               icon: Icon(
                 _isCartVisible ? Icons.shopping_cart : Icons.shopping_cart_outlined,
                 color: _isCartVisible ? const Color(0xFFE91E63) : Colors.black87,
@@ -3133,31 +3175,33 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
                         "₱${product.sellingPrice.toStringAsFixed(0)}",
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: Colors.black87, fontSize: 14.5),
                       ),
-                      InkWell(
-                        onTap: (isOutOfStock || _addingProductIds.contains(product.id)) ? null : () => _addToCart(product),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          height: 28,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          decoration: BoxDecoration(
-                            color: (isOutOfStock || _addingProductIds.contains(product.id)) ? Colors.grey[300] : const Color(0xFFFFD700),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_addingProductIds.contains(product.id))
-                                const SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black87),
-                                )
-                              else ...[
-                                Text("Add", style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 10.5)),
-                                const SizedBox(width: 2),
-                                const Icon(Icons.add_rounded, color: Colors.black87, size: 13),
+                      Builder(
+                        builder: (btnCtx) => InkWell(
+                          onTap: (isOutOfStock || _addingProductIds.contains(product.id)) ? null : () => _addToCart(product, buttonContext: btnCtx),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            height: 28,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: (isOutOfStock || _addingProductIds.contains(product.id)) ? Colors.grey[300] : const Color(0xFFFFD700),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_addingProductIds.contains(product.id))
+                                  const SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black87),
+                                  )
+                                else ...[
+                                  Text("Add", style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 10.5)),
+                                  const SizedBox(width: 2),
+                                  const Icon(Icons.add_rounded, color: Colors.black87, size: 13),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -4503,6 +4547,116 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FlyingParticleWidget extends StatefulWidget {
+  final Offset startPos;
+  final Offset endPos;
+  final String? imagePath;
+  final String productName;
+  final VoidCallback onComplete;
+
+  const _FlyingParticleWidget({
+    required this.startPos,
+    required this.endPos,
+    this.imagePath,
+    required this.productName,
+    required this.onComplete,
+  });
+
+  @override
+  State<_FlyingParticleWidget> createState() => _FlyingParticleWidgetState();
+}
+
+class _FlyingParticleWidgetState extends State<_FlyingParticleWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _progressAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+
+    _progressAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    );
+
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 0.8, end: 1.3), weight: 30),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.3, end: 0.25), weight: 70),
+    ]).animate(_controller);
+
+    _opacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.0), weight: 80),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 0.0), weight: 20),
+    ]).animate(_controller);
+
+    _controller.forward().then((_) {
+      widget.onComplete();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _progressAnimation.value;
+        // Parabolic arc curve (adds a pleasant upward arc during flight)
+        final arcY = -70 * (4 * t * (1 - t));
+        final currentX = widget.startPos.dx + (widget.endPos.dx - widget.startPos.dx) * t;
+        final currentY = widget.startPos.dy + (widget.endPos.dy - widget.startPos.dy) * t + arcY;
+
+        return Positioned(
+          left: currentX - 25,
+          top: currentY - 25,
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: _opacityAnimation.value,
+              child: Transform.scale(
+                scale: _scaleAnimation.value,
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFE91E63).withValues(alpha: 0.35),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                    border: Border.all(color: const Color(0xFFE91E63), width: 2),
+                  ),
+                  child: ClipOval(
+                    child: ProductImage(
+                      path: widget.imagePath ?? '',
+                      productName: widget.productName,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
