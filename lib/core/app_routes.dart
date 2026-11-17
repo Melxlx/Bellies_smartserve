@@ -123,6 +123,14 @@ class AppRoutes {
       cleanName = cleanName.substring(0, cleanName.length - 1);
     }
 
+    if (cleanName == '/kitchen/dashboard' || cleanName == '/staff/kitchen/dashboard') {
+      cleanName = staffKitchen;
+    } else if (cleanName == '/owner/dashboard') {
+      cleanName = staffDashboard;
+    } else if (cleanName == '/cashier/dashboard' || cleanName == '/pos/dashboard') {
+      cleanName = staffPos;
+    }
+
     switch (cleanName) {
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen(), settings: routeSettings);
