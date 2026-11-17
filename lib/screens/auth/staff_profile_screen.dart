@@ -290,13 +290,30 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                             ),
                             const SizedBox(height: 12),
                             Center(
-                              child: Text(
-                                "$_position ($_role)",
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: AppColors.adminPrimary,
-                                ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "${_firstNameController.text} ${_lastNameController.text}".trim().isNotEmpty
+                                        ? "${_firstNameController.text} ${_lastNameController.text}".trim()
+                                        : "Staff Member",
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    "$_position (${_role.toUpperCase()})",
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12.5,
+                                      color: AppColors.adminPrimary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 28),

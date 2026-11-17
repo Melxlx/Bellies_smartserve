@@ -282,9 +282,30 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                             ),
                             const SizedBox(height: 12),
                             Center(
-                              child: Text(
-                                "Owner / Administrator",
-                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.adminPrimary),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "${_firstNameController.text} ${_lastNameController.text}".trim().isNotEmpty
+                                        ? "${_firstNameController.text} ${_lastNameController.text}".trim()
+                                        : "Administrator",
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    "Owner / Administrator",
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12.5,
+                                      color: AppColors.adminPrimary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 28),
