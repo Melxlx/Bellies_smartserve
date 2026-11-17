@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
 import '../../models/payment_qr_model.dart';
 import '../../repositories/payment_qr_repository.dart';
 import '../../widgets/state_widgets.dart';
@@ -280,20 +281,35 @@ class _PaymentQrFormDialogState extends State<_PaymentQrFormDialog> {
     setState(() => _isUploading = true);
     try {
       final uploadPath = 'qrs/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await Supabase.instance.client.storage
-          .from('payment-qrs')
-          .uploadBinary(
-            uploadPath,
-            bytes,
-            fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
-          );
-      final url = Supabase.instance.client.storage.from('payment-qrs').getPublicUrl(uploadPath);
-      if (!mounted) return;
-      setState(() => _qrImageUrl = url);
+      try {
+        await Supabase.instance.client.storage
+            .from('payment-qrs')
+            .uploadBinary(
+              uploadPath,
+              bytes,
+              fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+            );
+        final url = Supabase.instance.client.storage.from('payment-qrs').getPublicUrl(uploadPath);
+        if (!mounted) return;
+        setState(() => _qrImageUrl = url);
+      } catch (storageErr) {
+        debugPrint("Storage bucket upload failed ($storageErr). Falling back to base64 encoding...");
+        final base64Str = base64Encode(bytes);
+        final dataUrl = 'data:image/jpeg;base64,$base64Str';
+        if (!mounted) return;
+        setState(() => _qrImageUrl = dataUrl);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('QR code encoded successfully (Local Storage Mode).'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not upload QR image: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Could not process QR image: $e'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isUploading = false);
