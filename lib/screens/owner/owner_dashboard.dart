@@ -72,6 +72,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
           lowStockItems: _lowStockItems,
           pendingOrders: _pendingOnlineOrders,
         );
+        _loadDashboardData();
       }
     });
     _activeDeliveriesSub = _orderRepo.getActiveDeliveriesStream().listen((orders) {
@@ -87,8 +88,8 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
       final response = await Supabase.instance.client
           .from('orders')
           .select('id')
-          .gte('created_at', start.toIso8601String())
-          .lt('created_at', end.toIso8601String())
+          .gte('created_at', start.toUtc().toIso8601String())
+          .lt('created_at', end.toUtc().toIso8601String())
           .neq('payment_status', 'PAID');
       return (response as List).length;
     } catch (_) {

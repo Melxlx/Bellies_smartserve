@@ -426,14 +426,18 @@ class OrderRepository {
         .asyncMap((data) async {
           final List<OrderModel> orders = [];
           for (var row in data) {
-            final serviceType = (row['service_type'] ?? row['order_type'] ?? '').toString().toUpperCase();
             final paymentStatus = (row['payment_status'] ?? '').toString().toUpperCase();
             final status = (row['status'] ?? '').toString().toLowerCase();
 
-            if (serviceType == 'DELIVERY' &&
-                (paymentStatus == 'PENDING' || paymentStatus == 'UNPAID') &&
-                status != 'cancelled' &&
-                status != 'completed') {
+            final isPendingPayment = paymentStatus == 'PENDING' ||
+                paymentStatus == 'UNPAID' ||
+                paymentStatus == 'UNVERIFIED';
+            final isNotFinished = status != 'cancelled' &&
+                status != 'completed' &&
+                status != 'served' &&
+                status != 'delivered';
+
+            if (isPendingPayment && isNotFinished) {
               try {
                 final itemsResponse = await _supabase
                     .from('order_items')

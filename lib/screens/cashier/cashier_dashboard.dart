@@ -1061,28 +1061,28 @@ class _ReadyOrdersListState extends State<_ReadyOrdersList> {
           for (final order in counterOrders.take(5))
             Card(
               elevation: 0,
-              margin: const EdgeInsets.only(bottom: 10),
+              margin: const EdgeInsets.only(bottom: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(color: Colors.green.shade200, width: 1),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 child: Row(
                   children: [
                     CircleAvatar(
                       backgroundColor: const Color(0xFFE8F5E9),
-                      radius: 20,
+                      radius: 22,
                       child: Text(
                         order.queueNumber,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF2E7D32),
-                          fontSize: 12,
+                          fontSize: 13,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1092,16 +1092,16 @@ class _ReadyOrdersListState extends State<_ReadyOrdersList> {
                             'Order #${order.queueNumber}',
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              fontSize: 15,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             '${order.items.length} item(s) • ${order.serviceType.name.toUpperCase()}',
                             style: GoogleFonts.inter(
-                              fontSize: 11,
+                              fontSize: 12,
                               color: Colors.grey.shade700,
                             ),
                             maxLines: 1,
@@ -1110,26 +1110,25 @@ class _ReadyOrdersListState extends State<_ReadyOrdersList> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: _servingOrderId == order.id ? null : () => _markServed(order),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2E7D32),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        minimumSize: const Size(120, 44),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: _servingOrderId == order.id
                           ? const SizedBox(
-                              width: 16,
-                              height: 16,
+                              width: 18,
+                              height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
                           : const Text(
                               'SERVE COUNTER',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                             ),
                     ),
                   ],
@@ -1138,30 +1137,30 @@ class _ReadyOrdersListState extends State<_ReadyOrdersList> {
             ),
         ],
         if (deliveryOrders.isNotEmpty) ...[
-          if (counterOrders.isNotEmpty) const Divider(height: 24),
+          if (counterOrders.isNotEmpty) const Divider(height: 28),
           Text(
             "Ready for Delivery Dispatch:",
-            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFFEF6C00)),
+            style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFFEF6C00)),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           for (final order in deliveryOrders.take(5))
             Card(
               elevation: 0,
-              margin: const EdgeInsets.only(bottom: 10),
+              margin: const EdgeInsets.only(bottom: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(color: Colors.orange.shade200, width: 1),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 child: Row(
                   children: [
                     CircleAvatar(
                       backgroundColor: const Color(0xFFFFF3E0),
-                      radius: 20,
-                      child: const Icon(Icons.local_shipping_outlined, color: Color(0xFFEF6C00), size: 18),
+                      radius: 22,
+                      child: const Icon(Icons.local_shipping_outlined, color: Color(0xFFEF6C00), size: 20),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1171,16 +1170,16 @@ class _ReadyOrdersListState extends State<_ReadyOrdersList> {
                             'Delivery Order #${order.queueNumber}',
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              fontSize: 15,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             '${order.items.length} item(s) • ${order.customerDetails?.address.isNotEmpty == true ? order.customerDetails!.address : "Laguna Area"}',
                             style: GoogleFonts.inter(
-                              fontSize: 11,
+                              fontSize: 12,
                               color: Colors.grey.shade700,
                             ),
                             maxLines: 1,
@@ -1189,17 +1188,16 @@ class _ReadyOrdersListState extends State<_ReadyOrdersList> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: () => _selectCashierSection(context, CashierSection.delivery),
-                      icon: const Icon(Icons.local_shipping_rounded, size: 14),
-                      label: const Text('DISPATCH', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.local_shipping_rounded, size: 16),
+                      label: const Text('DISPATCH', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFEF6C00),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        minimumSize: const Size(120, 44),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),

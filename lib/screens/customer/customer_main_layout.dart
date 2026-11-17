@@ -108,12 +108,28 @@ class _CustomerMainLayoutState extends State<CustomerMainLayout> {
     final user = Supabase.instance.client.auth.currentUser;
     final isAuthenticated = user != null && !user.isAnonymous;
 
-    // On Web OR before login (Guest / Visitor Mode):
-    // Render CustomerMenuScreen (Landing Page with Hero section & Login/Sign Up)
-    if (kIsWeb || !isAuthenticated) {
-      return CustomerMenuScreen(
-        key: _menuScreenKey,
-        onCartCountChanged: _onCartCountChanged,
+    // On Web: respect initialIndex/currentIndex for authenticated users
+    if (kIsWeb) {
+      Widget body;
+      switch (_currentIndex) {
+        case 1:
+          body = const CustomerTrackingScreen();
+          break;
+        case 3:
+          body = const CustomerAccountScreen();
+          break;
+        case 0:
+        default:
+          body = CustomerMenuScreen(
+            key: _menuScreenKey,
+            onAccountTabRequested: () => setState(() => _currentIndex = 3),
+            onCartCountChanged: _onCartCountChanged,
+          );
+          break;
+      }
+      return Scaffold(
+        backgroundColor: const Color(0xFFFDFDFD),
+        body: body,
       );
     }
 

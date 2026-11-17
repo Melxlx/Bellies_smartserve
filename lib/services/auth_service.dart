@@ -607,7 +607,7 @@ class AuthService {
         'p_email': cleanEmail,
         'p_password': newPassword,
       }).timeout(const Duration(seconds: 3));
-      debugPrint("✅ Password reset via RPC for $cleanEmail");
+      debugPrint(" Password reset via RPC for $cleanEmail");
       return;
     } catch (e) {
       debugPrint("RPC reset_user_password unavailable: $e");

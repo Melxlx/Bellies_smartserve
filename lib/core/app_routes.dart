@@ -24,6 +24,7 @@ import '../screens/customer/customer_menu_screen.dart';
 import '../screens/customer/customer_main_layout.dart';
 import '../screens/customer/customer_checkout_screen.dart';
 import '../screens/customer/order_review_screen.dart';
+import '../screens/customer/delivery_address_screen.dart';
 import '../models/customer_checkout_draft.dart';
 import '../models/order_model.dart';
 import '../models/user_model.dart';
@@ -147,7 +148,30 @@ class AppRoutes {
         );
 
       case customerMenu:
-        return MaterialPageRoute(builder: (_) => const CustomerMainLayout(), settings: routeSettings);
+      case '/customer/menu':
+        return MaterialPageRoute(builder: (_) => const CustomerMainLayout(initialIndex: 0), settings: routeSettings);
+
+      case customerAccount:
+        return _customerRoute(const CustomerMainLayout(initialIndex: 3), routeSettings);
+
+      case customerOrders:
+        return _customerRoute(const CustomerMainLayout(initialIndex: 1), routeSettings);
+
+      case tracking:
+        return _customerRoute(const CustomerMainLayout(initialIndex: 1), routeSettings);
+
+      case deliveryAddress:
+        final args = routeSettings.arguments;
+        final draft = args is CustomerCheckoutArguments ? args.draft : CustomerCheckoutDraft();
+        return _customerRoute(
+          DeliveryAddressScreen(
+            initialDetails: draft.details,
+            onDraftChanged: (details) {
+              draft.details = details;
+            },
+          ),
+          routeSettings,
+        );
 
       case customerCheckout:
         final args = routeSettings.arguments;
@@ -236,7 +260,9 @@ class AppRoutes {
 
       case payment:
         final order = getArgs<OrderModel>();
-        if (order == null) return _errorRoute("Payment state lost.");
+        if (order == null) {
+          return _staffRoute(const CashierDashboard(initialSection: CashierSection.orderHistory), [UserRole.owner, UserRole.cashier], routeSettings);
+        }
         return _staffRoute(PaymentScreen(order: order), [UserRole.owner, UserRole.cashier], routeSettings);
 
       case receipt:
@@ -251,7 +277,9 @@ class AppRoutes {
               : _staffRoute(screen, [UserRole.owner, UserRole.cashier], routeSettings);
         }
         final order = getArgs<OrderModel>();
-        if (order == null) return _errorRoute("Receipt data lost.");
+        if (order == null) {
+          return _staffRoute(const CashierDashboard(initialSection: CashierSection.orderHistory), [UserRole.owner, UserRole.cashier], routeSettings);
+        }
         return _staffRoute(ReceiptScreen(order: order), [UserRole.owner, UserRole.cashier], routeSettings);
 
       case menuManagement:

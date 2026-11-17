@@ -8,13 +8,21 @@ class AnalyticsRepository {
     DateTime start,
     DateTime end,
   ) async {
+    final startIso = start.toUtc().toIso8601String();
+    final endIso = end.toUtc().toIso8601String();
+
     final response = await _supabase
         .from('orders')
-        .select('id, total_amount, payment_status, created_at')
-        .gte('created_at', start.toIso8601String())
-        .lt('created_at', end.toIso8601String());
+        .select('id, total_amount, payment_status, status, created_at')
+        .gte('created_at', startIso)
+        .lt('created_at', endIso);
 
     final orderRows = List<Map<String, dynamic>>.from(response);
+
+    final activeOrdersToday = orderRows.where((row) {
+      final status = (row['status'] as String? ?? '').toLowerCase();
+      return status != 'cancelled';
+    }).toList();
     
     final paidOrders = orderRows.where((row) {
       final status = (row['payment_status'] as String? ?? '').toUpperCase();
@@ -25,15 +33,19 @@ class AnalyticsRepository {
     var totalCost = 0.0;
 
     if (orderIds.isNotEmpty) {
-      final items = await _supabase
-          .from('order_items')
-          .select('order_id, quantity, unit_cost')
-          .inFilter('order_id', orderIds);
-      
-      for (final item in items) {
-        final quantity = (item['quantity'] as num? ?? 0).toDouble();
-        final unitCost = (item['unit_cost'] as num? ?? 0).toDouble();
-        totalCost += quantity * unitCost;
+      try {
+        final items = await _supabase
+            .from('order_items')
+            .select('order_id, quantity, unit_cost')
+            .inFilter('order_id', orderIds);
+        
+        for (final item in items) {
+          final quantity = (item['quantity'] as num? ?? 0).toDouble();
+          final unitCost = (item['unit_cost'] as num? ?? 0).toDouble();
+          totalCost += quantity * unitCost;
+        }
+      } catch (e) {
+        debugPrint("Error calculating today order items cost: $e");
       }
     }
 
@@ -44,7 +56,8 @@ class AnalyticsRepository {
 
     return {
       'revenue': revenue,
-      'order_count': paidOrders.length,
+      'order_count': activeOrdersToday.isNotEmpty ? activeOrdersToday.length : orderRows.length,
+      'paid_order_count': paidOrders.length,
       'profit': revenue - totalCost,
     };
   }
