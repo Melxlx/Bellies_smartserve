@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/responsive_layout.dart';
 import '../../models/customer_checkout_draft.dart';
 import '../../models/order_model.dart';
 import '../../services/delivery_service_area.dart';
@@ -166,6 +167,7 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
   Widget build(BuildContext context) {
     final details = _draft.details;
     final hasAddress = _draft.hasConfirmedAddress;
+    final bool isDesktop = ResponsiveLayout.isDesktop(context) || ResponsiveLayout.isTablet(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -195,12 +197,13 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 680),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 48 : 20, vertical: 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: isDesktop ? 960 : double.infinity),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     // Step Indicator Banner
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -407,6 +410,7 @@ class _OrderReviewScreenState extends State<OrderReviewScreen> {
                 ),
               ),
             ),
+          ),
     );
   }
 
