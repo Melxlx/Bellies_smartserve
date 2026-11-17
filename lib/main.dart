@@ -48,6 +48,7 @@ class BelliesSmartServeApp extends StatelessWidget {
       title: "Bellie's SmartServe",
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      scrollBehavior: const MaterialScrollBehavior().copyWith(scrollbars: false),
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.onGenerateRoute,
       navigatorObservers: [WebUrlNavigatorObserver()],
