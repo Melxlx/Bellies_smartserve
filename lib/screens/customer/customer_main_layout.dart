@@ -44,8 +44,22 @@ class _CustomerMainLayoutState extends State<CustomerMainLayout> {
         if (profile.role != UserRole.customer && profile.role != UserRole.guest) {
           if (!mounted) return;
           String route = AppRoutes.staffLogin;
-          if (profile.role == UserRole.rider) {
-            route = AppRoutes.riderDashboard;
+          switch (profile.role) {
+            case UserRole.owner:
+              route = AppRoutes.staffDashboard;
+              break;
+            case UserRole.cashier:
+              route = AppRoutes.staffPos;
+              break;
+            case UserRole.kitchen:
+              route = AppRoutes.staffKitchen;
+              break;
+            case UserRole.rider:
+              route = AppRoutes.riderDashboard;
+              break;
+            default:
+              route = AppRoutes.staffLogin;
+              break;
           }
           Navigator.pushReplacementNamed(context, route);
           return;

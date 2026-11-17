@@ -115,11 +115,25 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
               duration: const Duration(seconds: 3),
             ),
           );
-          if (profile.role == UserRole.rider) {
-            Navigator.pushReplacementNamed(context, AppRoutes.riderDashboard);
-          } else {
-            Navigator.pushReplacementNamed(context, AppRoutes.staffLogin);
+          String route = AppRoutes.staffLogin;
+          switch (profile.role) {
+            case UserRole.owner:
+              route = AppRoutes.staffDashboard;
+              break;
+            case UserRole.cashier:
+              route = AppRoutes.staffPos;
+              break;
+            case UserRole.kitchen:
+              route = AppRoutes.staffKitchen;
+              break;
+            case UserRole.rider:
+              route = AppRoutes.riderDashboard;
+              break;
+            default:
+              route = AppRoutes.staffLogin;
+              break;
           }
+          Navigator.pushReplacementNamed(context, route);
         }
       } catch (e) {
         debugPrint("Staff redirect check error: $e");
