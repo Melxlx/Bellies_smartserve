@@ -14,10 +14,12 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   String? _error;
+  late final String? _initialRequestedRoute;
 
   @override
   void initState() {
     super.initState();
+    _initialRequestedRoute = _getInitialRequestedRoute();
     _startApp();
   }
 
@@ -91,7 +93,7 @@ class _SplashScreenState extends State<SplashScreen> {
       // Routing Logic for Anonymous / Unauthenticated Visitors
       if (session == null || session.user.isAnonymous) {
         if (!mounted) return;
-        final requestedRoute = _getInitialRequestedRoute();
+        final requestedRoute = _initialRequestedRoute;
         if (requestedRoute != null && (
             requestedRoute.startsWith('/menu') ||
             requestedRoute.startsWith('/customer') ||
@@ -124,7 +126,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
 
       // Preserve current URL route if user reloads / refreshes the page
-      final requestedRoute = _getInitialRequestedRoute();
+      final requestedRoute = _initialRequestedRoute;
       if (requestedRoute != null && requestedRoute != '/' && requestedRoute != '/splash') {
         if (requestedRoute == '/staff' || requestedRoute == '/staff/') {
           switch (profile.role) {
