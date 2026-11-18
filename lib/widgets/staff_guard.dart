@@ -45,6 +45,29 @@ class _StaffGuardState extends State<StaffGuard> {
     }
   }
 
+  void _redirectByRole(BuildContext context, UserRole role) {
+    String fallbackRoute = AppRoutes.customerMenu;
+    switch (role) {
+      case UserRole.owner:
+        fallbackRoute = AppRoutes.staffDashboard;
+        break;
+      case UserRole.cashier:
+        fallbackRoute = AppRoutes.cashierDashboard;
+        break;
+      case UserRole.kitchen:
+        fallbackRoute = AppRoutes.staffKitchen;
+        break;
+      case UserRole.rider:
+        fallbackRoute = AppRoutes.riderDashboard;
+        break;
+      case UserRole.customer:
+      case UserRole.guest:
+        fallbackRoute = AppRoutes.customerMenu;
+        break;
+    }
+    Navigator.pushReplacementNamed(context, fallbackRoute);
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<UserModel?>(
@@ -56,7 +79,7 @@ class _StaffGuardState extends State<StaffGuard> {
 
         final profile = snapshot.data;
 
-        // 1. Not Authenticated or Inactive
+        // 1. Not Authenticated or Inactive session
         if (profile == null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Navigator.pushReplacementNamed(
@@ -68,20 +91,19 @@ class _StaffGuardState extends State<StaffGuard> {
           return const Scaffold(body: LoadingState());
         }
 
-        // 2. Unauthorized Role (Customer attempting staff area)
-        if (profile.role == UserRole.guest) {
+        // 2. Customer or Guest attempting staff area
+        if (profile.role == UserRole.guest || profile.role == UserRole.customer) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, AppRoutes.accessDenied);
+            Navigator.pushReplacementNamed(context, AppRoutes.customerMenu);
           });
           return const Scaffold(body: LoadingState());
         }
 
-        // 3. Specific Role Check (e.g. only Owner allowed in Employees)
+        // 3. Strict Role Restriction Check (e.g. Owner trying to access Rider Dashboard, or Cashier trying to access Employees)
         if (widget.allowedRoles != null &&
             !widget.allowedRoles!.contains(profile.role)) {
-          // If the user is staff but doesn't have the specific role for this page
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, AppRoutes.accessDenied);
+            _redirectByRole(context, profile.role);
           });
           return const Scaffold(body: LoadingState());
         }

@@ -253,7 +253,7 @@ class AppRoutes {
         return _staffRoute(const CustomerReviewsScreen(), [UserRole.owner], routeSettings);
 
       case riderDashboard:
-        return _staffRoute(const RiderDashboardShell(), [UserRole.owner, UserRole.rider], routeSettings);
+        return _staffRoute(const RiderDashboardShell(), [UserRole.rider], routeSettings);
 
       case payment:
         final order = getArgs<OrderModel>();
