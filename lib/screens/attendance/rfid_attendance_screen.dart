@@ -182,10 +182,18 @@ class _RFIDAttendanceScreenState extends State<RFIDAttendanceScreen> {
                   final newUid = controller.text.trim().toUpperCase();
                   Navigator.pop(dialogContext);
                   try {
+                    final uidToSave = newUid.isEmpty ? null : newUid;
                     await _supabase.from('employee_details').upsert({
                       'user_id': employee['id'],
-                      'rfid_uid': newUid.isEmpty ? null : newUid,
+                      'rfid_uid': uidToSave,
+                      'position': employee['position'] ?? 'Staff',
                     });
+                    try {
+                      await _supabase.from('profiles').update({
+                        'rfid_uid': uidToSave,
+                      }).eq('id', employee['id']);
+                    } catch (_) {}
+
                     if (!mounted) return;
                     scaffoldMessenger.showSnackBar(
                       SnackBar(content: Text(hasExisting ? "RFID UID updated successfully!" : "RFID UID assigned successfully!")),

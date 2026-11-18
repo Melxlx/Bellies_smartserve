@@ -240,6 +240,7 @@ class AppRoutes {
         return _staffRoute(const RFIDAttendanceScreen(), [UserRole.owner, UserRole.cashier], routeSettings);
 
       case staffPayroll:
+      case '/payroll':
         return _staffRoute(const PayrollManagementScreen(), [UserRole.owner], routeSettings);
 
       case staffReports:

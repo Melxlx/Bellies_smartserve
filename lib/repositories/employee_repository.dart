@@ -136,6 +136,7 @@ class EmployeeRepository {
     required String position,
     required double dailyRate,
   }) async {
+    // 1. Attempt edge function first if available
     try {
       final response = await _supabase.functions.invoke(
         'create-employee',
@@ -153,12 +154,14 @@ class EmployeeRepository {
       );
 
       final data = response.data;
-      if (data is Map && data['error'] != null) {
-        throw Exception(data['error'].toString());
+      if (data is Map && data['error'] == null) {
+        return;
       }
-      return;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("Edge Function create-employee unavailable ($e), falling back to direct auth sign up.");
+    }
 
+    // 2. Direct fallback creation via secondary client
     final secondaryClient = SupabaseClient(
       'https://ijnbdmmnvjbhmjfgdqcw.supabase.co',
       'sb_publishable_C3A3Da5wQNkIAAzht0EdZA_QDDjkcTb',
@@ -181,7 +184,7 @@ class EmployeeRepository {
       );
 
       final newUserId = res.user?.id;
-      if (newUserId != null) {
+      if (newUserId != null && newUserId.isNotEmpty) {
         await _supabase.from('profiles').upsert({
           'id': newUserId,
           'email': cleanEmail,
