@@ -77,13 +77,13 @@ class _SplashScreenState extends State<SplashScreen> {
             debugPrint("Error exchanging recovery code: $e");
           }
         }
-        await _waitForRecoverySession();
+        await _waitForAuthSession();
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, AppRoutes.resetPassword);
         return;
       }
 
-      await _waitForRecoverySession();
+      await _waitForAuthSession();
       if (!mounted) return;
 
       final session = Supabase.instance.client.auth.currentSession;
@@ -197,16 +197,10 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  Future<void> _waitForRecoverySession() async {
-    final queryParameters = Uri.base.queryParameters;
-    final isPasswordRecovery =
-        queryParameters['type'] == 'recovery' ||
-        Uri.base.fragment.contains('type=recovery');
-    if (!isPasswordRecovery) return;
-
-    for (var attempt = 0; attempt < 20; attempt++) {
+  Future<void> _waitForAuthSession() async {
+    for (var attempt = 0; attempt < 25; attempt++) {
       if (Supabase.instance.client.auth.currentSession != null) return;
-      await Future<void>.delayed(const Duration(milliseconds: 250));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
     }
   }
 

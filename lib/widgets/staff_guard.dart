@@ -29,7 +29,15 @@ class _StaffGuardState extends State<StaffGuard> {
 
   Future<UserModel?> _checkAuthAndFetchProfile() async {
     final authService = AuthService();
-    final user = authService.currentUser;
+    var user = authService.currentUser;
+
+    if (user == null || user.isAnonymous) {
+      for (int i = 0; i < 20; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        user = authService.currentUser;
+        if (user != null && !user.isAnonymous) break;
+      }
+    }
 
     if (user == null || user.isAnonymous) return null;
 
