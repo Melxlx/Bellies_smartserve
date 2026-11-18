@@ -123,12 +123,26 @@ class AppRoutes {
       cleanName = cleanName.substring(0, cleanName.length - 1);
     }
 
-    if (cleanName == '/kitchen/dashboard' || cleanName == '/staff/kitchen/dashboard') {
+    if (cleanName.startsWith('/owner/')) {
+      cleanName = cleanName.replaceFirst('/owner/', '/staff/');
+    } else if (cleanName.startsWith('/cashier/')) {
+      cleanName = cleanName.replaceFirst('/cashier/', '/staff/');
+    } else if (cleanName.startsWith('/kitchen/')) {
+      cleanName = cleanName.replaceFirst('/kitchen/', '/staff/');
+    }
+
+    if (cleanName == '/staff/kitchen/dashboard' || cleanName == '/staff/kitchen') {
       cleanName = staffKitchen;
-    } else if (cleanName == '/owner/dashboard') {
+    } else if (cleanName == '/staff/dashboard' || cleanName == '/owner/dashboard') {
       cleanName = staffDashboard;
-    } else if (cleanName == '/cashier/dashboard' || cleanName == '/pos/dashboard') {
+    } else if (cleanName == '/staff/dashboard/pos' || cleanName == '/pos/dashboard') {
       cleanName = staffPos;
+    } else if (cleanName == '/staff/menu') {
+      cleanName = menuManagement;
+    } else if (cleanName == '/staff/analytics') {
+      cleanName = staffReports;
+    } else if (cleanName == '/staff/logistics') {
+      cleanName = staffDeliveries;
     }
 
     switch (cleanName) {
@@ -325,7 +339,7 @@ class AppRoutes {
       default:
         // Smart fuzzy fallback for mistyped or direct URLs
         if (cleanName.contains('rider')) {
-          return _staffRoute(const RiderDashboardShell(), [UserRole.owner, UserRole.rider], routeSettings);
+          return _staffRoute(const RiderDashboardShell(), [UserRole.rider], routeSettings);
         }
         if (cleanName.contains('kitchen')) {
           return _staffRoute(const KitchenDashboard(), [UserRole.owner, UserRole.kitchen], routeSettings);
@@ -333,7 +347,7 @@ class AppRoutes {
         if (cleanName.contains('pos') || cleanName.contains('cashier')) {
           return _staffRoute(const CashierDashboard(), [UserRole.owner, UserRole.cashier], routeSettings);
         }
-        if (cleanName.contains('dashboard') || cleanName.contains('owner') || cleanName.contains('admin')) {
+        if (cleanName == '/dashboard' || cleanName == '/owner' || cleanName == '/admin') {
           return _staffRoute(const OwnerDashboard(), [UserRole.owner], routeSettings);
         }
 
