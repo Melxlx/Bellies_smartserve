@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/app_routes.dart';
@@ -66,11 +67,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void _calculateChange() {
     final tendered = double.tryParse(_cashController.text) ?? 0.0;
     setState(() {
-      _change = tendered - widget.order.totalAmount;
-      if (tendered > 0 && _change < 0) {
-        _error = "Insufficient cash";
-      } else {
+      if (tendered >= widget.order.totalAmount) {
+        _change = tendered - widget.order.totalAmount;
         _error = null;
+      } else {
+        _change = 0.0;
+        if (_cashController.text.trim().isNotEmpty) {
+          final needed = widget.order.totalAmount - tendered;
+          _error = "Kulang pa ng ₱${needed.toStringAsFixed(2)} para makumpleto ang bayad.";
+        } else {
+          _error = null;
+        }
       }
     });
   }
@@ -78,8 +85,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _confirmPayment() async {
     if (_selectedMethod == PaymentMethod.cash) {
       final tendered = double.tryParse(_cashController.text) ?? 0.0;
+      if (_cashController.text.trim().isEmpty) {
+        setState(() => _error = "Ilagay ang halaga ng ibinayad ng customer (Amount Tendered)");
+        return;
+      }
       if (tendered < widget.order.totalAmount) {
-        setState(() => _error = "Insufficient cash");
+        final needed = widget.order.totalAmount - tendered;
+        setState(() => _error = "Kulang ang bayad! Kailangan ng karagdagang ₱${needed.toStringAsFixed(2)}");
         return;
       }
     } else {
@@ -87,15 +99,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final isCounterPos = widget.order.serviceType == ServiceType.dineIn || widget.order.serviceType == ServiceType.takeout;
       if (!isCounterPos || inputRef.isNotEmpty) {
         if (inputRef.isEmpty) {
-          setState(() => _error = "Reference number required");
+          setState(() => _error = "Kailangan ang GCash Reference Number");
           return;
         }
         if (!ReceiptOcrService.isValidGcashRefNumber(inputRef)) {
-          setState(() => _error = "Invalid GCash Reference Number (Must be 10 to 13 digits)");
+          setState(() => _error = "Maling GCash Reference Number (Dapat ay 10 hanggang 13 digits)");
           return;
         }
         if (!isCounterPos && !_agreedToOnlineTerms) {
-          setState(() => _error = "Please agree to the Online Payment Terms & Conditions");
+          setState(() => _error = "Mangyaring sumang-ayon sa Online Payment Terms & Conditions");
           return;
         }
       }
@@ -233,13 +245,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Select Payment Method")),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: Text(
+          "Payment Processing",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: ResponsiveLayout(
             mobile: _buildPaymentContent(maxWidth: double.infinity),
-            desktop: _buildPaymentContent(maxWidth: 500),
+            desktop: _buildPaymentContent(maxWidth: 520),
           ),
         ),
       ),
@@ -250,68 +270,164 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Container(
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: Card(
+        elevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.06),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                "Total Amount: ₱${widget.order.totalAmount.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFE91E63),
+              // Total Amount Header Card
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFF1F5), Color(0xFFFFE4EC)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFFFC1D6)),
                 ),
-                textAlign: TextAlign.center,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE91E63),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Total Amount Due",
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.pink.shade900,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "₱${widget.order.totalAmount.toStringAsFixed(2)}",
+                      style: GoogleFonts.poppins(
+                        fontSize: 34,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFFE91E63),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
+
+              // Customer Name Field
               TextField(
                 controller: _customerNameController,
                 enabled: !_isProcessing,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Customer Name (Optional)",
-                  hintText: "e.g. Juan or Walk-in",
-                  prefixIcon: Icon(Icons.person_outline),
-                  border: OutlineInputBorder(),
+                  hintText: "e.g. Juan or Walk-in Customer",
+                  prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF64748B)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFFE91E63), width: 1.8),
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 22),
+
+              // Payment Method Selectors
+              Text(
+                "Payment Method",
+                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
-                    child: _methodTile(PaymentMethod.cash, Icons.money, "CASH"),
+                    child: _methodTile(PaymentMethod.cash, Icons.payments_rounded, "CASH"),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: _methodTile(
                       PaymentMethod.gcash,
-                      Icons.qr_code,
-                      "GCASH",
+                      Icons.qr_code_2_rounded,
+                      "GCASH / QR",
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 26),
+
               if (_selectedMethod == PaymentMethod.cash) _buildCashView(),
               if (_selectedMethod == PaymentMethod.gcash) _buildGCashView(),
+
               if (_error != null) ...[
                 const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  style: const TextStyle(color: Colors.red),
-                  textAlign: TextAlign.center,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFCA5A5)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12.5, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-              const SizedBox(height: 32),
-              _isProcessing
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: _confirmPayment,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text("CONFIRM PAYMENT"),
-                    ),
+
+              const SizedBox(height: 28),
+
+              // Confirm Button
+              ElevatedButton.icon(
+                onPressed: _isProcessing ? null : _confirmPayment,
+                icon: _isProcessing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.check_circle_rounded, size: 20),
+                label: Text(
+                  _isProcessing ? "PROCESSING PAYMENT..." : "CONFIRM PAYMENT",
+                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE91E63),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 2,
+                ),
+              ),
             ],
           ),
         ),
@@ -322,30 +438,49 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget _methodTile(PaymentMethod method, IconData icon, String label) {
     final isSelected = _selectedMethod == method;
     return InkWell(
-      onTap: () => setState(() => _selectedMethod = method),
-      child: Container(
-        padding: const EdgeInsets.all(16),
+      onTap: () {
+        setState(() {
+          _selectedMethod = method;
+          _error = null;
+        });
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isSelected ? const Color(0xFFE91E63) : Colors.grey,
+            color: isSelected ? const Color(0xFFE91E63) : const Color(0xFFCBD5E1),
+            width: isSelected ? 2 : 1,
           ),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(14),
           color: isSelected
-              ? const Color(0xFFE91E63).withAlpha((0.1 * 255).toInt())
+              ? const Color(0xFFFFF1F5)
+              : Colors.white,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFE91E63).withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  )
+                ]
               : null,
         ),
         child: Column(
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFFE91E63) : Colors.grey,
+              color: isSelected ? const Color(0xFFE91E63) : const Color(0xFF64748B),
+              size: 26,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               label,
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
-                color: isSelected ? const Color(0xFFE91E63) : Colors.grey,
+                fontSize: 13,
+                color: isSelected ? const Color(0xFFE91E63) : const Color(0xFF64748B),
               ),
             ),
           ],
@@ -354,35 +489,182 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
+  Widget _buildQuickCashButtons() {
+    final total = widget.order.totalAmount;
+    final List<double> defaultDenominations = [100, 200, 500, 1000];
+    final Set<double> denominations = {total};
+
+    for (final d in defaultDenominations) {
+      if (d > total) {
+        denominations.add(d);
+      }
+    }
+
+    final sortedDenominations = denominations.toList()..sort();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: sortedDenominations.map((amount) {
+        final isExact = (amount - total).abs() < 0.01;
+        final label = isExact
+            ? "Exact (₱${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)})"
+            : "₱${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)}";
+        return OutlinedButton(
+          onPressed: _isProcessing
+              ? null
+              : () {
+                  _cashController.text = amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2);
+                  _calculateChange();
+                },
+          style: OutlinedButton.styleFrom(
+            foregroundColor: isExact ? const Color(0xFF059669) : const Color(0xFF2563EB),
+            side: BorderSide(
+              color: isExact ? const Color(0xFF10B981) : const Color(0xFF93C5FD),
+              width: 1.5,
+            ),
+            backgroundColor: isExact ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12.5,
+              color: isExact ? const Color(0xFF047857) : const Color(0xFF1D4ED8),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildCashView() {
+    final tendered = double.tryParse(_cashController.text) ?? 0.0;
+    final isSufficient = tendered >= widget.order.totalAmount;
+    final remainingNeeded = widget.order.totalAmount - tendered;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          "Quick Cash Denominations",
+          style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.bold, color: const Color(0xFF475569)),
+        ),
+        const SizedBox(height: 8),
+        _buildQuickCashButtons(),
+        const SizedBox(height: 18),
         TextField(
           controller: _cashController,
           enabled: !_isProcessing,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: "Amount Tendered",
+            hintText: "Enter cash given by customer",
             prefixText: "₱ ",
-            border: OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.payments_outlined, color: Color(0xFFE91E63)),
+            suffixIcon: _cashController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.cancel, size: 18, color: Colors.grey),
+                    onPressed: () {
+                      _cashController.clear();
+                      _calculateChange();
+                    },
+                  )
+                : null,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFFE91E63), width: 1.8),
+            ),
           ),
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
           autofocus: true,
         ),
         const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.all(16),
-          color: Colors.grey[100],
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: isSufficient
+                ? const Color(0xFFECFDF5)
+                : (_cashController.text.trim().isNotEmpty
+                    ? const Color(0xFFFFF1F2)
+                    : const Color(0xFFF8FAFC)),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSufficient
+                  ? const Color(0xFFA7F3D0)
+                  : (_cashController.text.trim().isNotEmpty
+                      ? const Color(0xFFFECDD3)
+                      : const Color(0xFFE2E8F0)),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
             children: [
-              const Text("Change:", style: TextStyle(fontSize: 18)),
-              Text(
-                "₱${_change.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        isSufficient ? Icons.check_circle_rounded : Icons.account_balance_wallet_outlined,
+                        size: 22,
+                        color: isSufficient
+                            ? const Color(0xFF059669)
+                            : (_cashController.text.trim().isNotEmpty
+                                ? const Color(0xFFE11D48)
+                                : const Color(0xFF64748B)),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        "Change To Return:",
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isSufficient
+                              ? const Color(0xFF065F46)
+                              : (_cashController.text.trim().isNotEmpty
+                                  ? const Color(0xFF9F1239)
+                                  : const Color(0xFF334155)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    "₱${_change.toStringAsFixed(2)}",
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: isSufficient
+                          ? const Color(0xFF059669)
+                          : (_cashController.text.trim().isNotEmpty
+                              ? const Color(0xFFE11D48)
+                              : const Color(0xFF0F172A)),
+                    ),
+                  ),
+                ],
               ),
+              if (!isSufficient && _cashController.text.trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline, size: 14, color: Color(0xFFE11D48)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        "Kulang pa ng ₱${remainingNeeded.toStringAsFixed(2)} para makumpleto ang bayad.",
+                        style: const TextStyle(fontSize: 12, color: Color(0xFFE11D48), fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -396,13 +678,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(color: Colors.blue.shade200),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+            boxShadow: [
+              BoxShadow(color: Colors.blue.shade100.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
           child: Column(
@@ -412,36 +694,37 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 child: _activeQr != null && _activeQr!.qrImageUrl.isNotEmpty
                     ? Image.network(
                         _activeQr!.qrImageUrl,
-                        height: 150,
-                        width: 150,
+                        height: 160,
+                        width: 160,
                         fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => Image.asset('assets/images/instapay_qr.png', height: 150, width: 150, fit: BoxFit.contain),
+                        errorBuilder: (ctx, err, stack) => Image.asset('assets/images/instapay_qr.png', height: 160, width: 160, fit: BoxFit.contain),
                       )
                     : Image.asset(
                         'assets/images/instapay_qr.png',
-                        height: 150,
-                        width: 150,
+                        height: 160,
+                        width: 160,
                         fit: BoxFit.contain,
                       ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 "SCAN TO PAY (${_activeQr?.providerName ?? 'GCASH'})",
-                style: const TextStyle(
-                  fontSize: 12,
+                style: GoogleFonts.poppins(
+                  fontSize: 12.5,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  color: Colors.blue.shade800,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.blue.shade100),
           ),
           child: Row(
@@ -450,8 +733,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Account Number: ${_activeQr?.accountNumber ?? '0928 732 2030'}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  Text("Account Name: ${_activeQr?.accountName ?? 'Bellies Duenas'}", style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  Text("Account Number: ${_activeQr?.accountNumber ?? '0928 732 2030'}", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue.shade900)),
+                  Text("Account Name: ${_activeQr?.accountName ?? 'Bellies Duenas'}", style: GoogleFonts.inter(fontSize: 11.5, color: Colors.grey.shade600)),
                 ],
               ),
               IconButton(
@@ -467,15 +750,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         if (!isCounterPos) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   "GCash Reference Number (13 digits):",
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(width: 8),
@@ -484,24 +767,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 icon: const Icon(Icons.document_scanner_rounded, size: 16, color: Colors.blue),
                 label: const Text("Scan Receipt (OCR)", style: TextStyle(fontSize: 11, color: Colors.blue)),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   side: BorderSide(color: Colors.blue.shade300),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           TextField(
             controller: _referenceController,
             enabled: !_isProcessing,
             maxLength: 13,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: "GCash Reference Number",
               counterText: "",
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.tag, color: Colors.blue),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: 16),
@@ -536,10 +820,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
             maxLength: 13,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: "GCash Reference Number (Optional for Counter)",
               counterText: "",
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.tag, color: Colors.blue),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
