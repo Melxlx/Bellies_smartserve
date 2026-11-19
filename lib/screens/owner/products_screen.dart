@@ -243,31 +243,36 @@ class ProductsScreenState extends State<ProductsScreen> {
     if (_error != null) return ErrorState(error: _error!, onRetry: _loadData);
     if (_products.isEmpty) return const EmptyState(message: "No products found.");
 
-    return Column(
-      children: [
-        Expanded(
-          child: ResponsiveLayout(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ResponsiveLayout(
             mobile: widget.isGridView ? _buildGrid(2) : _buildTable(),
             tablet: widget.isGridView ? _buildGrid(3) : _buildTable(),
             desktop: widget.isGridView ? _buildGrid(5) : _buildTable(),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
-          child: PaginationBar(
-            currentPage: _currentPage,
-            totalPages: _totalPages,
-            totalItems: _products.length,
-            itemsPerPage: _itemsPerPage,
-            onPageChanged: (page) => setState(() => _currentPage = page),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: PaginationBar(
+              currentPage: _currentPage,
+              totalPages: _totalPages,
+              totalItems: _products.length,
+              itemsPerPage: _itemsPerPage,
+              onPageChanged: (page) => setState(() => _currentPage = page),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildGrid(int crossAxisCount) {
     return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 240,
