@@ -240,8 +240,8 @@ class _PosScreenState extends State<PosScreen> {
         ),
         backgroundColor: const Color(0xFF2E9E6B),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
+        width: 420,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         duration: const Duration(seconds: 1),
       ),
     );

@@ -219,19 +219,19 @@ class AppRoutes {
         return _staffRoute(const OwnerDashboard(), [UserRole.owner], routeSettings);
 
       case cashierDashboard:
-        return _staffRoute(const CashierDashboard(), [UserRole.owner, UserRole.cashier], routeSettings);
+        return _staffRoute(const CashierDashboard(), [UserRole.cashier], routeSettings);
 
       case staffPos:
         return _staffRoute(
           const CashierDashboard(initialSection: CashierSection.pos),
-          [UserRole.owner, UserRole.cashier],
+          [UserRole.cashier],
           routeSettings,
         );
 
       case staffOnlineOrders:
         return _staffRoute(
           const CashierDashboard(initialSection: CashierSection.onlineOrders),
-          [UserRole.owner, UserRole.cashier],
+          [UserRole.cashier],
           routeSettings,
         );
 
