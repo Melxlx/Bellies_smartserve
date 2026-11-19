@@ -557,6 +557,109 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
     }
   }
 
+  void _showImagePickerModal() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final presetImages = [
+            'https://images.unsplash.com/photo-1544025162-d76694265947?w=300&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=300&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=300&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=300&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&auto=format&fit=crop&q=80',
+          ];
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: const Color(0xFFFFF1F5), borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.photo_library_rounded, color: Color(0xFFE91E63), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Text("Select Product Image", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+            content: SizedBox(
+              width: 480,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text("Choose from preset food gallery:", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                    const SizedBox(height: 12),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.1,
+                      ),
+                      itemCount: presetImages.length,
+                      itemBuilder: (context, index) {
+                        final imgUrl = presetImages[index];
+                        final isSelected = _imagePath == imgUrl;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() => _imagePath = imgUrl);
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFFE91E63) : Colors.grey.shade300,
+                                width: isSelected ? 2.5 : 1,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(13),
+                              child: Image.network(imgUrl, fit: BoxFit.cover),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await _pickAndUploadImage();
+                      },
+                      icon: const Icon(Icons.upload_file_rounded, size: 18),
+                      label: const Text("Upload Custom Image from PC"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E293B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -661,7 +764,7 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
                 // Product Image Picker (Professional Upload Card)
                 Center(
                   child: GestureDetector(
-                    onTap: _isSaving || _isUploadingImage ? null : _pickAndUploadImage,
+                    onTap: _isSaving || _isUploadingImage ? null : _showImagePickerModal,
                     child: Container(
                       width: 110,
                       height: 110,
