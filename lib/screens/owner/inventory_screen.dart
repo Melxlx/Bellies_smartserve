@@ -794,14 +794,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           },
                           cells: [
                             DataCell(
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(ingredient.name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                                  Text(ingredient.code, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                                ],
-                              ),
+                              Text(ingredient.name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12.5)),
                             ),
                             DataCell(
                               Container(

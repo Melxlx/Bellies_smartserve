@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/product_model.dart';
 import '../../models/category_model.dart';
@@ -471,7 +472,6 @@ class ProductFormDialog extends StatefulWidget {
 
 class _ProductFormDialogState extends State<ProductFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _skuController = TextEditingController();
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _priceController = TextEditingController();
@@ -479,19 +479,90 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
   String? _selectedCategoryId;
   ProductStatus _status = ProductStatus.available;
   bool _isSaving = false;
+  String? _imagePath;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.product != null) {
-      _skuController.text = widget.product!.sku;
       _nameController.text = widget.product!.name;
       _descController.text = widget.product!.description ?? '';
       _priceController.text = widget.product!.sellingPrice.toString();
       _costController.text = widget.product!.estimatedCost.toString();
       _selectedCategoryId = widget.product!.categoryId;
       _status = widget.product!.status;
+      _imagePath = widget.product!.imagePath;
     }
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (file == null) return;
+
+    final name = file.name.toLowerCase();
+    final path = file.path.toLowerCase();
+    final mime = file.mimeType?.toLowerCase() ?? '';
+
+    // Validate image format: JPG, JPEG, PNG only
+    final allowedExts = ['.jpg', '.jpeg', '.png'];
+    final hasValidExt = allowedExts.any((ext) => name.endsWith(ext) || path.endsWith(ext));
+    final hasValidMime = mime == 'image/jpeg' || mime == 'image/png' || mime == 'image/jpg';
+
+    if (!hasValidExt && !hasValidMime) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Invalid file type! Only image files (JPG, PNG) are allowed."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isUploadingImage = true);
+    try {
+      final bytes = await file.readAsBytes();
+      final fileExt = name.split('.').last;
+      final uploadPath = 'products/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+
+      await Supabase.instance.client.storage
+          .from('employee-avatars')
+          .uploadBinary(
+            uploadPath,
+            bytes,
+            fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+          );
+
+      final url = Supabase.instance.client.storage
+          .from('employee-avatars')
+          .getPublicUrl(uploadPath);
+
+      if (mounted) {
+        setState(() {
+          _imagePath = url;
+          _isUploadingImage = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to upload image: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descController.dispose();
+    _priceController.dispose();
+    _costController.dispose();
+    super.dispose();
   }
 
   Future<void> _save() async {
@@ -506,13 +577,14 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
       final repo = ProductRepository();
       final product = ProductModel(
         id: widget.product?.id ?? '',
-        sku: _skuController.text.trim(),
+        sku: widget.product?.sku ?? 'PRD-${DateTime.now().millisecondsSinceEpoch}',
         name: _nameController.text.trim(),
         description: _descController.text.trim(),
         sellingPrice: double.parse(_priceController.text),
         estimatedCost: double.parse(_costController.text),
         categoryId: _selectedCategoryId!,
         status: _status,
+        imagePath: _imagePath,
         createdAt: widget.product?.createdAt ?? DateTime.now(),
       );
       await repo.saveProduct(product);
@@ -532,15 +604,15 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
       return _nameController.text.trim().isNotEmpty && _priceController.text.trim().isNotEmpty;
     }
     final p = widget.product!;
-    final skuChanged = _skuController.text.trim() != p.sku;
     final nameChanged = _nameController.text.trim() != p.name;
     final descChanged = _descController.text.trim() != (p.description ?? '');
     final priceChanged = double.tryParse(_priceController.text) != p.sellingPrice;
     final costChanged = double.tryParse(_costController.text) != p.estimatedCost;
     final catChanged = _selectedCategoryId != p.categoryId;
     final statusChanged = _status != p.status;
+    final imageChanged = _imagePath != p.imagePath;
 
-    return skuChanged || nameChanged || descChanged || priceChanged || costChanged || catChanged || statusChanged;
+    return nameChanged || descChanged || priceChanged || costChanged || catChanged || statusChanged || imageChanged;
   }
 
   @override
@@ -554,19 +626,46 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                controller: _skuController,
-                enabled: !_isSaving,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(labelText: "SKU", border: OutlineInputBorder()),
-                validator: (val) => val == null || val.isEmpty ? "Required" : null,
+              // Product Image Picker
+              Center(
+                child: GestureDetector(
+                  onTap: _isSaving || _isUploadingImage ? null : _pickAndUploadImage,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: _isUploadingImage
+                          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                          : (_imagePath != null && _imagePath!.isNotEmpty
+                              ? Image.network(
+                                  _imagePath!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image, color: Colors.grey),
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.add_a_photo_rounded, color: Color(0xFFE91E63), size: 28),
+                                    const SizedBox(height: 4),
+                                    Text("Add Image", style: TextStyle(fontSize: 10, color: Colors.grey.shade700, fontWeight: FontWeight.bold)),
+                                  ],
+                                )),
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
                 enabled: !_isSaving,
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(labelText: "Product Name", border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: "Product Name *", border: OutlineInputBorder()),
                 validator: (val) {
                   if (val == null || val.isEmpty) return "Required";
                   if (val.length < 2 || val.length > 100) return "Must be 2-100 chars";
