@@ -472,6 +472,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
             ),
             duration: const Duration(milliseconds: 2000),
             behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 88),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             backgroundColor: const Color(0xFFE91E63),
           ),
