@@ -265,4 +265,94 @@ class GmailEmailService {
     }
     return isValid;
   }
+
+  /// Sends a professional welcome email with temporary login credentials to newly created staff
+  Future<bool> sendStaffWelcomeEmail({
+    required String recipientEmail,
+    required String recipientName,
+    required String tempPassword,
+    required String role,
+  }) async {
+    await _initCredentials();
+    final cleanRecipient = recipientEmail.trim().toLowerCase();
+
+    final html = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background-color: #FFF5F7; margin: 0; padding: 20px; }
+        .card { max-width: 500px; margin: 20px auto; background: #ffffff; border-radius: 24px; box-shadow: 0 12px 32px rgba(233, 30, 99, 0.12); overflow: hidden; border: 1px solid #FFE4E8; }
+        .header { background: linear-gradient(135deg, #FF2E63 0%, #E91E63 60%, #FF5277 100%); padding: 34px 24px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; }
+        .header p { margin: 6px 0 0 0; font-size: 13px; color: #FFE0E6; opacity: 0.95; font-weight: 500; }
+        .body { padding: 32px 28px; color: #222222; }
+        .greeting { font-size: 18px; font-weight: 700; color: #222222; margin-bottom: 12px; }
+        .intro { font-size: 14px; line-height: 1.6; color: #444444; margin-bottom: 20px; }
+        .creds-box { background: linear-gradient(135deg, #FFF0F5 0%, #FFE4E8 100%); border: 2px solid #E91E63; border-radius: 18px; padding: 20px; margin: 20px 0; }
+        .cred-row { font-size: 14px; margin: 8px 0; color: #333333; }
+        .cred-val { font-weight: bold; color: #E91E63; font-family: 'Courier New', monospace; }
+        .notice { font-size: 12px; color: #666666; text-align: center; line-height: 1.5; margin-top: 20px; }
+        .footer { background-color: #FFF0F5; padding: 20px; text-align: center; border-top: 1px solid #FFE4E8; font-size: 11px; color: #888888; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="header">
+          <h1>BELLIE'S SMARTSERVE</h1>
+          <p>Staff Portal Account Invitation</p>
+        </div>
+        <div class="body">
+          <div class="greeting">Welcome to the team, ${recipientName.isNotEmpty ? recipientName : 'Staff Member'}! 🚀</div>
+          <div class="intro">Your staff account has been created for the role of <strong>${role.toUpperCase()}</strong> at Bellie's SmartServe. You can now log in using the temporary credentials below:</div>
+          
+          <div class="creds-box">
+            <div class="cred-row">📧 <strong>Email:</strong> <span class="cred-val">$cleanRecipient</span></div>
+            <div class="cred-row">🔑 <strong>Temporary Password:</strong> <span class="cred-val">$tempPassword</span></div>
+          </div>
+          
+          <div class="notice">⚠️ For security purposes, please log in to the staff portal and change your password immediately in your profile settings.</div>
+        </div>
+        <div class="footer">
+          <p>© 2026 Bellie's Kitchen & SmartServe. All rights reserved.</p>
+          <p>Santa Cruz, Pagsanjan, & Pila, Laguna</p>
+        </div>
+      </div>
+    </body>
+    </html>
+    ''';
+
+    try {
+      final String endpoint = (kIsWeb && !Uri.base.host.contains('localhost') && !Uri.base.host.contains('127.0.0.1'))
+          ? Uri.base.resolve('/api/send-otp').toString()
+          : 'https://bellies-smartserve.vercel.app/api/send-otp';
+      
+      final response = await http.post(
+        Uri.parse(endpoint),
+        headers: {'accept': 'application/json', 'content-type': 'application/json'},
+        body: jsonEncode({
+          'to': cleanRecipient,
+          'toName': recipientName,
+          'subject': "Your Bellie's SmartServe Staff Account Credentials",
+          'html': html,
+        }),
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) return true;
+    } catch (_) {}
+
+    try {
+      final smtpServer = gmail(_senderEmail, _appPassword);
+      final message = Message()
+        ..from = Address(_senderEmail, "Bellie's SmartServe")
+        ..recipients.add(cleanRecipient)
+        ..subject = "Your Bellie's SmartServe Staff Account Credentials"
+        ..html = html;
+      await send(message, smtpServer);
+      return true;
+    } catch (e) {
+      debugPrint("Error sending staff welcome email: $e");
+      return false;
+    }
+  }
 }

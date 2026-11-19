@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/user_model.dart';
 import '../../repositories/employee_repository.dart';
+import '../../services/gmail_email_service.dart';
 import '../../widgets/app_modals.dart';
 import '../../widgets/state_widgets.dart';
 
@@ -1922,8 +1923,6 @@ class NewEmployeeDialog extends StatefulWidget {
 class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _middleNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -1936,7 +1935,6 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
   String _gender = 'Prefer not to say';
   int _currentStep = 0;
   bool _isSaving = false;
-  bool _passwordVisible = false;
   String? _avatarUrl;
   bool _isUploading = false;
   bool _isStepTransitioning = false;
@@ -2030,8 +2028,6 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     _firstNameController.dispose();
     _middleNameController.dispose();
     _lastNameController.dispose();
@@ -2043,18 +2039,14 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match!'), backgroundColor: Colors.red),
-      );
-      return;
-    }
 
     setState(() => _isSaving = true);
     try {
+      final tempPassword = "Bellies@${DateTime.now().year}${(1000 + DateTime.now().millisecond % 9000)}";
+
       await EmployeeRepository().createEmployee(
         email: _emailController.text.trim(),
-        password: _passwordController.text,
+        password: tempPassword,
         fullName: _buildFullName(),
         firstName: _normalizeNamePart(_firstNameController.text),
         middleName: _normalizeNamePart(_middleNameController.text),
@@ -2081,9 +2073,71 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
         }
       }
 
+      // Send Welcome Email in background
+      GmailEmailService().sendStaffWelcomeEmail(
+        recipientEmail: _emailController.text.trim(),
+        recipientName: _buildFullName(),
+        tempPassword: tempPassword,
+        role: _selectedRole.name,
+      );
+
       if (!mounted) return;
       widget.onSave();
       Navigator.of(context).pop();
+
+      // Show Success Dialog with Temporary Credentials copy button
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.green, size: 28),
+              const SizedBox(width: 10),
+              Expanded(child: Text("Staff Account Created!", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18))),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("The staff account has been created successfully, and a welcome email invitation has been sent."),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Email: ${_emailController.text.trim()}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text("Temp Password: $tempPassword", style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFE91E63), fontFamily: 'Courier')),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            OutlinedButton.icon(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: "Email: ${_emailController.text.trim()}\nPassword: $tempPassword"));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Credentials copied to clipboard!")));
+              },
+              icon: const Icon(Icons.copy_rounded, size: 16),
+              label: const Text("COPY CREDENTIALS"),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE91E63), foregroundColor: Colors.white),
+              child: const Text("DONE"),
+            ),
+          ],
+        ),
+      );
     } catch (error) {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -2566,58 +2620,75 @@ class _NewEmployeeDialogState extends State<NewEmployeeDialog> {
   }
 
   Widget _buildStep3AccountSetup() {
+    final staffEmail = _emailController.text.trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: const Color(0xFFF0F7FF),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.blue.shade200),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Account Summary:", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13)),
-              const SizedBox(height: 4),
-              Text("Name: ${_buildFullName()}", style: const TextStyle(fontSize: 12)),
-              Text("Email: ${_emailController.text.trim()}", style: const TextStyle(fontSize: 12)),
-              Text("Role: ${_selectedRole.name.toUpperCase()} (₱${_rateController.text}/day)", style: const TextStyle(fontSize: 12)),
+              Row(
+                children: [
+                  const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 20),
+                  const SizedBox(width: 8),
+                  Text("Account Summary & Invitation", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue.shade900)),
+                ],
+              ),
+              const Divider(height: 20),
+              _summaryRow("Full Name", _buildFullName()),
+              _summaryRow("Email", staffEmail.isNotEmpty ? staffEmail : 'Not provided'),
+              _summaryRow("Role", _selectedRole.name.toUpperCase()),
+              _summaryRow("Daily Rate", "₱${_rateController.text} / day"),
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _passwordController,
-          enabled: !_isSaving,
-          obscureText: !_passwordVisible,
-          decoration: InputDecoration(
-            labelText: "Login Password *",
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            suffixIcon: IconButton(
-              icon: Icon(_passwordVisible ? Icons.visibility : Icons.visibility_off),
-              onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
-            ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFECFDF5),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFA7F3D0)),
           ),
-          validator: (v) => v == null || v.length < 6 ? 'Min 6 characters required' : null,
-        ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _confirmPasswordController,
-          enabled: !_isSaving,
-          obscureText: !_passwordVisible,
-          decoration: InputDecoration(
-            labelText: "Confirm Password *",
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.mail_lock_rounded, color: Color(0xFF059669), size: 20),
+                  const SizedBox(width: 8),
+                  Text("Automated Email Invitation", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13.5, color: const Color(0xFF065F46))),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "A secure temporary password will be automatically generated upon creating this account. A welcome email containing their temporary login credentials and instructions to change their password will be sent instantly to the staff email above.",
+                style: TextStyle(fontSize: 12.5, color: Color(0xFF047857), height: 1.5),
+              ),
+            ],
           ),
-          validator: (v) {
-            if (v == null || v.isEmpty) return 'Required';
-            if (v != _passwordController.text) return 'Passwords do not match';
-            return null;
-          },
         ),
       ],
+    );
+  }
+
+  Widget _summaryRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 12.5, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+          Text(value, style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.black87)),
+        ],
+      ),
     );
   }
 }
