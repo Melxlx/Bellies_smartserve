@@ -1432,7 +1432,7 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
           : '0',
     );
     _avatarUrl = widget.employee.avatarUrl;
-    const validRoles = [UserRole.cashier, UserRole.kitchen, UserRole.rider, UserRole.owner];
+    const validRoles = [UserRole.cashier, UserRole.kitchen, UserRole.rider];
     _selectedRole = validRoles.contains(widget.employee.role)
         ? widget.employee.role
         : UserRole.cashier;
@@ -1696,7 +1696,6 @@ class _EmployeeFormDialogState extends State<EmployeeFormDialog> {
                     DropdownMenuItem(value: UserRole.cashier, child: Text("CASHIER")),
                     DropdownMenuItem(value: UserRole.kitchen, child: Text("KITCHEN")),
                     DropdownMenuItem(value: UserRole.rider, child: Text("RIDER")),
-                    DropdownMenuItem(value: UserRole.owner, child: Text("OWNER / MANAGER")),
                   ],
                   onChanged: _isSaving ? null : (v) => setState(() => _selectedRole = v ?? UserRole.cashier),
                 ),
