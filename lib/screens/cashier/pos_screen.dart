@@ -223,28 +223,7 @@ class _PosScreenState extends State<PosScreen> {
       }
     });
 
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                "Added ${product.name} to cart",
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF2E9E6B),
-        behavior: SnackBarBehavior.floating,
-        width: 420,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    showAppToast(context, "Added ${product.name} to cart", isSuccess: true);
   }
 
   void _updateQuantity(int index, int delta) {
