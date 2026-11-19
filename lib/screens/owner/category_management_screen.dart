@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/category_model.dart';
 import '../../repositories/category_repository.dart';
@@ -72,51 +73,98 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text("Category Management"),
+        title: Text("Category Management", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
+        centerTitle: true,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: "Refresh Categories",
             onPressed: _loadCategories,
           ),
+          if (_isOwner)
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: ElevatedButton.icon(
+                onPressed: () => _showCategoryForm(),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text("Add Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE91E63),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+              ),
+            ),
         ],
       ),
       body: _buildBody(),
-      floatingActionButton: _isOwner
-          ? FloatingActionButton(
-              onPressed: () => _showCategoryForm(),
-              child: const Icon(Icons.add),
-            )
-          : null,
     );
   }
 
   Widget _buildBody() {
     if (_isLoading) return const LoadingState();
     if (_error != null) return ErrorState(error: _error!, onRetry: _loadCategories);
-    if (_categories.isEmpty) return const EmptyState(message: "No categories found.");
+    if (_categories.isEmpty) return const EmptyState(message: "No menu categories found.");
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       itemCount: _categories.length,
       itemBuilder: (context, index) {
         final category = _categories[index];
-        return Card(
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+            ],
+          ),
           child: ListTile(
-            title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(category.description ?? "No description"),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            leading: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF1F5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.category_rounded, color: Color(0xFFE91E63), size: 22),
+            ),
+            title: Text(
+              category.name,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15, color: const Color(0xFF1E293B)),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                category.description?.isNotEmpty == true ? category.description! : "No description provided",
+                style: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF64748B)),
+              ),
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (!_isOwner && !category.isActive)
-                   const Icon(Icons.visibility_off, color: Colors.grey),
+                   Container(
+                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                     decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                     child: const Text("Hidden", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                   ),
                 if (_isOwner) ...[
                   IconButton(
-                    icon: const Icon(Icons.edit),
+                    icon: const Icon(Icons.edit_outlined, color: Color(0xFF2563EB), size: 20),
+                    tooltip: "Edit Category",
                     onPressed: () => _showCategoryForm(category: category),
                   ),
-                  Switch(
+                  const SizedBox(width: 8),
+                  Switch.adaptive(
                     value: category.isActive,
+                    activeTrackColor: const Color(0xFFE91E63),
                     onChanged: (val) async {
                       final messenger = ScaffoldMessenger.of(context);
                       try {
@@ -168,6 +216,14 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
     }
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descController.dispose();
+    _orderController.dispose();
+    super.dispose();
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -199,50 +255,121 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.category == null ? "Add Category" : "Edit Category"),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              enabled: !_isSaving,
-              maxLength: 50,
-              decoration: const InputDecoration(labelText: "Category Name *"),
-              validator: (val) {
-                if (val == null || val.trim().isEmpty) return "Category name is required";
-                if (val.trim().length < 2) return "Category name must be at least 2 characters";
-                return null;
-              },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xFFFFF1F5), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.category_rounded, color: Color(0xFFE91E63), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                widget.category == null ? "Add New Category" : "Edit Category",
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18, color: const Color(0xFF1E293B)),
+              ),
+            ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, color: Colors.grey),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 440,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  enabled: !_isSaving,
+                  maxLength: 50,
+                  decoration: InputDecoration(
+                    labelText: "Category Name *",
+                    hintText: "e.g. Ulam Meals, Silog",
+                    prefixIcon: const Icon(Icons.label_outline_rounded, color: Color(0xFF64748B)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE91E63), width: 1.8)),
+                  ),
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return "Category name is required";
+                    if (val.trim().length < 2) return "Category name must be at least 2 characters";
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _descController,
+                  enabled: !_isSaving,
+                  maxLength: 150,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: "Description (Optional)",
+                    hintText: "Short summary of category items",
+                    prefixIcon: const Icon(Icons.notes_rounded, color: Color(0xFF64748B)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE91E63), width: 1.8)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _orderController,
+                  enabled: !_isSaving,
+                  maxLength: 5,
+                  decoration: InputDecoration(
+                    labelText: "Display Order",
+                    hintText: "0",
+                    prefixIcon: const Icon(Icons.sort_rounded, color: Color(0xFF64748B)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE91E63), width: 1.8)),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return "Display order required";
+                    if (int.tryParse(val.trim()) == null) return "Enter a valid number";
+                    return null;
+                  },
+                ),
+              ],
             ),
-            TextFormField(
-              controller: _descController,
-              enabled: !_isSaving,
-              maxLength: 150,
-              decoration: const InputDecoration(labelText: "Description (Optional)"),
-              maxLines: 2,
-            ),
-            TextFormField(
-              controller: _orderController,
-              enabled: !_isSaving,
-              maxLength: 5,
-              decoration: const InputDecoration(labelText: "Display Order"),
-              keyboardType: TextInputType.number,
-              validator: (val) {
-                if (val == null || val.trim().isEmpty) return "Display order required";
-                if (int.tryParse(val.trim()) == null) return "Enter a valid number";
-                return null;
-              },
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCEL")),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF64748B),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          child: const Text("CANCEL", style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
         ElevatedButton(
           onPressed: _isSaving ? null : _save,
-          child: _isSaving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text("SAVE"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFE91E63),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 2,
+          ),
+          child: _isSaving
+              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : Text(widget.category == null ? "SAVE CATEGORY" : "UPDATE CHANGES", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         ),
       ],
     );

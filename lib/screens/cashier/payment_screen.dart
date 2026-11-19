@@ -74,7 +74,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _change = 0.0;
         if (_cashController.text.trim().isNotEmpty) {
           final needed = widget.order.totalAmount - tendered;
-          _error = "Kulang pa ng ₱${needed.toStringAsFixed(2)} para makumpleto ang bayad.";
+          _error = "Insufficient cash. Please add ₱${needed.toStringAsFixed(2)} more.";
         } else {
           _error = null;
         }
@@ -86,12 +86,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (_selectedMethod == PaymentMethod.cash) {
       final tendered = double.tryParse(_cashController.text) ?? 0.0;
       if (_cashController.text.trim().isEmpty) {
-        setState(() => _error = "Ilagay ang halaga ng ibinayad ng customer (Amount Tendered)");
+        setState(() => _error = "Please enter the cash amount tendered.");
         return;
       }
       if (tendered < widget.order.totalAmount) {
         final needed = widget.order.totalAmount - tendered;
-        setState(() => _error = "Kulang ang bayad! Kailangan ng karagdagang ₱${needed.toStringAsFixed(2)}");
+        setState(() => _error = "Insufficient amount tendered. Please provide at least ₱${widget.order.totalAmount.toStringAsFixed(2)} (Short by ₱${needed.toStringAsFixed(2)}).");
         return;
       }
     } else {
@@ -99,15 +99,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final isCounterPos = widget.order.serviceType == ServiceType.dineIn || widget.order.serviceType == ServiceType.takeout;
       if (!isCounterPos || inputRef.isNotEmpty) {
         if (inputRef.isEmpty) {
-          setState(() => _error = "Kailangan ang GCash Reference Number");
+          setState(() => _error = "GCash Reference Number is required.");
           return;
         }
         if (!ReceiptOcrService.isValidGcashRefNumber(inputRef)) {
-          setState(() => _error = "Maling GCash Reference Number (Dapat ay 10 hanggang 13 digits)");
+          setState(() => _error = "Invalid GCash Reference Number (Must be 10 to 13 digits).");
           return;
         }
         if (!isCounterPos && !_agreedToOnlineTerms) {
-          setState(() => _error = "Mangyaring sumang-ayon sa Online Payment Terms & Conditions");
+          setState(() => _error = "Please agree to the Online Payment Terms & Conditions.");
           return;
         }
       }
@@ -658,7 +658,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        "Kulang pa ng ₱${remainingNeeded.toStringAsFixed(2)} para makumpleto ang bayad.",
+                        "Insufficient cash. Please add ₱${remainingNeeded.toStringAsFixed(2)} more.",
                         style: const TextStyle(fontSize: 12, color: Color(0xFFE11D48), fontWeight: FontWeight.w600),
                       ),
                     ),
